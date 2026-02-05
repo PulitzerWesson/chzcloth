@@ -2732,38 +2732,48 @@ export default function App() {
   const [pendingDashboard, setPendingDashboard] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
+  const [hasRedirected, setHasRedirected] = useState(false);
   
-  // Safety valve: never show loading screen for more than 4 seconds
+  // Safety valve: never show loading screen for more than 3 seconds
   useEffect(() => {
     const timer = setTimeout(() => {
       setLoadingTimeout(true);
-    }, 4000);
+    }, 3000);
     return () => clearTimeout(timer);
   }, []);
   
-  // Debug: log loading states so we can see what's stuck
+  // Debug: log loading states
   useEffect(() => {
-    console.log('[CHZCLOTH] Auth loading:', authLoading, '| Orgs loading:', orgsLoading, '| User:', !!user, '| Orgs:', organizations?.length);
-  }, [authLoading, orgsLoading, user, organizations]);
+    console.log('[CHZCLOTH] Auth loading:', authLoading, '| Orgs loading:', orgsLoading, '| User:', !!user, '| Orgs:', organizations?.length, '| Screen:', screen, '| Timeout:', loadingTimeout);
+  }, [authLoading, orgsLoading, user, organizations, screen, loadingTimeout]);
   
-  // Check for magic link callback on mount
+  // Main routing logic - handles login redirect, magic link return, new tab
   useEffect(() => {
-    if (isAuthenticated && !authLoading && !orgsLoading) {
-      // User is logged in
-      if (pendingDashboard) {
-        setPendingDashboard(false);
+    // Don't redirect if we already did
+    if (hasRedirected) return;
+    
+    // Wait until auth is done loading
+    if (authLoading) return;
+    
+    // Not logged in - stay on whatever screen they're on
+    if (!isAuthenticated) return;
+    
+    // User is authenticated. Wait for orgs to finish loading OR timeout
+    if (orgsLoading && !loadingTimeout) return;
+    
+    // Ready to redirect
+    if (screen === 'email' || screen === 'landing') {
+      setHasRedirected(true);
+      const hasOrganization = organizations && organizations.length > 0;
+      if (hasOrganization) {
+        console.log('[CHZCLOTH] Redirecting to dashboard');
         setScreen('dashboard');
-      } else if (screen === 'email' || screen === 'landing') {
-        // v2: Check if user has organizations instead of profile check
-        const hasOrganization = organizations && organizations.length > 0;
-        if (hasOrganization) {
-          setScreen('dashboard');
-        } else {
-          setScreen('orgsetup');
-        }
+      } else {
+        console.log('[CHZCLOTH] Redirecting to org setup');
+        setScreen('orgsetup');
       }
     }
-  }, [isAuthenticated, authLoading, orgsLoading, organizations]);
+  }, [isAuthenticated, authLoading, orgsLoading, organizations, screen, loadingTimeout, hasRedirected]);
   
   const handleEmailSubmit = async (email) => {
     const { error } = await signInWithEmail(email);
@@ -2871,13 +2881,12 @@ export default function App() {
     }
   };
   
-  // Show loading state (but never for more than 4 seconds)
-  const isStillLoading = (authLoading || orgsLoading) && !loadingTimeout;
-  if (isStillLoading) {
+  // Show loading state only while auth is resolving (not orgs - those can load in background)
+  if (authLoading && !loadingTimeout) {
     return (
       <div style={{ 
         minHeight: '100vh', 
-        background: 'linear-gradient(135deg, #0a0f1a 0%, #0d1929 50%, #0a0f1a 100%)',
+        background: '#0a0f1a',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
