@@ -35,7 +35,7 @@ function AppHeader({ isLoggedIn, onDashboardClick, onLogoClick, showTeamsBanner 
               fontWeight: 600,
             }}
           >
-            Currently aging
+            Coming Soon
           </span>
           <button
             onClick={() => setBannerDismissed(true)}
