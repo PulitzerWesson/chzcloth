@@ -9,14 +9,12 @@ export function useBets(orgId) {
   const [error, setError] = useState(null)
   const fetchingRef = useRef(false)
 
-  // Fetch bets for the current user, optionally filtered by org
   const fetchBets = useCallback(async () => {
     if (!user) {
       setBets([])
       return
     }
 
-    // Prevent duplicate fetches
     if (fetchingRef.current) return
     fetchingRef.current = true
 
@@ -32,41 +30,59 @@ export function useBets(orgId) {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
-      // Filter by org if provided
+      // FIX: When filtering by org, also include orphan bets (org_id IS NULL).
+      // These are bets created before the org feature existed.
+      // Without this, orphan bets vanish when an org is selected.
       if (orgId) {
-        query = query.eq('org_id', orgId)
+        query = query.or(`org_id.eq.${orgId},org_id.is.null`)
       }
 
       const { data: betsData, error: betsError } = await query
 
       if (betsError) throw betsError
 
-      const transformedBets = (betsData || []).map(bet => ({
-        id: bet.id,
-        orgId: bet.org_id,
-        hypothesis: bet.hypothesis,
-        metricDomain: bet.metric_domain,
-        metric: bet.metric,
-        customMetric: bet.custom_metric,
-        betType: bet.bet_type,
-        baseline: bet.baseline,
-        prediction: bet.prediction,
-        confidence: bet.confidence,
-        timeframe: bet.timeframe,
-        assumptions: bet.assumptions,
-        cheapTest: bet.cheap_test,
-        isOwnIdea: bet.is_own_idea,
-        ideaSource: bet.idea_source,
-        measurementTool: bet.measurement_tool,
-        isPastBet: bet.is_past_bet,
-        createdAt: bet.created_at,
-        outcome: bet.is_past_bet ? bet.past_bet_outcome : bet.outcomes?.[0]?.status,
-        status: bet.outcomes?.[0]?.status,
-        actualResult: bet.is_past_bet ? bet.past_bet_actual_result : bet.outcomes?.[0]?.actual_result,
-        learned: bet.is_past_bet ? bet.past_bet_learned : bet.outcomes?.[0]?.learned,
-        wouldDoAgain: bet.outcomes?.[0]?.would_do_again,
-        completedAt: bet.outcomes?.[0]?.recorded_at
-      }))
+      const transformedBets = (betsData || []).map(bet => {
+        // FIX: Determine the resolved outcome/status consistently.
+        // Past bets store outcome directly on the bet row.
+        // Active bets store outcome in the joined outcomes table.
+        // Previously, `status` was always from outcomes table — undefined for past bets.
+        // This caused past bets to show as "active" in some code paths.
+        const resolvedStatus = bet.is_past_bet
+          ? bet.past_bet_outcome
+          : (bet.outcomes?.[0]?.status || null)
+
+        return {
+          id: bet.id,
+          orgId: bet.org_id,
+          hypothesis: bet.hypothesis,
+          metricDomain: bet.metric_domain,
+          metric: bet.metric,
+          customMetric: bet.custom_metric,
+          betType: bet.bet_type,
+          baseline: bet.baseline,
+          prediction: bet.prediction,
+          confidence: bet.confidence,
+          timeframe: bet.timeframe,
+          assumptions: bet.assumptions,
+          cheapTest: bet.cheap_test,
+          isOwnIdea: bet.is_own_idea,
+          ideaSource: bet.idea_source,
+          measurementTool: bet.measurement_tool,
+          isPastBet: !!bet.is_past_bet,  // FIX: coerce nullable bool to definite bool
+          createdAt: bet.created_at,
+          // FIX: Both outcome and status now resolve from the same source
+          outcome: resolvedStatus,
+          status: resolvedStatus,
+          actualResult: bet.is_past_bet
+            ? bet.past_bet_actual_result
+            : (bet.outcomes?.[0]?.actual_result || null),
+          learned: bet.is_past_bet
+            ? bet.past_bet_learned
+            : (bet.outcomes?.[0]?.learned || null),
+          wouldDoAgain: bet.outcomes?.[0]?.would_do_again ?? null,
+          completedAt: bet.outcomes?.[0]?.recorded_at || null
+        }
+      })
 
       setBets(transformedBets)
       setError(null)
@@ -80,13 +96,11 @@ export function useBets(orgId) {
   }, [user, orgId])
 
   // Re-fetch when user or orgId changes
-  // FIX: Reset fetchingRef so org switches and user changes trigger a real refetch
   useEffect(() => {
     fetchingRef.current = false
     fetchBets()
   }, [fetchBets])
 
-  // Create a new bet — tags with current orgId
   const createBet = async (betData) => {
     if (!user) return { error: { message: 'Not authenticated' } }
 
@@ -121,6 +135,9 @@ export function useBets(orgId) {
         ...betData,
         id: data.id,
         orgId: data.org_id,
+        isPastBet: false,
+        outcome: null,
+        status: null,
         createdAt: data.created_at
       }
       setBets(prev => [newBet, ...prev])
@@ -132,7 +149,6 @@ export function useBets(orgId) {
     }
   }
 
-  // Create past bets — tags with current orgId
   const createPastBets = async (pastBetsData) => {
     if (!user) return { error: { message: 'Not authenticated' } }
 
@@ -166,6 +182,8 @@ export function useBets(orgId) {
 
       if (error) throw error
 
+      // Full refetch to get consistent transforms
+      fetchingRef.current = false
       await fetchBets()
 
       return { data, error: null }
@@ -175,7 +193,6 @@ export function useBets(orgId) {
     }
   }
 
-  // Record outcome for a bet
   const recordOutcome = async (betId, outcomeData) => {
     if (!user) return { error: { message: 'Not authenticated' } }
 
@@ -195,6 +212,7 @@ export function useBets(orgId) {
 
       if (error) throw error
 
+      // FIX: Update both status and outcome consistently
       setBets(prev => prev.map(bet => 
         bet.id === betId 
           ? { 
@@ -216,7 +234,6 @@ export function useBets(orgId) {
     }
   }
 
-  // Delete a bet
   const deleteBet = async (betId) => {
     if (!user) return { error: { message: 'Not authenticated' } }
 
@@ -238,24 +255,23 @@ export function useBets(orgId) {
     }
   }
 
-  // Get user stats
   const getStats = useCallback(() => {
     const safeBets = bets || []
     
+    // FIX: Use single field (status) since outcome and status are now the same
     const betsWithOutcomes = safeBets.filter(b => 
-      ['succeeded', 'partial', 'failed'].includes(b.outcome) || 
       ['succeeded', 'partial', 'failed'].includes(b.status)
     )
     
     const ownIdeas = betsWithOutcomes.filter(b => b.isOwnIdea !== false)
     const othersIdeas = betsWithOutcomes.filter(b => b.isOwnIdea === false)
     
-    const isSuccess = (b) => ['succeeded', 'partial'].includes(b.status || b.outcome)
+    const isSuccess = (b) => ['succeeded', 'partial'].includes(b.status)
     
     return {
       totalBets: safeBets.length,
       completedBets: betsWithOutcomes.length,
-      activeBets: safeBets.filter(b => !b.outcome && !b.status && !b.isPastBet).length,
+      activeBets: safeBets.filter(b => !b.status && !b.isPastBet).length,
       accuracy: betsWithOutcomes.length > 0
         ? Math.round((betsWithOutcomes.filter(isSuccess).length / betsWithOutcomes.length) * 100)
         : null,
