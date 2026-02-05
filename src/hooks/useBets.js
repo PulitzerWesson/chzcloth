@@ -1,26 +1,28 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './useAuth'
 
-export function useBets() {
+export function useBets(orgId) {
   const { user } = useAuth()
   const [bets, setBets] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const fetchingRef = useRef(false)
 
-  // Fetch all bets for the current user
+  // Fetch bets for the current user, optionally filtered by org
   const fetchBets = useCallback(async () => {
     if (!user) {
       setBets([])
-      setLoading(false)
       return
     }
+
+    if (fetchingRef.current) return
+    fetchingRef.current = true
 
     try {
       setLoading(true)
       
-      // Fetch bets with their outcomes
-      const { data: betsData, error: betsError } = await supabase
+      let query = supabase
         .from('bets')
         .select(`
           *,
@@ -29,11 +31,18 @@ export function useBets() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
+      // Filter by org if provided
+      if (orgId) {
+        query = query.eq('org_id', orgId)
+      }
+
+      const { data: betsData, error: betsError } = await query
+
       if (betsError) throw betsError
 
-      // Transform data to match our app's expected format
-      const transformedBets = betsData.map(bet => ({
+      const transformedBets = (betsData || []).map(bet => ({
         id: bet.id,
+        orgId: bet.org_id,
         hypothesis: bet.hypothesis,
         metricDomain: bet.metric_domain,
         metric: bet.metric,
@@ -50,7 +59,6 @@ export function useBets() {
         measurementTool: bet.measurement_tool,
         isPastBet: bet.is_past_bet,
         createdAt: bet.created_at,
-        // Outcome data (from joined outcomes or past_bet fields)
         outcome: bet.is_past_bet ? bet.past_bet_outcome : bet.outcomes?.[0]?.status,
         status: bet.outcomes?.[0]?.status,
         actualResult: bet.is_past_bet ? bet.past_bet_actual_result : bet.outcomes?.[0]?.actual_result,
@@ -66,15 +74,16 @@ export function useBets() {
       setError(err.message)
     } finally {
       setLoading(false)
+      fetchingRef.current = false
     }
-  }, [user])
+  }, [user, orgId])
 
-  // Load bets on mount and when user changes
+  // Re-fetch when user or orgId changes
   useEffect(() => {
     fetchBets()
   }, [fetchBets])
 
-  // Create a new bet
+  // Create a new bet — tags with current orgId
   const createBet = async (betData) => {
     if (!user) return { error: { message: 'Not authenticated' } }
 
@@ -83,6 +92,7 @@ export function useBets() {
         .from('bets')
         .insert({
           user_id: user.id,
+          org_id: orgId || null,
           hypothesis: betData.hypothesis,
           metric_domain: betData.metricDomain,
           metric: betData.metric,
@@ -104,10 +114,10 @@ export function useBets() {
 
       if (error) throw error
 
-      // Add to local state
       const newBet = {
         ...betData,
         id: data.id,
+        orgId: data.org_id,
         createdAt: data.created_at
       }
       setBets(prev => [newBet, ...prev])
@@ -119,7 +129,7 @@ export function useBets() {
     }
   }
 
-  // Create past bets (for baseline seeding)
+  // Create past bets — tags with current orgId
   const createPastBets = async (pastBetsData) => {
     if (!user) return { error: { message: 'Not authenticated' } }
 
@@ -128,6 +138,7 @@ export function useBets() {
         .filter(b => b.hypothesis && b.outcome && b.learned)
         .map(bet => ({
           user_id: user.id,
+          org_id: orgId || null,
           hypothesis: bet.hypothesis,
           metric_domain: bet.metricDomain,
           metric: bet.metric,
@@ -152,7 +163,6 @@ export function useBets() {
 
       if (error) throw error
 
-      // Refresh bets from server
       await fetchBets()
 
       return { data, error: null }
@@ -182,7 +192,6 @@ export function useBets() {
 
       if (error) throw error
 
-      // Update local state
       setBets(prev => prev.map(bet => 
         bet.id === betId 
           ? { 
@@ -217,7 +226,6 @@ export function useBets() {
 
       if (error) throw error
 
-      // Remove from local state
       setBets(prev => prev.filter(bet => bet.id !== betId))
 
       return { error: null }
