@@ -6,7 +6,7 @@ export function useOrganizations() {
   const { user } = useAuth()
   const [organizations, setOrganizations] = useState([])
   const [currentOrg, setCurrentOrg] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
   // Fetch all organizations for the current user
