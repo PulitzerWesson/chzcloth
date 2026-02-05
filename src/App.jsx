@@ -401,7 +401,7 @@ function Landing({ onStart }) {
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0a0f1a 0%, #0d1929 50%, #0a0f1a 100%)' }}>
       {/* Hero */}
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '80px 24px 60px' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '80px 24px 60px', minHeight: 'calc(100vh - 140px)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <div style={{ color: '#fbbf24', fontSize: '1.1rem', fontWeight: 600, marginBottom: 16, letterSpacing: '0.5px' }}>
           More Cheese. Less Waste.
         </div>
@@ -428,6 +428,7 @@ function Landing({ onStart }) {
             border: 'none',
             borderRadius: 12,
             cursor: 'pointer',
+            alignSelf: 'flex-start',
             transition: 'transform 0.2s, box-shadow 0.2s'
           }}
           onMouseOver={e => { e.target.style.transform = 'translateY(-2px)'; e.target.style.boxShadow = '0 8px 30px rgba(45, 212, 191, 0.3)'; }}
