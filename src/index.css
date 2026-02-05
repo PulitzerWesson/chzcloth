@@ -16,7 +16,6 @@ body {
   min-height: 100vh;
 }
 
-/* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -34,7 +33,6 @@ body {
   background: rgba(255, 255, 255, 0.3);
 }
 
-/* Focus styles */
 button:focus-visible,
 input:focus-visible,
 select:focus-visible,
@@ -43,7 +41,6 @@ textarea:focus-visible {
   outline-offset: 2px;
 }
 
-/* Remove default select styling */
 select {
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
@@ -52,13 +49,28 @@ select {
   padding-right: 36px;
 }
 
-/* Placeholder styling */
 ::placeholder {
   color: #64748b;
 }
 
-/* Selection styling */
 ::selection {
   background: rgba(45, 212, 191, 0.3);
   color: #f1f5f9;
+}
+
+@keyframes float1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-30px, 40px) scale(1.05); }
+  66% { transform: translate(20px, -20px) scale(0.95); }
+}
+
+@keyframes float2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(40px, -30px) scale(1.08); }
+  66% { transform: translate(-20px, 20px) scale(0.92); }
+}
+
+@keyframes float3 {
+  0%, 100% { transform: translate(-50%, 0) scale(1); opacity: 0.6; }
+  50% { transform: translate(-50%, -40px) scale(1.1); opacity: 1; }
 }
