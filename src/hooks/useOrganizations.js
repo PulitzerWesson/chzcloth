@@ -86,11 +86,13 @@ export function useOrganizations() {
   }, [user])
 
   // Only fetch when user changes and auth is done loading
+  // FIX: Reset fetchingRef so legitimate refetches (user change) aren't blocked
   useEffect(() => {
     if (!authLoading) {
+      fetchingRef.current = false
       fetchOrganizations()
     }
-  }, [user, authLoading])
+  }, [user, authLoading, fetchOrganizations])
 
   // Create a new organization and link to user
   const createOrganization = async (orgData, userOrgData) => {
