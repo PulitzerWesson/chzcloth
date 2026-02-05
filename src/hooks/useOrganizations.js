@@ -11,16 +11,15 @@ export function useOrganizations() {
   const [initialized, setInitialized] = useState(false)
   const fetchingRef = useRef(false)
 
-  // Fetch all organizations for the current user
   const fetchOrganizations = useCallback(async () => {
     if (!user) {
       setOrganizations([])
       setCurrentOrg(null)
       setInitialized(true)
+      setLoading(false)
       return
     }
 
-    // Prevent duplicate fetches
     if (fetchingRef.current) return
     fetchingRef.current = true
 
@@ -52,7 +51,7 @@ export function useOrganizations() {
       if (fetchError) throw fetchError
 
       const transformed = (data || [])
-        .filter(uo => uo.organizations) // skip if org join failed
+        .filter(uo => uo.organizations)
         .map(uo => ({
           userOrgId: uo.id,
           orgId: uo.organizations.id,
@@ -78,6 +77,8 @@ export function useOrganizations() {
     } catch (err) {
       console.error('Error fetching organizations:', err)
       setError(err.message)
+      // IMPORTANT: Still set initialized on error so the app can route.
+      // Empty orgs + error = redirect to orgsetup (acceptable fallback).
     } finally {
       setLoading(false)
       setInitialized(true)
@@ -85,8 +86,8 @@ export function useOrganizations() {
     }
   }, [user])
 
-  // Only fetch when user changes and auth is done loading
-  // FIX: Reset fetchingRef so legitimate refetches (user change) aren't blocked
+  // Fetch when user changes and auth is done loading.
+  // Reset fetchingRef so legitimate refetches aren't blocked.
   useEffect(() => {
     if (!authLoading) {
       fetchingRef.current = false
@@ -94,12 +95,10 @@ export function useOrganizations() {
     }
   }, [user, authLoading, fetchOrganizations])
 
-  // Create a new organization and link to user
   const createOrganization = async (orgData, userOrgData) => {
     if (!user) return { error: { message: 'Not authenticated' } }
 
     try {
-      // Create the organization
       const { data: org, error: orgError } = await supabase
         .from('organizations')
         .insert({
@@ -115,7 +114,6 @@ export function useOrganizations() {
 
       if (orgError) throw orgError
 
-      // If this will be current, unset other current orgs
       if (userOrgData.isCurrent !== false) {
         await supabase
           .from('user_organizations')
@@ -124,7 +122,6 @@ export function useOrganizations() {
           .eq('is_current', true)
       }
 
-      // Link user to organization
       const { data: userOrg, error: userOrgError } = await supabase
         .from('user_organizations')
         .insert({
@@ -140,7 +137,7 @@ export function useOrganizations() {
 
       if (userOrgError) throw userOrgError
 
-      // Refresh orgs
+      fetchingRef.current = false
       await fetchOrganizations()
 
       return { data: { org, userOrg }, error: null }
@@ -150,7 +147,6 @@ export function useOrganizations() {
     }
   }
 
-  // Update organization details
   const updateOrganization = async (orgId, updates) => {
     if (!user) return { error: { message: 'Not authenticated' } }
 
@@ -173,6 +169,7 @@ export function useOrganizations() {
 
       if (error) throw error
 
+      fetchingRef.current = false
       await fetchOrganizations()
 
       return { data, error: null }
@@ -182,23 +179,19 @@ export function useOrganizations() {
     }
   }
 
-  // Update company mode specifically
   const updateCompanyMode = async (orgId, mode) => {
     return updateOrganization(orgId, { currentMode: mode })
   }
 
-  // Switch current organization
   const switchCurrentOrg = async (orgId) => {
     if (!user) return { error: { message: 'Not authenticated' } }
 
     try {
-      // Unset all current flags
       await supabase
         .from('user_organizations')
         .update({ is_current: false })
         .eq('user_id', user.id)
 
-      // Set new current
       const { error } = await supabase
         .from('user_organizations')
         .update({ is_current: true })
@@ -207,6 +200,7 @@ export function useOrganizations() {
 
       if (error) throw error
 
+      fetchingRef.current = false
       await fetchOrganizations()
 
       return { error: null }
@@ -216,7 +210,6 @@ export function useOrganizations() {
     }
   }
 
-  // Mark an org as left
   const leaveOrganization = async (orgId) => {
     if (!user) return { error: { message: 'Not authenticated' } }
 
@@ -232,6 +225,7 @@ export function useOrganizations() {
 
       if (error) throw error
 
+      fetchingRef.current = false
       await fetchOrganizations()
 
       return { error: null }
@@ -241,7 +235,6 @@ export function useOrganizations() {
     }
   }
 
-  // Get context check for a bet
   const getContextCheck = (betDomain) => {
     if (!currentOrg?.currentMode || currentOrg.currentMode === 'unsure') {
       return null
@@ -288,10 +281,14 @@ export function useOrganizations() {
     return null
   }
 
+  // FIX: Return raw `loading` and `initialized` separately.
+  // Let App.jsx decide how to combine them for UI decisions.
+  // Old code returned a computed `loading` that mixed concerns.
   return {
     organizations,
     currentOrg,
-    loading: loading || (!initialized && !authLoading),
+    loading,
+    initialized,
     error,
     createOrganization,
     updateOrganization,
