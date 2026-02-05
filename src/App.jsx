@@ -401,16 +401,35 @@ function Landing({ onStart }) {
   ];
   
   return (
-    <div style={{ minHeight: '100vh', background: '#0a0f1a', position: 'relative', overflow: 'hidden' }}>
-      {/* Animated background */}
-      <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(45,212,191,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(45,212,191,0.07) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
-        <div style={{ position: 'absolute', top: '-20%', right: '-10%', width: '60vw', height: '60vw', maxWidth: 800, maxHeight: 800, borderRadius: '50%', background: 'radial-gradient(circle, rgba(45,212,191,0.25) 0%, rgba(45,212,191,0.06) 40%, transparent 70%)', animation: 'float1 20s ease-in-out infinite' }} />
-        <div style={{ position: 'absolute', bottom: '-30%', left: '-15%', width: '50vw', height: '50vw', maxWidth: 700, maxHeight: 700, borderRadius: '50%', background: 'radial-gradient(circle, rgba(34,211,238,0.2) 0%, rgba(34,211,238,0.05) 40%, transparent 70%)', animation: 'float2 25s ease-in-out infinite' }} />
-        <div style={{ position: 'absolute', top: '40%', left: '50%', width: '40vw', height: '40vw', maxWidth: 500, maxHeight: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(251,191,36,0.15) 0%, transparent 50%)', animation: 'float3 18s ease-in-out infinite' }} />
-      </div>
-      {/* Hero */}
-      <div style={{ position: 'relative', zIndex: 1, maxWidth: 900, margin: '0 auto', padding: '80px 24px 60px', minHeight: 'calc(100vh - 140px)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+    <div style={{ minHeight: '100vh', background: '#0a0f1a' }}>
+      {/* Inline keyframes so animations always work */}
+      <style>{`
+        @keyframes float1 {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          33% { transform: translate(-30px, 40px) scale(1.05); }
+          66% { transform: translate(20px, -20px) scale(0.95); }
+        }
+        @keyframes float2 {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          33% { transform: translate(40px, -30px) scale(1.08); }
+          66% { transform: translate(-20px, 20px) scale(0.92); }
+        }
+        @keyframes float3 {
+          0%, 100% { transform: translate(-50%, 0) scale(1); opacity: 0.6; }
+          50% { transform: translate(-50%, -40px) scale(1.1); opacity: 1; }
+        }
+      `}</style>
+      {/* Hero with animated background */}
+      <div style={{ position: 'relative', overflow: 'hidden', minHeight: 'calc(100vh - 140px)' }}>
+        {/* Orbs + grid - hero only */}
+        <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+          <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(45,212,191,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(45,212,191,0.07) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+          <div style={{ position: 'absolute', top: '-20%', right: '-10%', width: '60vw', height: '60vw', maxWidth: 800, maxHeight: 800, borderRadius: '50%', background: 'radial-gradient(circle, rgba(45,212,191,0.25) 0%, rgba(45,212,191,0.06) 40%, transparent 70%)', animation: 'float1 20s ease-in-out infinite' }} />
+          <div style={{ position: 'absolute', bottom: '-30%', left: '-15%', width: '50vw', height: '50vw', maxWidth: 700, maxHeight: 700, borderRadius: '50%', background: 'radial-gradient(circle, rgba(34,211,238,0.2) 0%, rgba(34,211,238,0.05) 40%, transparent 70%)', animation: 'float2 25s ease-in-out infinite' }} />
+          <div style={{ position: 'absolute', top: '40%', left: '50%', width: '40vw', height: '40vw', maxWidth: 500, maxHeight: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(251,191,36,0.15) 0%, transparent 50%)', animation: 'float3 18s ease-in-out infinite' }} />
+        </div>
+        {/* Hero content */}
+        <div style={{ position: 'relative', zIndex: 1, maxWidth: 900, margin: '0 auto', padding: '80px 24px 60px', minHeight: 'calc(100vh - 140px)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <div style={{ color: '#fbbf24', fontSize: '1.1rem', fontWeight: 600, marginBottom: 16, letterSpacing: '0.5px' }}>
           More Cheese. Less Waste.
         </div>
@@ -446,9 +465,10 @@ function Landing({ onStart }) {
           Submit Your First Bet →
         </button>
       </div>
+      </div>
       
       {/* How it works */}
-      <div style={{ position: 'relative', zIndex: 1, background: 'rgba(255,255,255,0.02)', padding: '60px 24px' }}>
+      <div style={{ background: 'rgba(255,255,255,0.02)', padding: '60px 24px' }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <h2 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#f1f5f9', marginBottom: 40, textAlign: 'center' }}>
             How It Works
@@ -477,7 +497,7 @@ function Landing({ onStart }) {
       </div>
       
       {/* Example bets */}
-      <div style={{ position: 'relative', zIndex: 1, padding: '60px 24px' }}>
+      <div style={{ padding: '60px 24px' }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <h2 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#f1f5f9', marginBottom: 12, textAlign: 'center' }}>
             See What Good Bets Look Like
@@ -535,7 +555,7 @@ function Landing({ onStart }) {
       </div>
       
       {/* CTA */}
-      <div style={{ position: 'relative', zIndex: 1, padding: '40px 24px 80px', textAlign: 'center' }}>
+      <div style={{ padding: '40px 24px 80px', textAlign: 'center' }}>
         <button
           onClick={onStart}
           style={{
@@ -2711,6 +2731,20 @@ export default function App() {
   const [betToRecord, setBetToRecord] = useState(null);
   const [pendingDashboard, setPendingDashboard] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
+  
+  // Safety valve: never show loading screen for more than 4 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoadingTimeout(true);
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, []);
+  
+  // Debug: log loading states so we can see what's stuck
+  useEffect(() => {
+    console.log('[CHZCLOTH] Auth loading:', authLoading, '| Orgs loading:', orgsLoading, '| User:', !!user, '| Orgs:', organizations?.length);
+  }, [authLoading, orgsLoading, user, organizations]);
   
   // Check for magic link callback on mount
   useEffect(() => {
@@ -2837,8 +2871,9 @@ export default function App() {
     }
   };
   
-  // Show loading state
-  if (authLoading || orgsLoading) {
+  // Show loading state (but never for more than 4 seconds)
+  const isStillLoading = (authLoading || orgsLoading) && !loadingTimeout;
+  if (isStillLoading) {
     return (
       <div style={{ 
         minHeight: '100vh', 
