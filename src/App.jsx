@@ -2689,78 +2689,81 @@ function Dashboard({ profile, bets, currentOrg, organizations, pmValueIndex, onS
 export default function App() {
   const { user, profile, loading: authLoading, signInWithEmail, updateProfile, isAuthenticated } = useAuth();
   
-  // v2: Organizations hook
+  // FIX: Destructure `initialized` (new) instead of relying on computed `loading`
   const { 
     organizations, 
     currentOrg, 
     loading: orgsLoading,
+    initialized: orgsInitialized,
     createOrganization,
     updateCompanyMode,
     switchCurrentOrg,
     getContextCheck
   } = useOrganizations();
   
-  // v2: Pass currentOrg?.orgId to useBets for filtering
   const { bets, loading: betsLoading, createBet, createPastBets, recordOutcome } = useBets(currentOrg?.orgId);
   
-  // v2: PM Value Index
   const { index: pmValueIndex } = usePMValueIndex(currentOrg?.orgId);
   
   const [screen, setScreen] = useState('landing');
   const [currentBet, setCurrentBet] = useState(null);
   const [betToRecord, setBetToRecord] = useState(null);
-  const [pendingDashboard, setPendingDashboard] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
-  const [loadingTimeout, setLoadingTimeout] = useState(false);
-  const [hasRedirected, setHasRedirected] = useState(false);
   
-  // Safety valve: never show loading screen for more than 3 seconds
+  // FIX: Progressive loading messages for Supabase free tier cold starts (5-8s)
+  // Instead of a 3s timeout that forces a wrong routing decision,
+  // we count seconds and update the loading message.
+  const [loadingElapsed, setLoadingElapsed] = useState(0);
+  
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoadingTimeout(true);
-    }, 3000);
-    return () => clearTimeout(timer);
+    const interval = setInterval(() => {
+      setLoadingElapsed(prev => prev + 1);
+    }, 1000);
+    return () => clearInterval(interval);
   }, []);
   
-  // FIX: Reset hasRedirected when user logs out so re-login works
+  // Debug logging
   useEffect(() => {
-    if (!isAuthenticated) {
-      setHasRedirected(false);
-    }
-  }, [isAuthenticated]);
+    console.log('[CHZCLOTH] Auth:', authLoading ? 'loading' : 'ready',
+      '| Orgs:', orgsInitialized ? `ready (${organizations?.length})` : 'loading',
+      '| User:', !!user,
+      '| Screen:', screen);
+  }, [authLoading, orgsInitialized, user, organizations, screen]);
   
-  // Debug: log loading states
+  // ============================================
+  // MAIN ROUTING LOGIC
+  // ============================================
+  // FIX: Routes based on `orgsInitialized` (real data arrived) instead
+  // of a timeout (arbitrary guess). The loading screen handles UX
+  // during Supabase cold starts.
+  //
+  // Removed: loadingTimeout, hasRedirected, pendingDashboard
+  //
+  // Why no hasRedirected guard?
+  // The redirect only fires when screen === 'email' || 'landing'.
+  // Once we setScreen('dashboard'), the condition fails and the
+  // effect becomes a no-op. React bails out of setScreen if the
+  // value hasn't changed, so no infinite loops.
   useEffect(() => {
-    console.log('[CHZCLOTH] Auth loading:', authLoading, '| Orgs loading:', orgsLoading, '| User:', !!user, '| Orgs:', organizations?.length, '| Screen:', screen, '| Timeout:', loadingTimeout);
-  }, [authLoading, orgsLoading, user, organizations, screen, loadingTimeout]);
-  
-  // Main routing logic - handles login redirect, magic link return, new tab
-  useEffect(() => {
-    // Don't redirect if we already did
-    if (hasRedirected) return;
-    
-    // Wait until auth is done loading
     if (authLoading) return;
-    
-    // Not logged in - stay on whatever screen they're on
     if (!isAuthenticated) return;
+    if (!orgsInitialized) return;
     
-    // User is authenticated. Wait for orgs to finish loading OR timeout
-    if (orgsLoading && !loadingTimeout) return;
-    
-    // Ready to redirect
     if (screen === 'email' || screen === 'landing') {
-      setHasRedirected(true);
       const hasOrganization = organizations && organizations.length > 0;
       if (hasOrganization) {
-        console.log('[CHZCLOTH] Redirecting to dashboard');
+        console.log('[CHZCLOTH] → dashboard');
         setScreen('dashboard');
       } else {
-        console.log('[CHZCLOTH] Redirecting to org setup');
+        console.log('[CHZCLOTH] → org setup');
         setScreen('orgsetup');
       }
     }
-  }, [isAuthenticated, authLoading, orgsLoading, organizations, screen, loadingTimeout, hasRedirected]);
+  }, [isAuthenticated, authLoading, orgsInitialized, organizations, screen]);
+  
+  // ============================================
+  // EVENT HANDLERS
+  // ============================================
   
   const handleEmailSubmit = async (email) => {
     const { error } = await signInWithEmail(email);
@@ -2782,7 +2785,6 @@ export default function App() {
     }
   };
   
-  // v2: Handle organization setup completion
   const handleOrgSetupComplete = async ({ organization, userOrg }) => {
     const { error } = await createOrganization(organization, userOrg);
     if (error) {
@@ -2851,11 +2853,11 @@ export default function App() {
     setScreen('dashboard');
   };
   
+  // FIX: Removed pendingDashboard (was set but never used in routing)
   const handleDashboardClick = () => {
     if (isAuthenticated) {
       setScreen('dashboard');
     } else {
-      setPendingDashboard(true);
       setScreen('email');
     }
   };
@@ -2868,11 +2870,42 @@ export default function App() {
     }
   };
   
-  // FIX: Loading screen now also gates on orgsLoading for authenticated users
-  // This prevents flash of landing/wrong screen while orgs resolve
-  const isResolvingState = !loadingTimeout && (authLoading || (isAuthenticated && orgsLoading));
+  // ============================================
+  // LOADING SCREEN
+  // ============================================
+  // Shows while auth resolves OR while authenticated + orgs haven't loaded.
+  // Progressive messages handle Supabase free tier cold starts gracefully.
+  // After 12 seconds, shows retry button instead of hanging forever.
+  const isResolvingState = authLoading || (isAuthenticated && !orgsInitialized);
   
   if (isResolvingState) {
+    let loadingContent;
+    if (loadingElapsed < 4) {
+      loadingContent = <div style={{ color: '#64748b' }}>Loading...</div>;
+    } else if (loadingElapsed < 10) {
+      loadingContent = <div style={{ color: '#64748b' }}>Waking up the server...</div>;
+    } else {
+      loadingContent = (
+        <>
+          <div style={{ color: '#94a3b8', marginBottom: 8 }}>Taking longer than expected</div>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              padding: '10px 24px',
+              background: 'rgba(45, 212, 191, 0.2)',
+              border: '1px solid rgba(45, 212, 191, 0.4)',
+              borderRadius: 8,
+              color: '#2dd4bf',
+              cursor: 'pointer',
+              fontSize: '0.9rem'
+            }}
+          >
+            Retry
+          </button>
+        </>
+      );
+    }
+    
     return (
       <div style={{ 
         minHeight: '100vh', 
@@ -2880,13 +2913,18 @@ export default function App() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        flexDirection: 'column',
+        gap: 16,
         fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
       }}>
-        <div style={{ color: '#64748b' }}>Loading...</div>
+        {loadingContent}
       </div>
     );
   }
   
+  // ============================================
+  // MAIN RENDER
+  // ============================================
   return (
     <div style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif", minHeight: '100vh', background: 'linear-gradient(135deg, #0a0f1a 0%, #0d1929 50%, #0a0f1a 100%)' }}>
       <AppHeader 
@@ -2906,3 +2944,4 @@ export default function App() {
     </div>
   );
 }
+
