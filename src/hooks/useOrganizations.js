@@ -1,27 +1,32 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './useAuth'
 
 export function useOrganizations() {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [organizations, setOrganizations] = useState([])
   const [currentOrg, setCurrentOrg] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [initialized, setInitialized] = useState(false)
+  const fetchingRef = useRef(false)
 
   // Fetch all organizations for the current user
   const fetchOrganizations = useCallback(async () => {
     if (!user) {
       setOrganizations([])
       setCurrentOrg(null)
-      setLoading(false)
+      setInitialized(true)
       return
     }
+
+    // Prevent duplicate fetches
+    if (fetchingRef.current) return
+    fetchingRef.current = true
 
     try {
       setLoading(true)
       
-      // Fetch user's organizations with relationship data
       const { data, error: fetchError } = await supabase
         .from('user_organizations')
         .select(`
@@ -43,30 +48,29 @@ export function useOrganizations() {
         `)
         .eq('user_id', user.id)
         .order('is_current', { ascending: false })
-        .order('started_at', { ascending: false })
 
       if (fetchError) throw fetchError
 
-      // Transform data
-      const transformed = (data || []).map(uo => ({
-        userOrgId: uo.id,
-        orgId: uo.organizations.id,
-        name: uo.organizations.name,
-        website: uo.organizations.website,
-        stage: uo.organizations.stage,
-        teamSize: uo.organizations.team_size,
-        industry: uo.organizations.industry,
-        currentMode: uo.organizations.current_mode,
-        role: uo.role,
-        seniority: uo.seniority,
-        startedAt: uo.started_at,
-        endedAt: uo.ended_at,
-        isCurrent: uo.is_current
-      }))
+      const transformed = (data || [])
+        .filter(uo => uo.organizations) // skip if org join failed
+        .map(uo => ({
+          userOrgId: uo.id,
+          orgId: uo.organizations.id,
+          name: uo.organizations.name,
+          website: uo.organizations.website,
+          stage: uo.organizations.stage,
+          teamSize: uo.organizations.team_size,
+          industry: uo.organizations.industry,
+          currentMode: uo.organizations.current_mode,
+          role: uo.role,
+          seniority: uo.seniority,
+          startedAt: uo.started_at,
+          endedAt: uo.ended_at,
+          isCurrent: uo.is_current
+        }))
 
       setOrganizations(transformed)
       
-      // Set current org
       const current = transformed.find(o => o.isCurrent) || transformed[0] || null
       setCurrentOrg(current)
       
@@ -76,12 +80,17 @@ export function useOrganizations() {
       setError(err.message)
     } finally {
       setLoading(false)
+      setInitialized(true)
+      fetchingRef.current = false
     }
   }, [user])
 
+  // Only fetch when user changes and auth is done loading
   useEffect(() => {
-    fetchOrganizations()
-  }, [fetchOrganizations])
+    if (!authLoading) {
+      fetchOrganizations()
+    }
+  }, [user, authLoading])
 
   // Create a new organization and link to user
   const createOrganization = async (orgData, userOrgData) => {
@@ -162,7 +171,6 @@ export function useOrganizations() {
 
       if (error) throw error
 
-      // Refresh orgs
       await fetchOrganizations()
 
       return { data, error: null }
@@ -172,7 +180,7 @@ export function useOrganizations() {
     }
   }
 
-  // Update company mode specifically (common operation)
+  // Update company mode specifically
   const updateCompanyMode = async (orgId, mode) => {
     return updateOrganization(orgId, { currentMode: mode })
   }
@@ -197,7 +205,6 @@ export function useOrganizations() {
 
       if (error) throw error
 
-      // Refresh orgs
       await fetchOrganizations()
 
       return { error: null }
@@ -207,7 +214,7 @@ export function useOrganizations() {
     }
   }
 
-  // Mark an org as left (end tenure)
+  // Mark an org as left
   const leaveOrganization = async (orgId) => {
     if (!user) return { error: { message: 'Not authenticated' } }
 
@@ -223,7 +230,6 @@ export function useOrganizations() {
 
       if (error) throw error
 
-      // Refresh orgs
       await fetchOrganizations()
 
       return { error: null }
@@ -241,43 +247,39 @@ export function useOrganizations() {
 
     const mode = currentOrg.currentMode
     
-    // Growth bets in efficiency mode
     if (betDomain === 'growth' && mode === 'efficiency') {
       return {
         showCheck: true,
         betDomain,
         companyMode: mode,
-        guidance: "You're making a growth bet while your company is focused on efficiency. Growth bets can still succeed, but may face more scrutiny. Consider: Can you frame this as \"efficient growth\"? Is the cost low enough to de-risk? Do you have exec sponsorship?"
+        guidance: "You're making a growth bet while your company is focused on efficiency. Consider: Can you frame this as \"efficient growth\"? Is the cost low enough to de-risk?"
       }
     }
 
-    // Efficiency bets in growth mode
     if (['operations', 'platform'].includes(betDomain) && mode === 'growth') {
       return {
         showCheck: true,
         betDomain,
         companyMode: mode,
-        guidance: "You're making an efficiency/ops bet while your company is in growth mode. These bets are often deprioritized in growth phases. Consider: Does this unblock growth? Can it wait until growth stabilizes? Is there a compelling cost-savings story?"
+        guidance: "You're making an efficiency/ops bet while your company is in growth mode. Consider: Does this unblock growth? Can it wait?"
       }
     }
 
-    // Optimization bets in PMF mode
     if (['operations', 'platform', 'monetization'].includes(betDomain) && mode === 'pmf') {
       return {
         showCheck: true,
         betDomain,
         companyMode: mode,
-        guidance: "You're making an optimization bet while your company is still finding product-market fit. Premature optimization can distract from learning. Consider: Will this help you learn faster? Is the pain severe enough to address now?"
+        guidance: "You're making an optimization bet while still finding product-market fit. Consider: Will this help you learn faster?"
       }
     }
 
-    // Retention bets in PMF mode
     if (betDomain === 'retention' && mode === 'pmf') {
       return {
         showCheck: true,
         betDomain,
         companyMode: mode,
-        guidance: "You're focused on retention while still finding product-market fit. Retention matters, but if the core product isn't right, retention won't save you. Consider: Is the product fundamentally working for some users? Are you optimizing too early?"
+        guidance: "You're focused on retention while still finding product-market fit. Consider: Is the product fundamentally working for some users?"
       }
     }
 
@@ -287,7 +289,7 @@ export function useOrganizations() {
   return {
     organizations,
     currentOrg,
-    loading,
+    loading: loading || (!initialized && !authLoading),
     error,
     createOrganization,
     updateOrganization,
