@@ -28,17 +28,15 @@ function AppHeader({ isLoggedIn, onDashboardClick, onLogoClick, showTeamsBanner 
           <span style={{ color: '#cbd5e1', fontSize: '0.85rem' }}>
             🚀 <strong style={{ color: '#2dd4bf' }}>CHZCLOTH for Teams</strong> — Decision Intelligence for Teams That Build.
           </span>
-          <a 
-            href="#teams" 
+          <span 
             style={{ 
               color: '#fbbf24', 
               fontSize: '0.85rem', 
               fontWeight: 600,
-              textDecoration: 'none'
             }}
           >
-            Learn more →
-          </a>
+            Currently aging
+          </span>
           <button
             onClick={() => setBannerDismissed(true)}
             style={{
