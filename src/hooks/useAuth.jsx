@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext } from 'react'
+import { useState, useEffect, useRef, createContext, useContext } from 'react'
 import { supabase } from '../lib/supabase'
 
 const AuthContext = createContext({})
@@ -7,10 +7,12 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const initialSessionHandled = useRef(false)
 
   useEffect(() => {
-    // Get initial session
+    // Get initial session from localStorage (fast)
     supabase.auth.getSession().then(({ data: { session } }) => {
+      initialSessionHandled.current = true
       setUser(session?.user ?? null)
       if (session?.user) {
         fetchProfile(session.user.id)
@@ -19,9 +21,16 @@ export function AuthProvider({ children }) {
       }
     })
 
-    // Listen for auth changes
+    // Listen for auth changes (sign in, sign out, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        // FIX: Skip INITIAL_SESSION — we already handle it via getSession() above.
+        // Without this, both fire on mount with the same session, causing:
+        //   - two setUser calls (different object refs = re-renders)
+        //   - two fetchProfile calls (wasted network)
+        //   - useOrganizations triggers twice
+        if (event === 'INITIAL_SESSION') return
+
         setUser(session?.user ?? null)
         if (session?.user) {
           await fetchProfile(session.user.id)
@@ -47,7 +56,6 @@ export function AuthProvider({ children }) {
         console.error('Error fetching profile:', error)
       }
       
-      // Map database columns to frontend format
       if (data) {
         setProfile({
           ...data,
@@ -67,7 +75,6 @@ export function AuthProvider({ children }) {
     }
   }
 
-  // Send magic link email
   const signInWithEmail = async (email) => {
     const { data, error } = await supabase.auth.signInWithOtp({
       email,
@@ -78,7 +85,6 @@ export function AuthProvider({ children }) {
     return { data, error }
   }
 
-  // Sign out
   const signOut = async () => {
     const { error } = await supabase.auth.signOut()
     if (!error) {
@@ -88,43 +94,21 @@ export function AuthProvider({ children }) {
     return { error }
   }
 
-  // Update profile
   const updateProfile = async (updates) => {
     if (!user) return { error: { message: 'Not authenticated' } }
 
-    // Map frontend field names to database column names
     const dbUpdates = {
       updated_at: new Date().toISOString()
     }
     
-    if (updates.profileMethod) {
-      dbUpdates.profile_method = updates.profileMethod
-    }
-    
-    // Company method fields
-    if (updates.companyName !== undefined) {
-      dbUpdates.company_name = updates.companyName
-    }
-    if (updates.companyWebsite !== undefined) {
-      dbUpdates.company_website = updates.companyWebsite
-    }
-    
-    // Survey method fields
-    if (updates.role !== undefined) {
-      dbUpdates.role = updates.role
-    }
-    if (updates.seniority !== undefined) {
-      dbUpdates.seniority = updates.seniority
-    }
-    if (updates.companyStage !== undefined) {
-      dbUpdates.company_stage = updates.companyStage
-    }
-    if (updates.teamSize !== undefined) {
-      dbUpdates.team_size = updates.teamSize
-    }
-    if (updates.industry !== undefined) {
-      dbUpdates.industry = updates.industry
-    }
+    if (updates.profileMethod) dbUpdates.profile_method = updates.profileMethod
+    if (updates.companyName !== undefined) dbUpdates.company_name = updates.companyName
+    if (updates.companyWebsite !== undefined) dbUpdates.company_website = updates.companyWebsite
+    if (updates.role !== undefined) dbUpdates.role = updates.role
+    if (updates.seniority !== undefined) dbUpdates.seniority = updates.seniority
+    if (updates.companyStage !== undefined) dbUpdates.company_stage = updates.companyStage
+    if (updates.teamSize !== undefined) dbUpdates.team_size = updates.teamSize
+    if (updates.industry !== undefined) dbUpdates.industry = updates.industry
 
     const { data, error } = await supabase
       .from('profiles')
@@ -134,7 +118,6 @@ export function AuthProvider({ children }) {
       .single()
 
     if (!error && data) {
-      // Map database columns back to frontend format
       setProfile({
         ...data,
         profileMethod: data.profile_method,
