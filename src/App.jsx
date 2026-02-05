@@ -255,7 +255,6 @@ function calculateScore(bet) {
   }
   
   // Structural (0-40)
-  // Has If/Then/Because structure
   const hypothesis = bet.hypothesis || '';
   const hasIf = hypothesis.toLowerCase().includes('if ');
   const hasThen = hypothesis.toLowerCase().includes('then ');
@@ -269,7 +268,6 @@ function calculateScore(bet) {
     score.breakdown.push({ label: "Partial hypothesis structure", points: 8 });
   }
   
-  // Action is specific (check hypothesis length and specificity)
   if (hypothesis.length > 100) {
     score.structural += 10;
     score.breakdown.push({ label: "Specific action described", points: 10 });
@@ -278,7 +276,6 @@ function calculateScore(bet) {
     score.breakdown.push({ label: "Action described", points: 5 });
   }
   
-  // Mechanism articulated (because + explanation)
   if (hasBecause && hypothesis.split('because')[1]?.length > 30) {
     score.structural += 15;
     score.breakdown.push({ label: "Mechanism explained (because...)", points: 15 });
@@ -288,19 +285,16 @@ function calculateScore(bet) {
   }
   
   // Measurement (0-25)
-  // Metric is quantifiable
   if (bet.metric) {
     score.measurement += 10;
     score.breakdown.push({ label: "Metric selected", points: 10 });
   }
   
-  // Baseline known
   if (bet.baseline && bet.baseline.trim()) {
     score.measurement += 5;
     score.breakdown.push({ label: "Baseline provided", points: 5 });
   }
   
-  // Prediction is specific (has numbers)
   const prediction = bet.prediction || '';
   const hasNumbers = /\d+/.test(prediction);
   const hasPercent = /%/.test(prediction);
@@ -324,7 +318,6 @@ function calculateScore(bet) {
   }
   
   // Context (0-15)
-  // Bet type fits (test bets are good for uncertainty)
   if (bet.betType === 'test') {
     score.context += 5;
     score.breakdown.push({ label: "Testing before committing", points: 5 });
@@ -333,7 +326,6 @@ function calculateScore(bet) {
     score.breakdown.push({ label: "Improving existing (lower risk)", points: 3 });
   }
   
-  // Confidence calibration (extreme confidence is suspect)
   const confidence = bet.confidence || 70;
   if (confidence >= 60 && confidence <= 85) {
     score.context += 5;
@@ -343,7 +335,6 @@ function calculateScore(bet) {
     score.breakdown.push({ label: "High confidence (watch for overconfidence)", points: 2 });
   }
   
-  // Timeframe appropriate
   if (bet.timeframe) {
     score.context += 5;
     score.breakdown.push({ label: "Measurement timeframe set", points: 5 });
@@ -362,7 +353,6 @@ function getScoreLabel(score) {
 }
 
 function generatePeerComparison(profile, score) {
-  // Handle null profile
   if (!profile) {
     return {
       peerAvg: 58,
@@ -371,7 +361,6 @@ function generatePeerComparison(profile, score) {
     };
   }
   
-  // Simulated peer data based on profile
   const stageMultiplier = {
     preseed: 0.9, seed: 0.92, seriesA: 0.95, seriesB: 1.0, seriesC: 1.02, enterprise: 1.05
   };
@@ -402,7 +391,6 @@ function Landing({ onStart }) {
   
   return (
     <div style={{ minHeight: '100vh', background: '#0a0f1a' }}>
-      {/* Inline keyframes so animations always work */}
       <style>{`
         @keyframes float1 {
           0%, 100% { transform: translate(0, 0) scale(1); }
@@ -421,7 +409,7 @@ function Landing({ onStart }) {
       `}</style>
       {/* Hero with animated background */}
       <div style={{ position: 'relative', overflow: 'hidden', minHeight: 'calc(100vh - 140px)' }}>
-        {/* Orbs + grid - hero only */}
+        {/* Orbs + grid */}
         <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
           <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(45,212,191,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(45,212,191,0.07) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
           <div style={{ position: 'absolute', top: '-20%', right: '-10%', width: '60vw', height: '60vw', maxWidth: 800, maxHeight: 800, borderRadius: '50%', background: 'radial-gradient(circle, rgba(45,212,191,0.25) 0%, rgba(45,212,191,0.06) 40%, transparent 70%)', animation: 'float1 20s ease-in-out infinite' }} />
@@ -672,7 +660,7 @@ function EmailAuth({ onComplete, emailSent }) {
 }
 
 function ProfileSetup({ onComplete }) {
-  const [mode, setMode] = useState(null); // null = choosing, 'company' = name/url, 'survey' = questions
+  const [mode, setMode] = useState(null);
   const [companyInfo, setCompanyInfo] = useState({ name: '', website: '' });
   const [profile, setProfile] = useState({
     role: '',
@@ -729,7 +717,6 @@ function ProfileSetup({ onComplete }) {
     </div>
   );
   
-  // Mode selection screen
   if (mode === null) {
     return (
       <div style={{ padding: '60px 24px' }}>
@@ -791,7 +778,6 @@ function ProfileSetup({ onComplete }) {
     );
   }
   
-  // Company name/website screen
   if (mode === 'company') {
     return (
       <div style={{ padding: '60px 24px' }}>
@@ -895,7 +881,6 @@ function ProfileSetup({ onComplete }) {
     );
   }
   
-  // Survey screen
   return (
     <div style={{ padding: '60px 24px' }}>
       <div style={{ maxWidth: 500, margin: '0 auto' }}>
@@ -975,7 +960,8 @@ function ProfileSetup({ onComplete }) {
   );
 }
 
-function BetSubmission({ profile, onComplete }) {
+// FIX: BetSubmission now destructures currentOrg prop
+function BetSubmission({ profile, currentOrg, onComplete }) {
   const [step, setStep] = useState(1);
   const [bet, setBet] = useState({
     metricDomain: '',
@@ -1436,7 +1422,7 @@ function BetSubmission({ profile, onComplete }) {
           </div>
         )}
         
-        {/* Step 7: Risk awareness (optional but scored) */}
+        {/* Step 7: Risk awareness */}
         {step === 7 && (
           <div>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#f1f5f9', marginBottom: 12 }}>
@@ -1584,7 +1570,6 @@ function ScoreResult({ profile, bet, onNewBet, onSeedBaseline, onSkipToDashboard
             ))}
           </div>
           
-          {/* Missing points hint */}
           {score.total < 80 && (
             <div style={{ marginTop: 16, padding: 16, background: 'rgba(251, 191, 36, 0.1)', borderRadius: 8 }}>
               <div style={{ color: '#fbbf24', fontSize: '0.85rem', fontWeight: 600, marginBottom: 8 }}>Ways to improve</div>
@@ -1722,7 +1707,6 @@ function SeedBaseline({ profile, onComplete }) {
   
   const completedBets = pastBets.filter(b => b.hypothesis && b.outcome && b.learned);
   
-  // Calculate accuracy from completed past bets
   const accuracy = completedBets.length > 0 
     ? Math.round((completedBets.filter(b => b.outcome === 'succeeded' || b.outcome === 'partial').length / completedBets.length) * 100)
     : 0;
@@ -2136,7 +2120,6 @@ function SeedBaseline({ profile, onComplete }) {
           </div>
         )}
         
-        {/* Skip option */}
         {!canFinish && completedBets.length >= 1 && (
           <div style={{ textAlign: 'center', marginTop: 24 }}>
             <button
@@ -2162,7 +2145,7 @@ function SeedBaseline({ profile, onComplete }) {
 function RecordOutcome({ bet, onComplete, onCancel }) {
   const [outcome, setOutcome] = useState({
     actualResult: '',
-    status: '', // succeeded, partial, failed, inconclusive, never_shipped
+    status: '',
     learned: '',
     wouldDoAgain: null
   });
@@ -2413,18 +2396,15 @@ function RecordOutcome({ bet, onComplete, onCancel }) {
 }
 
 function Dashboard({ profile, bets, currentOrg, organizations, pmValueIndex, onSwitchOrg, onEditMode, onAddOrg, onNewBet, email, onRecordOutcome }) {
-  // Safeguard for undefined bets
   const safeBets = bets || [];
   
   const completedBets = safeBets.filter(b => b.outcome || b.status);
   const activeBets = safeBets.filter(b => !b.outcome && !b.status && !b.isPastBet);
   
-  // Split by ownership (only count bets with actual outcomes)
   const betsWithOutcomes = safeBets.filter(b => ['succeeded', 'partial', 'failed'].includes(b.outcome) || ['succeeded', 'partial', 'failed'].includes(b.status));
   const ownIdeas = betsWithOutcomes.filter(b => b.isOwnIdea !== false);
   const othersIdeas = betsWithOutcomes.filter(b => b.isOwnIdea === false);
   
-  // Calculate stats (using outcome for past bets, status for new bets)
   const getOutcome = (b) => b.status || b.outcome;
   const isSuccess = (b) => ['succeeded', 'partial'].includes(getOutcome(b));
   
@@ -2538,7 +2518,7 @@ function Dashboard({ profile, bets, currentOrg, organizations, pmValueIndex, onS
             {ownAccuracy !== null && othersAccuracy !== null && ownAccuracy > othersAccuracy && (
               <div style={{ marginTop: 16, padding: 12, background: 'rgba(45, 212, 191, 0.1)', borderRadius: 8 }}>
                 <span style={{ color: '#2dd4bf', fontSize: '0.85rem' }}>
-                  💡 Your ideas succeed {ownAccuracy - othersAccuracy}% more often than ideas you execute for others.
+                  Your ideas succeed {ownAccuracy - othersAccuracy}% more often than ideas you execute for others.
                 </span>
               </div>
             )}
@@ -2742,6 +2722,13 @@ export default function App() {
     return () => clearTimeout(timer);
   }, []);
   
+  // FIX: Reset hasRedirected when user logs out so re-login works
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setHasRedirected(false);
+    }
+  }, [isAuthenticated]);
+  
   // Debug: log loading states
   useEffect(() => {
     console.log('[CHZCLOTH] Auth loading:', authLoading, '| Orgs loading:', orgsLoading, '| User:', !!user, '| Orgs:', organizations?.length, '| Screen:', screen, '| Timeout:', loadingTimeout);
@@ -2881,8 +2868,11 @@ export default function App() {
     }
   };
   
-  // Show loading state only while auth is resolving (not orgs - those can load in background)
-  if (authLoading && !loadingTimeout) {
+  // FIX: Loading screen now also gates on orgsLoading for authenticated users
+  // This prevents flash of landing/wrong screen while orgs resolve
+  const isResolvingState = !loadingTimeout && (authLoading || (isAuthenticated && orgsLoading));
+  
+  if (isResolvingState) {
     return (
       <div style={{ 
         minHeight: '100vh', 
