@@ -16,6 +16,7 @@ export function useBets(orgId) {
       return
     }
 
+    // Prevent duplicate fetches
     if (fetchingRef.current) return
     fetchingRef.current = true
 
@@ -79,7 +80,9 @@ export function useBets(orgId) {
   }, [user, orgId])
 
   // Re-fetch when user or orgId changes
+  // FIX: Reset fetchingRef so org switches and user changes trigger a real refetch
   useEffect(() => {
+    fetchingRef.current = false
     fetchBets()
   }, [fetchBets])
 
