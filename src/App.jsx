@@ -28,15 +28,17 @@ function AppHeader({ isLoggedIn, onDashboardClick, onLogoClick, showTeamsBanner 
           <span style={{ color: '#cbd5e1', fontSize: '0.85rem' }}>
             🚀 <strong style={{ color: '#2dd4bf' }}>CHZCLOTH for Teams</strong> — Decision Intelligence for Teams That Build.
           </span>
-          <span 
+          <a 
+            href="#teams" 
             style={{ 
               color: '#fbbf24', 
               fontSize: '0.85rem', 
               fontWeight: 600,
+              textDecoration: 'none'
             }}
           >
-            Aging at the Moment
-          </span>
+            Learn more →
+          </a>
           <button
             onClick={() => setBannerDismissed(true)}
             style={{
@@ -399,9 +401,16 @@ function Landing({ onStart }) {
   ];
   
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0a0f1a 0%, #0d1929 50%, #0a0f1a 100%)' }}>
+    <div style={{ minHeight: '100vh', background: '#0a0f1a', position: 'relative', overflow: 'hidden' }}>
+      {/* Animated background */}
+      <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(45,212,191,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(45,212,191,0.03) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+        <div style={{ position: 'absolute', top: '-20%', right: '-10%', width: '60vw', height: '60vw', maxWidth: 800, maxHeight: 800, borderRadius: '50%', background: 'radial-gradient(circle, rgba(45,212,191,0.12) 0%, rgba(45,212,191,0.02) 40%, transparent 70%)', animation: 'float1 20s ease-in-out infinite' }} />
+        <div style={{ position: 'absolute', bottom: '-30%', left: '-15%', width: '50vw', height: '50vw', maxWidth: 700, maxHeight: 700, borderRadius: '50%', background: 'radial-gradient(circle, rgba(34,211,238,0.1) 0%, rgba(34,211,238,0.02) 40%, transparent 70%)', animation: 'float2 25s ease-in-out infinite' }} />
+        <div style={{ position: 'absolute', top: '40%', left: '50%', width: '40vw', height: '40vw', maxWidth: 500, maxHeight: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(251,191,36,0.06) 0%, transparent 50%)', animation: 'float3 18s ease-in-out infinite' }} />
+      </div>
       {/* Hero */}
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '80px 24px 60px', minHeight: 'calc(100vh - 140px)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+      <div style={{ position: 'relative', zIndex: 1, maxWidth: 900, margin: '0 auto', padding: '80px 24px 60px', minHeight: 'calc(100vh - 140px)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <div style={{ color: '#fbbf24', fontSize: '1.1rem', fontWeight: 600, marginBottom: 16, letterSpacing: '0.5px' }}>
           More Cheese. Less Waste.
         </div>
@@ -439,7 +448,7 @@ function Landing({ onStart }) {
       </div>
       
       {/* How it works */}
-      <div style={{ background: 'rgba(255,255,255,0.02)', padding: '60px 24px' }}>
+      <div style={{ position: 'relative', zIndex: 1, background: 'rgba(255,255,255,0.02)', padding: '60px 24px' }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <h2 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#f1f5f9', marginBottom: 40, textAlign: 'center' }}>
             How It Works
@@ -468,7 +477,7 @@ function Landing({ onStart }) {
       </div>
       
       {/* Example bets */}
-      <div style={{ padding: '60px 24px' }}>
+      <div style={{ position: 'relative', zIndex: 1, padding: '60px 24px' }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <h2 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#f1f5f9', marginBottom: 12, textAlign: 'center' }}>
             See What Good Bets Look Like
@@ -526,7 +535,7 @@ function Landing({ onStart }) {
       </div>
       
       {/* CTA */}
-      <div style={{ padding: '40px 24px 80px', textAlign: 'center' }}>
+      <div style={{ position: 'relative', zIndex: 1, padding: '40px 24px 80px', textAlign: 'center' }}>
         <button
           onClick={onStart}
           style={{
