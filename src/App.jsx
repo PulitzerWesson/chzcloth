@@ -2703,7 +2703,7 @@ export default function App() {
     getContextCheck
   } = useOrganizations();
   
-  const { bets, loading: betsLoading, createBet, createPastBets, recordOutcome } = useBets(currentOrg?.orgId);
+const { bets, loading: betsLoading, createBet, createPastBets, recordOutcome, scoreBet } = useBets(currentOrg?.orgId, currentOrg?.mode);
   
   const { index: pmValueIndex } = usePMValueIndex(currentOrg?.orgId);
   
