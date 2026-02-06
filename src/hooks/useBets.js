@@ -2,12 +2,30 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './useAuth'
 
-export function useBets(orgId) {
+export function useBets(orgId, orgMode) {
   const { user } = useAuth()
   const [bets, setBets] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const fetchingRef = useRef(false)
+
+  // AI scoring function
+  const scoreBet = async (betData) => {
+    try {
+      const response = await fetch('/api/score-bet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bet: betData, orgMode: orgMode || 'growth' })
+      });
+      
+      if (!response.ok) throw new Error('Scoring failed');
+      
+      return await response.json();
+    } catch (err) {
+      console.error('Scoring error:', err);
+      return null;
+    }
+  };
 
   const fetchBets = useCallback(async () => {
     if (!user) {
@@ -30,9 +48,6 @@ export function useBets(orgId) {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
-      // FIX: When filtering by org, also include orphan bets (org_id IS NULL).
-      // These are bets created before the org feature existed.
-      // Without this, orphan bets vanish when an org is selected.
       if (orgId) {
         query = query.or(`org_id.eq.${orgId},org_id.is.null`)
       }
@@ -42,11 +57,6 @@ export function useBets(orgId) {
       if (betsError) throw betsError
 
       const transformedBets = (betsData || []).map(bet => {
-        // FIX: Determine the resolved outcome/status consistently.
-        // Past bets store outcome directly on the bet row.
-        // Active bets store outcome in the joined outcomes table.
-        // Previously, `status` was always from outcomes table — undefined for past bets.
-        // This caused past bets to show as "active" in some code paths.
         const resolvedStatus = bet.is_past_bet
           ? bet.past_bet_outcome
           : (bet.outcomes?.[0]?.status || null)
@@ -68,9 +78,8 @@ export function useBets(orgId) {
           isOwnIdea: bet.is_own_idea,
           ideaSource: bet.idea_source,
           measurementTool: bet.measurement_tool,
-          isPastBet: !!bet.is_past_bet,  // FIX: coerce nullable bool to definite bool
+          isPastBet: !!bet.is_past_bet,
           createdAt: bet.created_at,
-          // FIX: Both outcome and status now resolve from the same source
           outcome: resolvedStatus,
           status: resolvedStatus,
           actualResult: bet.is_past_bet
@@ -80,7 +89,12 @@ export function useBets(orgId) {
             ? bet.past_bet_learned
             : (bet.outcomes?.[0]?.learned || null),
           wouldDoAgain: bet.outcomes?.[0]?.would_do_again ?? null,
-          completedAt: bet.outcomes?.[0]?.recorded_at || null
+          completedAt: bet.outcomes?.[0]?.recorded_at || null,
+          // New score fields
+          approachScore: bet.approach_score,
+          potentialScore: bet.potential_score,
+          fitScore: bet.fit_score,
+          scoringRationale: bet.scoring_rationale
         }
       })
 
@@ -95,7 +109,6 @@ export function useBets(orgId) {
     }
   }, [user, orgId])
 
-  // Re-fetch when user or orgId changes
   useEffect(() => {
     fetchingRef.current = false
     fetchBets()
@@ -105,6 +118,9 @@ export function useBets(orgId) {
     if (!user) return { error: { message: 'Not authenticated' } }
 
     try {
+      // Get AI scores first
+      const scores = await scoreBet(betData);
+
       const { data, error } = await supabase
         .from('bets')
         .insert({
@@ -124,7 +140,12 @@ export function useBets(orgId) {
           is_own_idea: betData.isOwnIdea !== false,
           idea_source: betData.ideaSource,
           measurement_tool: betData.measurementTool,
-          is_past_bet: false
+          is_past_bet: false,
+          // New score fields
+          approach_score: scores?.approach?.score || null,
+          potential_score: scores?.potential?.score || null,
+          fit_score: scores?.fit?.score || null,
+          scoring_rationale: scores || null
         })
         .select()
         .single()
@@ -138,11 +159,15 @@ export function useBets(orgId) {
         isPastBet: false,
         outcome: null,
         status: null,
-        createdAt: data.created_at
+        createdAt: data.created_at,
+        approachScore: scores?.approach?.score,
+        potentialScore: scores?.potential?.score,
+        fitScore: scores?.fit?.score,
+        scoringRationale: scores
       }
       setBets(prev => [newBet, ...prev])
 
-      return { data: newBet, error: null }
+      return { data: newBet, error: null, scores }
     } catch (err) {
       console.error('Error creating bet:', err)
       return { data: null, error: err }
@@ -182,7 +207,6 @@ export function useBets(orgId) {
 
       if (error) throw error
 
-      // Full refetch to get consistent transforms
       fetchingRef.current = false
       await fetchBets()
 
@@ -212,7 +236,6 @@ export function useBets(orgId) {
 
       if (error) throw error
 
-      // FIX: Update both status and outcome consistently
       setBets(prev => prev.map(bet => 
         bet.id === betId 
           ? { 
@@ -258,7 +281,6 @@ export function useBets(orgId) {
   const getStats = useCallback(() => {
     const safeBets = bets || []
     
-    // FIX: Use single field (status) since outcome and status are now the same
     const betsWithOutcomes = safeBets.filter(b => 
       ['succeeded', 'partial', 'failed'].includes(b.status)
     )
@@ -295,6 +317,7 @@ export function useBets(orgId) {
     recordOutcome,
     deleteBet,
     refreshBets: fetchBets,
-    getStats
+    getStats,
+    scoreBet  // Export for preview scoring without saving
   }
 }
