@@ -44,36 +44,43 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe()
   }, [])
 
-  const fetchProfile = async (userId) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single()
+const fetchProfile = async (userId) => {
+  try {
+    // Safety timeout - don't hang forever
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Profile fetch timeout')), 10000)
+    );
+    
+    const fetchPromise = supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching profile:', error)
-      }
-      
-      if (data) {
-        setProfile({
-          ...data,
-          profileMethod: data.profile_method,
-          companyName: data.company_name,
-          companyWebsite: data.company_website,
-          companyStage: data.company_stage,
-          teamSize: data.team_size
-        })
-      } else {
-        setProfile(null)
-      }
-    } catch (error) {
+    const { data, error } = await Promise.race([fetchPromise, timeoutPromise]);
+
+    if (error && error.code !== 'PGRST116') {
       console.error('Error fetching profile:', error)
-    } finally {
-      setLoading(false)
     }
+    
+    if (data) {
+      setProfile({
+        ...data,
+        profileMethod: data.profile_method,
+        companyName: data.company_name,
+        companyWebsite: data.company_website,
+        companyStage: data.company_stage,
+        teamSize: data.team_size
+      })
+    } else {
+      setProfile(null)
+    }
+  } catch (error) {
+    console.error('Error fetching profile:', error)
+  } finally {
+    setLoading(false)
   }
+}
 
   const signInWithEmail = async (email) => {
     const { data, error } = await supabase.auth.signInWithOtp({
