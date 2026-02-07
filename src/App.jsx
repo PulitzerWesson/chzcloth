@@ -228,6 +228,30 @@ const BET_TYPES = [
   { value: "test", label: "Running a test first", desc: "A cheap experiment before committing full resources" }
 ];
 
+const STRATEGIC_ALIGNMENT = [
+  { value: 'bullseye', label: 'Bullseye', desc: 'Directly impacts the main thing customers pay for' },
+  { value: 'inner', label: 'Inner Ring', desc: 'Supports or enables the core experience' },
+  { value: 'outer', label: 'Outer Ring', desc: 'Adjacent feature, nice-to-have' },
+  { value: 'edge', label: 'Edge', desc: 'Tangential, exploratory' }
+];
+
+const ESTIMATED_EFFORT = [
+  { value: '1-sprint', label: '1 sprint or less', desc: '≤2 weeks' },
+  { value: '2-3-sprints', label: '2-3 sprints', desc: '1-6 weeks' },
+  { value: '4-6-sprints', label: '4-6 sprints', desc: '2-3 months' },
+  { value: '6+-sprints', label: '6+ sprints', desc: '3+ months' }
+];
+
+const INACTION_IMPACT = [
+  { value: 'lose-revenue', label: 'Lose revenue / miss growth', desc: 'Direct hit to top line' },
+  { value: 'increase-costs', label: 'Increase costs / inefficiency', desc: 'Burning money or time' },
+  { value: 'lose-customers', label: 'Lose customers / churn', desc: 'Users will leave' },
+  { value: 'fall-behind', label: 'Fall behind competitors', desc: 'Market position erodes' },
+  { value: 'compliance-risk', label: 'Compliance / legal risk', desc: 'Regulatory exposure' },
+  { value: 'tech-debt', label: 'Technical debt compounds', desc: 'Future work gets harder' },
+  { value: 'nothing', label: 'Nothing significant', desc: 'Life goes on' }
+];
+
 const TIMEFRAMES = [
   { value: "30", label: "30 days" },
   { value: "60", label: "60 days" },
@@ -979,13 +1003,16 @@ function BetSubmission({ profile, currentOrg, onComplete }) {
     cheapTest: '',
     measurementTool: '',
     isOwnIdea: true,
-    ideaSource: ''
+    ideaSource: '',
+    strategicAlignment: '',
+    estimatedEffort: '',
+    inactionImpact: ''
   });
   
   const currentDomain = bet.metricDomain ? METRICS[bet.metricDomain] : null;
   const relevantExample = currentDomain?.examples.find(e => e.type === bet.betType);
   
-  const stepLabels = ['Metric Area', 'Specific Metric', 'Bet Type', 'Ownership', 'Hypothesis', 'Prediction', 'Stress Test'];
+const stepLabels = ['Metric Area', 'Specific Metric', 'Bet Type', 'Strategic Fit', 'Effort', 'Cost of Inaction', 'Ownership', 'Hypothesis', 'Prediction', 'Stress Test'];
   
   return (
     <div style={{ padding: '60px 24px' }}>
@@ -998,7 +1025,7 @@ function BetSubmission({ profile, currentOrg, onComplete }) {
         
         {/* Progress */}
         <div style={{ display: 'flex', gap: 4, marginBottom: 40 }}>
-          {[1,2,3,4,5,6,7].map(s => (
+          {[1,2,3,4,5,6,7,8,9,10].map(s => (
             <div key={s} style={{
               flex: 1, height: 4, borderRadius: 2,
               background: s <= step ? '#2dd4bf' : 'rgba(255,255,255,0.1)'
@@ -1126,9 +1153,111 @@ function BetSubmission({ profile, currentOrg, onComplete }) {
             </button>
           </div>
         )}
+{/* Step 4: Strategic Alignment */}
+{step === 4 && (
+  <div>
+    <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#f1f5f9', marginBottom: 12 }}>
+      How central is this to your product?
+    </h2>
+    <p style={{ color: '#64748b', marginBottom: 32 }}>
+      If your core product is a bullseye, where does this dart land?
+    </p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {STRATEGIC_ALIGNMENT.map(item => (
+        <button
+          key={item.value}
+          onClick={() => { setBet({...bet, strategicAlignment: item.value}); setStep(5); }}
+          style={{
+            padding: '20px',
+            background: bet.strategicAlignment === item.value ? 'rgba(45, 212, 191, 0.15)' : 'rgba(255,255,255,0.03)',
+            border: `1px solid ${bet.strategicAlignment === item.value ? '#2dd4bf' : 'rgba(255,255,255,0.1)'}`,
+            borderRadius: 10,
+            textAlign: 'left',
+            cursor: 'pointer'
+          }}
+        >
+          <div style={{ color: '#f1f5f9', fontWeight: 600, marginBottom: 4 }}>{item.label}</div>
+          <div style={{ color: '#64748b', fontSize: '0.85rem' }}>{item.desc}</div>
+        </button>
+      ))}
+    </div>
+    <button onClick={() => setStep(3)} style={{ marginTop: 24, color: '#64748b', background: 'none', border: 'none', cursor: 'pointer' }}>
+      ← Back
+    </button>
+  </div>
+)}
+
+{/* Step 5: Estimated Effort */}
+{step === 5 && (
+  <div>
+    <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#f1f5f9', marginBottom: 12 }}>
+      How big is this effort?
+    </h2>
+    <p style={{ color: '#64748b', marginBottom: 32 }}>
+      Your best guess — we're checking if the juice is worth the squeeze.
+    </p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {ESTIMATED_EFFORT.map(item => (
+        <button
+          key={item.value}
+          onClick={() => { setBet({...bet, estimatedEffort: item.value}); setStep(6); }}
+          style={{
+            padding: '20px',
+            background: bet.estimatedEffort === item.value ? 'rgba(45, 212, 191, 0.15)' : 'rgba(255,255,255,0.03)',
+            border: `1px solid ${bet.estimatedEffort === item.value ? '#2dd4bf' : 'rgba(255,255,255,0.1)'}`,
+            borderRadius: 10,
+            textAlign: 'left',
+            cursor: 'pointer'
+          }}
+        >
+          <div style={{ color: '#f1f5f9', fontWeight: 600, marginBottom: 4 }}>{item.label}</div>
+          <div style={{ color: '#64748b', fontSize: '0.85rem' }}>{item.desc}</div>
+        </button>
+      ))}
+    </div>
+    <button onClick={() => setStep(4)} style={{ marginTop: 24, color: '#64748b', background: 'none', border: 'none', cursor: 'pointer' }}>
+      ← Back
+    </button>
+  </div>
+)}
+
+{/* Step 6: Cost of Inaction */}
+{step === 6 && (
+  <div>
+    <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#f1f5f9', marginBottom: 12 }}>
+      What happens if you don't do this?
+    </h2>
+    <p style={{ color: '#64748b', marginBottom: 32 }}>
+      Be honest — not every bet is urgent.
+    </p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {INACTION_IMPACT.map(item => (
+        <button
+          key={item.value}
+          onClick={() => { setBet({...bet, inactionImpact: item.value}); setStep(7); }}
+          style={{
+            padding: '20px',
+            background: bet.inactionImpact === item.value ? 'rgba(45, 212, 191, 0.15)' : 'rgba(255,255,255,0.03)',
+            border: `1px solid ${bet.inactionImpact === item.value ? '#2dd4bf' : 'rgba(255,255,255,0.1)'}`,
+            borderRadius: 10,
+            textAlign: 'left',
+            cursor: 'pointer'
+          }}
+        >
+          <div style={{ color: '#f1f5f9', fontWeight: 600, marginBottom: 4 }}>{item.label}</div>
+          <div style={{ color: '#64748b', fontSize: '0.85rem' }}>{item.desc}</div>
+        </button>
+      ))}
+    </div>
+    <button onClick={() => setStep(5)} style={{ marginTop: 24, color: '#64748b', background: 'none', border: 'none', cursor: 'pointer' }}>
+      ← Back
+    </button>
+  </div>
+)}
+
         
-        {/* Step 4: Ownership */}
-        {step === 4 && (
+        {/* Step 7: Ownership */}
+        {step === 7 && (
           <div>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#f1f5f9', marginBottom: 12 }}>
               Whose bet is this?
@@ -1188,7 +1317,7 @@ function BetSubmission({ profile, currentOrg, onComplete }) {
                   }}
                 />
                 <button
-                  onClick={() => setStep(5)}
+                  onClick={() => setStep(8)}
                   style={{
                     width: '100%',
                     marginTop: 16,
@@ -1206,14 +1335,14 @@ function BetSubmission({ profile, currentOrg, onComplete }) {
               </div>
             )}
             
-            <button onClick={() => setStep(3)} style={{ marginTop: 24, color: '#64748b', background: 'none', border: 'none', cursor: 'pointer' }}>
+            <button onClick={() => setStep(6)} style={{ marginTop: 24, color: '#64748b', background: 'none', border: 'none', cursor: 'pointer' }}>
               ← Back
             </button>
           </div>
         )}
         
-        {/* Step 5: Hypothesis */}
-        {step === 5 && (
+        {/* Step 8: Hypothesis */}
+        {step === 8 && (
           <div>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#f1f5f9', marginBottom: 12 }}>
               Write your hypothesis
@@ -1256,11 +1385,11 @@ function BetSubmission({ profile, currentOrg, onComplete }) {
             />
             
             <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-              <button onClick={() => setStep(4)} style={{ padding: '12px 20px', background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: 8, color: '#94a3b8', cursor: 'pointer' }}>
+              <button onClick={() => setStep(7)} style={{ padding: '12px 20px', background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: 8, color: '#94a3b8', cursor: 'pointer' }}>
                 ← Back
               </button>
               <button 
-                onClick={() => setStep(6)}
+                onClick={() => setStep(9)}
                 disabled={bet.hypothesis.length < 30}
                 style={{
                   flex: 1,
@@ -1279,8 +1408,8 @@ function BetSubmission({ profile, currentOrg, onComplete }) {
           </div>
         )}
         
-        {/* Step 6: Prediction details */}
-        {step === 6 && (
+        {/* Step 9: Prediction details */}
+        {step === 9 && (
           <div>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#f1f5f9', marginBottom: 12 }}>
               Make your prediction
@@ -1401,11 +1530,11 @@ function BetSubmission({ profile, currentOrg, onComplete }) {
             </div>
             
             <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-              <button onClick={() => setStep(5)} style={{ padding: '12px 20px', background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: 8, color: '#94a3b8', cursor: 'pointer' }}>
+              <button onClick={() => setStep(8)} style={{ padding: '12px 20px', background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: 8, color: '#94a3b8', cursor: 'pointer' }}>
                 ← Back
               </button>
               <button 
-                onClick={() => setStep(7)}
+                onClick={() => setStep(10)}
                 disabled={!bet.prediction}
                 style={{
                   flex: 1,
@@ -1424,8 +1553,8 @@ function BetSubmission({ profile, currentOrg, onComplete }) {
           </div>
         )}
         
-        {/* Step 7: Risk awareness */}
-        {step === 7 && (
+        {/* Step 10: Risk awareness */}
+        {step === 10 && (
           <div>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#f1f5f9', marginBottom: 12 }}>
               Stress-test your thinking
@@ -1479,7 +1608,7 @@ function BetSubmission({ profile, currentOrg, onComplete }) {
             </div>
             
             <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-              <button onClick={() => setStep(6)} style={{ padding: '12px 20px', background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: 8, color: '#94a3b8', cursor: 'pointer' }}>
+              <button onClick={() => setStep(9)} style={{ padding: '12px 20px', background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: 8, color: '#94a3b8', cursor: 'pointer' }}>
                 ← Back
               </button>
               <button 
