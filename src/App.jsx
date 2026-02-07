@@ -4,8 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from './hooks/useAuth';
 import { useBets } from './hooks/useBets';
 import { useOrganizations } from './hooks/useOrganizations';
-import { usePMValueIndex } from './hooks/usePMValueIndex';
-import { OrganizationSetup, ContextCheck, shouldShowContextCheck, PMValueIndex, OrgSwitcher } from './components';
+import { OrganizationSetup, ContextCheck, shouldShowContextCheck, OrgSwitcher } from './components';
 
 // ============================================
 // CHZCLOTH Free - Where Bets Get Smarter
@@ -2588,7 +2587,7 @@ function RecordOutcome({ bet, onComplete, onCancel }) {
   );
 }
 
-function Dashboard({ profile, bets, currentOrg, organizations, pmValueIndex, onSwitchOrg, onEditMode, onAddOrg, onNewBet, email, onRecordOutcome }) {
+function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEditMode, onAddOrg, onNewBet, email, onRecordOutcome }) {
   const safeBets = bets || [];
   
   const completedBets = safeBets.filter(b => b.outcome || b.status);
@@ -2654,10 +2653,7 @@ function Dashboard({ profile, bets, currentOrg, organizations, pmValueIndex, onS
             + New Bet
           </button>
         </div>
-        
-        {/* v2: PM Value Index */}
-        <PMValueIndex indexData={pmValueIndex} bets={safeBets} />
-        
+
         {/* Stats cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 16, marginBottom: 24 }}>
           <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
@@ -2896,8 +2892,6 @@ export default function App() {
   
 const { bets, loading: betsLoading, createBet, createPastBets, recordOutcome, scoreBet } = useBets(currentOrg?.orgId, currentOrg?.mode);
   
-  const { index: pmValueIndex } = usePMValueIndex(currentOrg?.orgId);
-  
   const [screen, setScreen] = useState('landing');
   const [currentBet, setCurrentBet] = useState(null);
   const [betToRecord, setBetToRecord] = useState(null);
@@ -3125,7 +3119,7 @@ const { bets, loading: betsLoading, createBet, createPastBets, recordOutcome, sc
       {screen === 'score' && <ScoreResult profile={profile} bet={currentBet} onNewBet={handleNewBet} onSeedBaseline={handleSeedBaseline} onSkipToDashboard={handleSkipToDashboard} />}
       {screen === 'baseline' && <SeedBaseline profile={profile} onComplete={handleBaselineComplete} />}
       {screen === 'record_outcome' && <RecordOutcome bet={betToRecord} onComplete={handleOutcomeComplete} onCancel={handleOutcomeCancel} />}
-      {screen === 'dashboard' && <Dashboard profile={profile} bets={bets} currentOrg={currentOrg} organizations={organizations} pmValueIndex={pmValueIndex} onSwitchOrg={switchCurrentOrg} onEditMode={updateCompanyMode} onAddOrg={() => setScreen('orgsetup')} onNewBet={handleNewBet} email={user?.email} onRecordOutcome={handleRecordOutcome} />}
+      {screen === 'dashboard' && <Dashboard profile={profile} bets={bets} currentOrg={currentOrg} organizations={organizations} onSwitchOrg={switchCurrentOrg} onEditMode={updateCompanyMode} onAddOrg={() => setScreen('orgsetup')} onNewBet={handleNewBet} email={user?.email} onRecordOutcome={handleRecordOutcome} />}
     </div>
   );
 }
