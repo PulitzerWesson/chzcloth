@@ -1676,7 +1676,7 @@ function ScoreResult({ profile, bet, onNewBet, onSeedBaseline, onSkipToDashboard
         </div>
       </div>
       <div style={{ color: '#f1f5f9', fontWeight: 600, marginBottom: 4 }}>{label}</div>
-      <div style={{ color: '#64748b', fontSize: '0.8rem', lineHeight: 1.4, padding: '0 8px' }}>{rationale}</div>
+<div style={{ color: '#64748b', fontSize: '0.8rem', lineHeight: 1.4, padding: '0 8px', textAlign: 'left' }}>{rationale}</div>
     </div>
   );
 
