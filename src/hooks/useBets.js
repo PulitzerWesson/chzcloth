@@ -145,7 +145,10 @@ export function useBets(orgId, orgMode) {
           approach_score: scores?.approach?.score || null,
           potential_score: scores?.potential?.score || null,
           fit_score: scores?.fit?.score || null,
-          scoring_rationale: scores || null
+          scoring_rationale: scores || null,
+          strategic_alignment: betData.strategicAlignment || null,
+          estimated_effort: betData.estimatedEffort || null,
+          inaction_impact: betData.inactionImpact || null,
         })
         .select()
         .single()
