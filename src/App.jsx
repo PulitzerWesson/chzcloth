@@ -600,7 +600,7 @@ function EmailAuth({ onComplete, emailSent }) {
               value={email}
               onChange={e => setEmail(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-              placeholder="you@company.com"
+              placeholder="you@domain.com"
               disabled={sending}
               style={{
                 width: '100%',
