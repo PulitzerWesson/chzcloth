@@ -1267,7 +1267,7 @@ const stepLabels = ['Metric Area', 'Specific Metric', 'Bet Type', 'Strategic Fit
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <button
-                onClick={() => { setBet({...bet, isOwnIdea: true, ideaSource: ''}); setStep(5); }}
+                onClick={() => { setBet({...bet, isOwnIdea: true, ideaSource: ''}); setStep(8); }}
                 style={{
                   padding: '20px',
                   background: bet.isOwnIdea ? 'rgba(45, 212, 191, 0.15)' : 'rgba(255,255,255,0.03)',
@@ -1587,7 +1587,7 @@ const stepLabels = ['Metric Area', 'Specific Metric', 'Bet Type', 'Strategic Fit
             
             <div style={{ marginBottom: 24 }}>
               <label style={{ display: 'block', color: '#94a3b8', fontSize: '0.9rem', marginBottom: 8 }}>
-                What's a cheap test that could prove you wrong? <span style={{ color: '#fbbf24' }}>+10 points</span>
+                What's a cheap test or exercise that could prove you wrong? <span style={{ color: '#fbbf24' }}>+10 points</span>
               </label>
               <textarea
                 value={bet.cheapTest}
