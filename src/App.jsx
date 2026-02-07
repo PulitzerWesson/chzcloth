@@ -2915,13 +2915,6 @@ const { bets, loading: betsLoading, createBet, createPastBets, recordOutcome, sc
     return () => clearInterval(interval);
   }, []);
   
-  // Debug logging
-  useEffect(() => {
-    console.log('[CHZCLOTH] Auth:', authLoading ? 'loading' : 'ready',
-      '| Orgs:', orgsInitialized ? `ready (${organizations?.length})` : 'loading',
-      '| User:', !!user,
-      '| Screen:', screen);
-  }, [authLoading, orgsInitialized, user, organizations, screen]);
   
   // ============================================
   // MAIN ROUTING LOGIC
@@ -3070,7 +3063,6 @@ const { bets, loading: betsLoading, createBet, createPastBets, recordOutcome, sc
   // Progressive messages handle Supabase free tier cold starts gracefully.
   // After 12 seconds, shows retry button instead of hanging forever.
   const isResolvingState = authLoading || (isAuthenticated && !orgsInitialized);
-  console.log('DEBUG:', { authLoading, isAuthenticated, orgsInitialized });
   if (isResolvingState) {
     let loadingContent;
     if (loadingElapsed < 4) {
