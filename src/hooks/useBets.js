@@ -56,12 +56,17 @@ export function useBets(orgId, orgMode) {
 
       if (betsError) throw betsError
 
-      const transformedBets = (betsData || []).map(bet => {
-        const resolvedStatus = bet.is_past_bet
-          ? bet.past_bet_outcome
-          : (bet.outcomes?.[0]?.status || null)
+const transformedBets = (betsData || []).map(bet => {
+  // Handle outcomes as either array or object
+  const outcome = Array.isArray(bet.outcomes) 
+    ? bet.outcomes[0] 
+    : bet.outcomes;
 
-        return {
+  const resolvedStatus = bet.is_past_bet
+    ? bet.past_bet_outcome
+    : (outcome?.status || null)
+
+  return {
           id: bet.id,
           orgId: bet.org_id,
           hypothesis: bet.hypothesis,
@@ -84,12 +89,12 @@ export function useBets(orgId, orgMode) {
           status: resolvedStatus,
           actualResult: bet.is_past_bet
             ? bet.past_bet_actual_result
-            : (bet.outcomes?.[0]?.actual_result || null),
+            : (outcome?.actual_result || null),
           learned: bet.is_past_bet
             ? bet.past_bet_learned
-            : (bet.outcomes?.[0]?.learned || null),
-          wouldDoAgain: bet.outcomes?.[0]?.would_do_again ?? null,
-          completedAt: bet.outcomes?.[0]?.recorded_at || null,
+            : (outcome?.learned|| null),
+          wouldDoAgain: outcome?.would_do_again ?? null,
+          completedAt: outcome?.recorded_at || null,
           // New score fields
           approachScore: bet.approach_score,
           potentialScore: bet.potential_score,
