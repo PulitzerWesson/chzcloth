@@ -2638,7 +2638,7 @@ function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEd
         {/* Stats cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 16, marginBottom: 24 }}>
           <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
-          <div style={{ color: '#2dd4bf', fontSize: '2.5rem', fontWeight: 800 }}>{stats.completedBets || 0}</div>
+          <div style={{ color: '#2dd4bf', fontSize: '2.5rem', fontWeight: 800 }}>{completedBets || 0}</div>
             <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Completed</div>
           </div>
           <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
