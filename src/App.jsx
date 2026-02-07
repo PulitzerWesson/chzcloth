@@ -3070,7 +3070,7 @@ const { bets, loading: betsLoading, createBet, createPastBets, recordOutcome, sc
   // Progressive messages handle Supabase free tier cold starts gracefully.
   // After 12 seconds, shows retry button instead of hanging forever.
   const isResolvingState = authLoading || (isAuthenticated && !orgsInitialized);
-  
+  console.log('DEBUG:', { authLoading, isAuthenticated, orgsInitialized });
   if (isResolvingState) {
     let loadingContent;
     if (loadingElapsed < 4) {
