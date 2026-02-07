@@ -1635,90 +1635,118 @@ const stepLabels = ['Metric Area', 'Specific Metric', 'Bet Type', 'Strategic Fit
 }
 
 function ScoreResult({ profile, bet, onNewBet, onSeedBaseline, onSkipToDashboard }) {
-  const score = calculateScore(bet);
-  const scoreInfo = getScoreLabel(score.total);
-  const peerComparison = generatePeerComparison(profile, score.total);
+  // Use AI scores if available, fallback to old scoring
+  const aiScores = bet.scoringRationale;
+  const hasAIScores = aiScores?.approach && aiScores?.potential && aiScores?.fit;
   
+  // Fallback for old scoring
+  const oldScore = calculateScore(bet);
+  const oldScoreInfo = getScoreLabel(oldScore.total);
+  
+  const getScoreColor = (score) => {
+    if (score >= 80) return '#22c55e';
+    if (score >= 60) return '#2dd4bf';
+    if (score >= 40) return '#fbbf24';
+    return '#f87171';
+  };
+
+  const ScoreCircle = ({ score, label, rationale }) => (
+    <div style={{ textAlign: 'center', flex: 1 }}>
+      <div style={{
+        width: 100, height: 100, borderRadius: '50%',
+        background: `conic-gradient(${getScoreColor(score)} ${score * 3.6}deg, rgba(255,255,255,0.1) 0deg)`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        margin: '0 auto 12px'
+      }}>
+        <div style={{
+          width: 80, height: 80, borderRadius: '50%',
+          background: '#0d1929',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexDirection: 'column'
+        }}>
+          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: getScoreColor(score) }}>{score}</div>
+        </div>
+      </div>
+      <div style={{ color: '#f1f5f9', fontWeight: 600, marginBottom: 4 }}>{label}</div>
+      <div style={{ color: '#64748b', fontSize: '0.8rem', lineHeight: 1.4, padding: '0 8px' }}>{rationale}</div>
+    </div>
+  );
+
+  const avgScore = hasAIScores 
+    ? Math.round((aiScores.approach.score + aiScores.potential.score + aiScores.fit.score) / 3)
+    : oldScore.total;
+
   return (
     <div style={{ padding: '60px 24px' }}>
-      <div style={{ maxWidth: 600, margin: '0 auto' }}>
-        {/* Score display */}
-        <div style={{ textAlign: 'center', marginBottom: 48 }}>
-          <div style={{
-            width: 160, height: 160, borderRadius: '50%',
-            background: `conic-gradient(${scoreInfo.color} ${score.total * 3.6}deg, rgba(255,255,255,0.1) 0deg)`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 24px',
-            position: 'relative'
-          }}>
-            <div style={{
-              width: 130, height: 130, borderRadius: '50%',
-              background: '#0d1929',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexDirection: 'column'
-            }}>
-              <div style={{ fontSize: '3rem', fontWeight: 800, color: scoreInfo.color }}>{score.total}</div>
-              <div style={{ fontSize: '0.9rem', color: scoreInfo.color, fontWeight: 600 }}>{scoreInfo.label}</div>
-            </div>
-          </div>
-          <p style={{ color: '#94a3b8', fontSize: '1.1rem' }}>{scoreInfo.desc}</p>
-        </div>
+      <div style={{ maxWidth: 700, margin: '0 auto' }}>
         
-        {/* Peer comparison */}
-        <div style={{
-          background: 'rgba(45, 212, 191, 0.1)',
-          border: '1px solid rgba(45, 212, 191, 0.3)',
-          borderRadius: 12,
-          padding: 24,
-          marginBottom: 32,
-          textAlign: 'center'
-        }}>
-          <div style={{ fontSize: '0.8rem', color: '#2dd4bf', fontWeight: 600, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>
-            Peer Comparison
-          </div>
-          <div style={{ color: '#f1f5f9', fontSize: '1.1rem', lineHeight: 1.6 }}>
-            {peerComparison.description}
-          </div>
-          <div style={{ color: '#64748b', fontSize: '0.85rem', marginTop: 8 }}>
-            Average score for your cohort: {peerComparison.peerAvg}
-          </div>
-        </div>
-        
-        {/* Score breakdown */}
-        <div style={{ marginBottom: 32 }}>
-          <h3 style={{ color: '#f1f5f9', fontSize: '1.1rem', fontWeight: 600, marginBottom: 16 }}>Score Breakdown</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {score.breakdown.map((item, i) => (
-              <div key={i} style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '12px 16px',
-                background: 'rgba(255,255,255,0.03)',
-                borderRadius: 8
-              }}>
-                <span style={{ color: '#cbd5e1' }}>{item.label}</span>
-                <span style={{ color: '#2dd4bf', fontWeight: 600 }}>+{item.points}</span>
+        {hasAIScores ? (
+          <>
+            {/* Three AI Scores */}
+            <div style={{ marginBottom: 48 }}>
+              <h2 style={{ color: '#f1f5f9', fontSize: '1.5rem', fontWeight: 700, textAlign: 'center', marginBottom: 32 }}>
+                Your Bet Score
+              </h2>
+              <div style={{ display: 'flex', gap: 24, justifyContent: 'center' }}>
+                <ScoreCircle 
+                  score={aiScores.approach.score} 
+                  label="Approach" 
+                  rationale={aiScores.approach.rationale} 
+                />
+                <ScoreCircle 
+                  score={aiScores.potential.score} 
+                  label="Potential" 
+                  rationale={aiScores.potential.rationale} 
+                />
+                <ScoreCircle 
+                  score={aiScores.fit.score} 
+                  label="Fit" 
+                  rationale={aiScores.fit.rationale} 
+                />
               </div>
-            ))}
-          </div>
-          
-          {score.total < 80 && (
-            <div style={{ marginTop: 16, padding: 16, background: 'rgba(251, 191, 36, 0.1)', borderRadius: 8 }}>
-              <div style={{ color: '#fbbf24', fontSize: '0.85rem', fontWeight: 600, marginBottom: 8 }}>Ways to improve</div>
-              <ul style={{ color: '#cbd5e1', fontSize: '0.9rem', margin: 0, paddingLeft: 20 }}>
-                {!bet.hypothesis.toLowerCase().includes('because') && <li>Add a "because" to explain the mechanism</li>}
-                {!bet.baseline && <li>Include the current baseline for your metric</li>}
-                {!bet.assumptions && <li>Identify key assumptions (+10 points)</li>}
-                {!bet.cheapTest && <li>Suggest a cheap test to validate (+10 points)</li>}
-              </ul>
             </div>
-          )}
-        </div>
-        
+
+            {/* Average score callout */}
+            <div style={{
+              background: 'rgba(45, 212, 191, 0.1)',
+              border: '1px solid rgba(45, 212, 191, 0.3)',
+              borderRadius: 12,
+              padding: 20,
+              marginBottom: 32,
+              textAlign: 'center'
+            }}>
+              <div style={{ color: '#2dd4bf', fontSize: '2rem', fontWeight: 800 }}>{avgScore}</div>
+              <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Overall Score</div>
+            </div>
+          </>
+        ) : (
+          /* Fallback to old score display */
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <div style={{
+              width: 160, height: 160, borderRadius: '50%',
+              background: `conic-gradient(${oldScoreInfo.color} ${oldScore.total * 3.6}deg, rgba(255,255,255,0.1) 0deg)`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 24px'
+            }}>
+              <div style={{
+                width: 130, height: 130, borderRadius: '50%',
+                background: '#0d1929',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexDirection: 'column'
+              }}>
+                <div style={{ fontSize: '3rem', fontWeight: 800, color: oldScoreInfo.color }}>{oldScore.total}</div>
+                <div style={{ fontSize: '0.9rem', color: oldScoreInfo.color, fontWeight: 600 }}>{oldScoreInfo.label}</div>
+              </div>
+            </div>
+            <p style={{ color: '#94a3b8', fontSize: '1.1rem' }}>{oldScoreInfo.desc}</p>
+          </div>
+        )}
+
         {/* Your bet summary */}
         <div style={{ marginBottom: 32 }}>
           <h3 style={{ color: '#f1f5f9', fontSize: '1.1rem', fontWeight: 600, marginBottom: 16 }}>Your Bet</h3>
           <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
               <span style={{
                 fontSize: '0.75rem',
                 fontWeight: 600,
@@ -1729,6 +1757,32 @@ function ScoreResult({ profile, bet, onNewBet, onSeedBaseline, onSkipToDashboard
               }}>
                 {bet.isOwnIdea ? 'Your idea' : `Tracking: ${bet.ideaSource || "someone else's bet"}`}
               </span>
+              {bet.strategicAlignment && (
+                <span style={{
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  color: '#94a3b8',
+                  background: 'rgba(255,255,255,0.05)',
+                  padding: '4px 10px',
+                  borderRadius: 4
+                }}>
+                  {bet.strategicAlignment === 'bullseye' ? '🎯 Bullseye' : 
+                   bet.strategicAlignment === 'inner' ? '⭕ Inner Ring' :
+                   bet.strategicAlignment === 'outer' ? '⚪ Outer Ring' : '🔲 Edge'}
+                </span>
+              )}
+              {bet.estimatedEffort && (
+                <span style={{
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  color: '#94a3b8',
+                  background: 'rgba(255,255,255,0.05)',
+                  padding: '4px 10px',
+                  borderRadius: 4
+                }}>
+                  {bet.estimatedEffort}
+                </span>
+              )}
             </div>
             <div style={{ marginBottom: 16 }}>
               <div style={{ color: '#64748b', fontSize: '0.8rem', marginBottom: 4 }}>Hypothesis</div>
