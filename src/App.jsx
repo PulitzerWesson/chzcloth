@@ -1818,25 +1818,6 @@ function ScoreResult({ profile, bet, onNewBet, onSeedBaseline, onSkipToDashboard
         
         {/* Actions */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <button
-            onClick={onSeedBaseline}
-            style={{
-              width: '100%',
-              padding: '16px',
-              background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
-              border: 'none',
-              borderRadius: 10,
-              color: '#0a0f1a',
-              fontSize: '1rem',
-              fontWeight: 700,
-              cursor: 'pointer'
-            }}
-          >
-            Unlock My Accuracy Baseline →
-          </button>
-          <p style={{ textAlign: 'center', color: '#64748b', fontSize: '0.85rem', margin: '4px 0' }}>
-            Tell us about 2-3 past bets to see your accuracy immediately
-          </p>
           
           <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
             <button
@@ -2657,8 +2638,8 @@ function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEd
         {/* Stats cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 16, marginBottom: 24 }}>
           <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
-            <div style={{ color: '#2dd4bf', fontSize: '2.5rem', fontWeight: 800 }}>{totalAccuracy || '—'}%</div>
-            <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Accuracy</div>
+          <div style={{ color: '#2dd4bf', fontSize: '2.5rem', fontWeight: 800 }}>{stats.completedBets || 0}</div>
+            <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Completed</div>
           </div>
           <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
             <div style={{ color: '#f1f5f9', fontSize: '2.5rem', fontWeight: 800 }}>{safeBets.length}</div>
