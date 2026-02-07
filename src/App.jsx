@@ -1011,6 +1011,7 @@ function BetSubmission({ profile, currentOrg, onComplete }) {
   
   const currentDomain = bet.metricDomain ? METRICS[bet.metricDomain] : null;
   const relevantExample = currentDomain?.examples.find(e => e.type === bet.betType);
+  const [submitting, setSubmitting] = useState(false);
   
 const stepLabels = ['Metric Area', 'Specific Metric', 'Bet Type', 'Strategic Fit', 'Effort', 'Cost of Inaction', 'Ownership', 'Hypothesis', 'Prediction', 'Stress Test'];
   
@@ -1612,20 +1613,27 @@ const stepLabels = ['Metric Area', 'Specific Metric', 'Bet Type', 'Strategic Fit
                 ← Back
               </button>
               <button 
-                onClick={() => onComplete(bet)}
-                style={{
-                  flex: 1,
-                  padding: '14px 20px',
-                  background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
-                  border: 'none',
-                  borderRadius: 8,
-                  color: '#0a0f1a',
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
-              >
-                Get My Score →
-              </button>
+                onClick={async () => {
+                  setSubmitting(true);
+                  await onComplete(bet);
+                  }}
+                  disabled={submitting}
+                  style={{
+                    flex: 1,
+                    padding: '14px 20px',
+                    background: submitting 
+                      ? 'rgba(45, 212, 191, 0.5)' 
+                      : 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
+                    border: 'none',
+                    borderRadius: 8,
+                    color: '#0a0f1a',
+                    fontWeight: 700,
+                    cursor: submitting ? 'not-allowed' : 'pointer',
+                    opacity: submitting ? 0.7 : 1
+                  }}
+                >
+                  {submitting ? 'Scoring your bet...' : 'Get My Score →'}
+                </button>
             </div>
           </div>
         )}
