@@ -45,6 +45,19 @@ Respond in JSON only, no other text:
     });
 
     const data = await response.json();
+    
+    // Check for API errors
+    if (data.error) {
+      console.error('Anthropic API error:', data.error);
+      return res.status(500).json({ error: data.error.message || 'API error' });
+    }
+
+    // Check response structure
+    if (!data.content || !data.content[0] || !data.content[0].text) {
+      console.error('Unexpected API response:', JSON.stringify(data));
+      return res.status(500).json({ error: 'Unexpected API response' });
+    }
+
     const scores = JSON.parse(data.content[0].text);
 
     return res.status(200).json(scores);
