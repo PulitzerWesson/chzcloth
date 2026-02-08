@@ -454,8 +454,7 @@ function Landing({ onStart }) {
           Build Smarter With CHZCLOTH
         </h1>
         <p style={{ fontSize: '1.25rem', color: '#94a3b8', lineHeight: 1.6, maxWidth: 650, marginBottom: 40 }}>
-          Track product bets — yours or the ones you're asked to make. Measure outcomes. See what actually works.
-        </p>
+        AI-powered product bet scoring tool helping leaders evaluate bets before committing resources        </p>
         <button
           onClick={onStart}
           style={{
