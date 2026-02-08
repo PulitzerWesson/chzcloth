@@ -2570,6 +2570,7 @@ function RecordOutcome({ bet, onComplete, onCancel }) {
 
 function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEditMode, onAddOrg, onNewBet, email, onRecordOutcome }) {
   const safeBets = bets || [];
+  const [expandedBets, setExpandedBets] = useState({});
   
   const completedBets = safeBets.filter(b => b.outcome || b.status);
   const activeBets = safeBets.filter(b => !b.outcome && !b.status && !b.isPastBet);
@@ -2695,74 +2696,127 @@ function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEd
           </div>
         )}
         
-        {/* Active bets */}
-        {activeBets.length > 0 && (
-          <div style={{ marginBottom: 40 }}>
-            <h2 style={{ color: '#f1f5f9', fontSize: '1.25rem', fontWeight: 600, marginBottom: 16 }}>
-              Active Bets ({activeBets.length})
-            </h2>
-            {activeBets.map((bet, i) => {
-              const score = calculateScore(bet);
-              const scoreInfo = getScoreLabel(score.total);
-              return (
-                <div key={bet.id || i} style={{
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 12,
-                  padding: 20,
-                  marginBottom: 12
+{/* Active bets */}
+{activeBets.length > 0 && (
+  <div style={{ marginBottom: 40 }}>
+    <h2 style={{ color: '#f1f5f9', fontSize: '1.25rem', fontWeight: 600, marginBottom: 16 }}>
+      Active Bets ({activeBets.length})
+    </h2>
+    {activeBets.map((bet, i) => {
+      const hasAIScores = bet.approachScore != null;
+      return (
+        <div key={bet.id || i} style={{
+          background: 'rgba(255,255,255,0.03)',
+          border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: 12,
+          padding: 20,
+          marginBottom: 12
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+            <div style={{ flex: 1, marginRight: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <span style={{
+                  fontSize: '0.7rem',
+                  fontWeight: 600,
+                  color: bet.isOwnIdea !== false ? '#2dd4bf' : '#fbbf24',
+                  background: bet.isOwnIdea !== false ? 'rgba(45, 212, 191, 0.15)' : 'rgba(251, 191, 36, 0.15)',
+                  padding: '2px 8px',
+                  borderRadius: 4
                 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                    <div style={{ flex: 1, marginRight: 16 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                        <span style={{
-                          fontSize: '0.7rem',
-                          fontWeight: 600,
-                          color: bet.isOwnIdea !== false ? '#2dd4bf' : '#fbbf24',
-                          background: bet.isOwnIdea !== false ? 'rgba(45, 212, 191, 0.15)' : 'rgba(251, 191, 36, 0.15)',
-                          padding: '2px 8px',
-                          borderRadius: 4
-                        }}>
-                          {bet.isOwnIdea !== false ? 'Your idea' : `Tracking: ${bet.ideaSource || "other"}`}
-                        </span>
-                      </div>
-                      <div style={{ color: '#f1f5f9', lineHeight: 1.5, marginBottom: 8 }}>{bet.hypothesis}</div>
-                      <div style={{ display: 'flex', gap: 16, fontSize: '0.85rem' }}>
-                        <span style={{ color: '#2dd4bf' }}>{bet.metric}</span>
-                        <span style={{ color: '#64748b' }}>Measure in {bet.timeframe} days</span>
-                      </div>
-                    </div>
-                    <div style={{
-                      width: 50, height: 50, borderRadius: '50%',
-                      background: `rgba(${scoreInfo.color === '#22c55e' ? '34,197,94' : scoreInfo.color === '#7dd3fc' ? '125,211,252' : '251,191,36'}, 0.2)`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      flexDirection: 'column', flexShrink: 0
-                    }}>
-                      <div style={{ fontSize: '1.1rem', fontWeight: 700, color: scoreInfo.color }}>{score.total}</div>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => onRecordOutcome(bet)}
-                    style={{
-                      width: '100%',
-                      padding: '10px 16px',
-                      background: 'rgba(45, 212, 191, 0.1)',
-                      border: '1px solid rgba(45, 212, 191, 0.3)',
-                      borderRadius: 8,
-                      color: '#2dd4bf',
-                      fontSize: '0.9rem',
-                      fontWeight: 500,
-                      cursor: 'pointer',
-                      marginTop: 8
-                    }}
-                  >
-                    Record Outcome →
-                  </button>
+                  {bet.isOwnIdea !== false ? 'Your idea' : `Tracking: ${bet.ideaSource || "other"}`}
+                </span>
+              </div>
+              <div style={{ color: '#f1f5f9', lineHeight: 1.5, marginBottom: 8 }}>{bet.hypothesis}</div>
+              <div style={{ display: 'flex', gap: 16, fontSize: '0.85rem' }}>
+                <span style={{ color: '#2dd4bf' }}>{bet.metric}</span>
+                <span style={{ color: '#64748b' }}>Measure in {bet.timeframe} days</span>
+              </div>
+            </div>
+            
+            {hasAIScores ? (
+              <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.65rem', color: '#64748b', marginBottom: 2 }}>APR</div>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#2dd4bf' }}>{bet.approachScore}</div>
                 </div>
-              );
-            })}
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.65rem', color: '#64748b', marginBottom: 2 }}>POT</div>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#fbbf24' }}>{bet.potentialScore}</div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.65rem', color: '#64748b', marginBottom: 2 }}>FIT</div>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#7dd3fc' }}>{bet.fitScore}</div>
+                </div>
+              </div>
+            ) : (
+              <div style={{ color: '#64748b', fontSize: '0.8rem' }}>No score</div>
+            )}
           </div>
-        )}
+          
+          {hasAIScores && bet.scoringRationale && (
+            <>
+              <button
+                onClick={() => setExpandedBets(prev => ({ ...prev, [bet.id]: !prev[bet.id] }))}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#64748b',
+                  fontSize: '0.8rem',
+                  cursor: 'pointer',
+                  padding: '4px 0',
+                  marginBottom: 8
+                }}
+              >
+                {expandedBets[bet.id] ? '▼ Hide rationale' : '▶ Show rationale'}
+              </button>
+              
+              {expandedBets[bet.id] && (
+                <div style={{
+                  background: 'rgba(0,0,0,0.2)',
+                  borderRadius: 8,
+                  padding: 12,
+                  marginBottom: 12,
+                  fontSize: '0.8rem',
+                  lineHeight: 1.5
+                }}>
+                  <div style={{ marginBottom: 8 }}>
+                    <span style={{ color: '#2dd4bf', fontWeight: 600 }}>Approach:</span>
+                    <span style={{ color: '#94a3b8', marginLeft: 8 }}>{bet.scoringRationale?.approach?.rationale}</span>
+                  </div>
+                  <div style={{ marginBottom: 8 }}>
+                    <span style={{ color: '#fbbf24', fontWeight: 600 }}>Potential:</span>
+                    <span style={{ color: '#94a3b8', marginLeft: 8 }}>{bet.scoringRationale?.potential?.rationale}</span>
+                  </div>
+                  <div>
+                    <span style={{ color: '#7dd3fc', fontWeight: 600 }}>Fit:</span>
+                    <span style={{ color: '#94a3b8', marginLeft: 8 }}>{bet.scoringRationale?.fit?.rationale}</span>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+          
+          <button
+            onClick={() => onRecordOutcome(bet)}
+            style={{
+              width: '100%',
+              padding: '10px 16px',
+              background: 'rgba(45, 212, 191, 0.1)',
+              border: '1px solid rgba(45, 212, 191, 0.3)',
+              borderRadius: 8,
+              color: '#2dd4bf',
+              fontSize: '0.9rem',
+              fontWeight: 500,
+              cursor: 'pointer'
+            }}
+          >
+            Record Outcome →
+          </button>
+        </div>
+      );
+    })}
+  </div>
+)}
         
         {/* Completed bets */}
         {completedBets.length > 0 && (
