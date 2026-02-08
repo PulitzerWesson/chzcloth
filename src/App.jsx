@@ -30,7 +30,6 @@ function AppHeader({ isLoggedIn, onDashboardClick, onLogoClick, showTeamsBanner 
             🚀 <strong style={{ color: '#2dd4bf' }}>CHZCLOTH for Teams</strong> — Decision Intelligence for Teams That Build.
           </span>
           <a 
-            href="#teams" 
             style={{ 
               color: '#fbbf24', 
               fontSize: '0.85rem', 
@@ -38,7 +37,7 @@ function AppHeader({ isLoggedIn, onDashboardClick, onLogoClick, showTeamsBanner 
               textDecoration: 'none'
             }}
           >
-            Learn more →
+            Coming Soon
           </a>
           <button
             onClick={() => setBannerDismissed(true)}
@@ -223,8 +222,7 @@ const INDUSTRY = [
 
 const BET_TYPES = [
   { value: "new", label: "Building something new", desc: "A new feature, capability, or initiative that doesn't exist yet" },
-  { value: "improve", label: "Improving something existing", desc: "Making something you already have work better" },
-  { value: "test", label: "Running a test first", desc: "A cheap experiment before committing full resources" }
+  { value: "improve", label: "Improving something existing", desc: "Making something you already have work better" }
 ];
 
 const STRATEGIC_ALIGNMENT = [
