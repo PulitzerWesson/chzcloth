@@ -451,7 +451,7 @@ function Landing({ onStart }) {
           lineHeight: 1.2, 
           marginBottom: 24 
         }}>
-          CHZCLOTH Helps You Build Smarter Over Time.
+          Build Smarter With CHZCLOTH
         </h1>
         <p style={{ fontSize: '1.25rem', color: '#94a3b8', lineHeight: 1.6, maxWidth: 650, marginBottom: 40 }}>
           Track product bets — yours or the ones you're asked to make. Measure outcomes. See what actually works.
