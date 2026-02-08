@@ -2594,12 +2594,11 @@ function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEd
     ? Math.round((othersIdeas.filter(isSuccess).length / othersIdeas.length) * 100)
     : null;
   
-  const avgScore = safeBets.filter(b => !b.isPastBet).length > 0
-    ? Math.round(safeBets.filter(b => !b.isPastBet).reduce((sum, b) => sum + calculateScore(b).total, 0) / safeBets.filter(b => !b.isPastBet).length)
-    : 0;
-  
-  const peerComparison = generatePeerComparison(profile, avgScore);
-  
+const betsWithScores = safeBets.filter(b => b.approachScore != null);
+const avgScore = betsWithScores.length > 0
+  ? Math.round(betsWithScores.reduce((sum, b) => sum + (b.approachScore + b.potentialScore + b.fitScore) / 3, 0) / betsWithScores.length)
+  : null;
+    
   return (
     <div style={{ padding: '40px 24px' }}>
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
@@ -2649,10 +2648,6 @@ function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEd
           <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
             <div style={{ color: '#fbbf24', fontSize: '2.5rem', fontWeight: 800 }}>{avgScore || '—'}</div>
             <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Avg Score</div>
-          </div>
-          <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
-            <div style={{ color: '#22d3ee', fontSize: '2.5rem', fontWeight: 800 }}>Top {100 - peerComparison.percentile}%</div>
-            <div style={{ color: '#64748b', fontSize: '0.85rem' }}>vs Peers</div>
           </div>
         </div>
         
