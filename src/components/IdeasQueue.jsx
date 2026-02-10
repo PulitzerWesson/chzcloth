@@ -3,7 +3,7 @@ import { useIdeas } from '../hooks/useIdeas';
 
 function IdeasQueue({ currentOrg, onClaimIdea, onStructureBet }) {
   const { ideas, loading, claimIdea, unclaimIdea, getStats } = useIdeas(currentOrg?.orgId);
-  const [filter, setFilter] = useState('pending'); // pending, claimed, all
+  const [filter, setFilter] = useState('all'); // pending, claimed, all
   
   const stats = getStats();
   
@@ -63,9 +63,9 @@ function IdeasQueue({ currentOrg, onClaimIdea, onStructureBet }) {
             textAlign: 'center' 
           }}>
             <div style={{ color: '#2dd4bf', fontSize: '1.75rem', fontWeight: 800 }}>
-              {stats.pendingIdeas}
+              {stats.Ideas}
             </div>
-            <div style={{ color: '#64748b', fontSize: '0.8rem' }}>Pending</div>
+            <div style={{ color: '#64748b', fontSize: '0.8rem' }}></div>
           </div>
           <div style={{ 
             background: 'rgba(255,255,255,0.03)', 
