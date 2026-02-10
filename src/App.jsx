@@ -2949,7 +2949,6 @@ function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEd
     </div>
   </div>
 ))}
-            })}
           </div>
         )}
         
