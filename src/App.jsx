@@ -2807,6 +2807,13 @@ const avgScore = betsWithScores.length > 0
             )}
           </div>
         )}
+
+        {/* Active bets */}
+{activeBets.length > 0 && (
+  <div style={{ marginBottom: 40 }}>
+    <h2 style={{ color: '#f1f5f9', fontSize: '1.25rem', fontWeight: 600, marginBottom: 16 }}>
+      Active Bets ({activeBets.length})
+    </h2>
         
 {activeBets.map((bet, i) => {
   const hasAIScores = bet.approachScore != null;
