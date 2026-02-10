@@ -2641,7 +2641,6 @@ const avgScore = betsWithScores.length > 0
           />
         </div>
         
-// DASHBOARD ACTION BUTTONS - Replace the button grid with this
 
 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 32 }}>
   {/* New Bet */}
@@ -2753,8 +2752,6 @@ const avgScore = betsWithScores.length > 0
 )}
 
         {/* Stats cards */}
-// DASHBOARD STAT CARDS - Replace your current stat cards section with this
-
 {/* Stats cards with gradients */}
 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 16, marginBottom: 24 }}>
   {/* Completed Bets - Teal gradient */}
@@ -2833,8 +2830,6 @@ const avgScore = betsWithScores.length > 0
             )}
           </div>
         )}
-
-// ACTIVE BETS SECTION - Replace the entire Active Bets mapping with this
 
 {activeBets.map((bet, i) => {
   const hasAIScores = bet.approachScore != null;
