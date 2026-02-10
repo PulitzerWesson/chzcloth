@@ -2567,7 +2567,7 @@ function RecordOutcome({ bet, onComplete, onCancel }) {
   );
 }
 
-function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEditMode, onAddOrg, onNewBet, email, onRecordOutcome }) {
+function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEditMode, onAddOrg, onNewBet, email, onRecordOutcome, setScreen }) {
   const safeBets = bets || [];
   const [expandedBets, setExpandedBets] = useState({});
   
@@ -3219,8 +3219,8 @@ const handleStructureBetFromIdea = (idea) => {
       {screen === 'score' && <ScoreResult profile={profile} bet={currentBet} onNewBet={handleNewBet} onSeedBaseline={handleSeedBaseline} onSkipToDashboard={handleSkipToDashboard} />}
       {screen === 'baseline' && <SeedBaseline profile={profile} onComplete={handleBaselineComplete} />}
       {screen === 'record_outcome' && <RecordOutcome bet={betToRecord} onComplete={handleOutcomeComplete} onCancel={handleOutcomeCancel} />}
-      {screen === 'dashboard' && <Dashboard profile={profile} bets={bets} currentOrg={currentOrg} organizations={organizations} onSwitchOrg={switchCurrentOrg} onEditMode={updateCompanyMode} onAddOrg={() => setScreen('orgsetup')} onNewBet={handleNewBet} email={user?.email} onRecordOutcome={handleRecordOutcome} />}
-{screen === 'submit_idea' && (
+      {screen === 'dashboard' && <Dashboard profile={profile} bets={bets} currentOrg={currentOrg} organizations={organizations} onSwitchOrg={switchCurrentOrg} onEditMode={updateCompanyMode} onAddOrg={() => setScreen('orgsetup')} onNewBet={handleNewBet} email={user?.email} onRecordOutcome={handleRecordOutcome} setScreen={setScreen} />}
+      {screen === 'submit_idea' && (
   <IdeaSubmission 
     onSubmit={handleIdeaSubmitted}
     onCancel={() => setScreen('dashboard')}
