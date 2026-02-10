@@ -3089,6 +3089,30 @@ const avgScore = betsWithScores.length > 0
             })}
           </div>
         )}
+        {/* Empty state */}
+        {safeBets.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+            <div style={{ color: '#64748b', marginBottom: 24 }}>No bets yet. Submit your first one!</div>
+            <button
+              onClick={onNewBet}
+              style={{
+                padding: '14px 32px',
+                background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
+                border: 'none',
+                borderRadius: 10,
+                color: '#0a0f1a',
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}
+            >
+              Submit a Bet →
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 // ============================================
 // MAIN APP
