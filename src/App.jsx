@@ -3220,8 +3220,6 @@ const handleStructureBetFromIdea = (idea) => {
       {screen === 'baseline' && <SeedBaseline profile={profile} onComplete={handleBaselineComplete} />}
       {screen === 'record_outcome' && <RecordOutcome bet={betToRecord} onComplete={handleOutcomeComplete} onCancel={handleOutcomeCancel} />}
       {screen === 'dashboard' && <Dashboard profile={profile} bets={bets} currentOrg={currentOrg} organizations={organizations} onSwitchOrg={switchCurrentOrg} onEditMode={updateCompanyMode} onAddOrg={() => setScreen('orgsetup')} onNewBet={handleNewBet} email={user?.email} onRecordOutcome={handleRecordOutcome} />}
-   // ADD THESE TWO BLOCKS before the final closing </div>:
-
 {screen === 'submit_idea' && (
   <IdeaSubmission 
     onSubmit={handleIdeaSubmitted}
