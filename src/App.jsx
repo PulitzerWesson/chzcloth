@@ -2853,7 +2853,6 @@ const avgScore = betsWithScores.length > 0
               <div style={{ display: 'flex', gap: 16, fontSize: '0.85rem' }}>
                 <span style={{ color: '#2dd4bf' }}>{bet.metric}</span>
                 <span style={{ color: '#64748b' }}>Measure in {bet.timeframe} days</span>
-              </div>
             </div>
             
             {hasAIScores ? (
