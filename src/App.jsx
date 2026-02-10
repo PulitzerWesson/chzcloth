@@ -8,6 +8,7 @@ import { useOrganizations } from './hooks/useOrganizations';
 import { OrganizationSetup, ContextCheck, shouldShowContextCheck, OrgSwitcher } from './components';
 import IdeaSubmission from './components/IdeaSubmission';
 import IdeasQueue from './components/IdeasQueue';
+import SponsorReview from './components/SponsorReview';
 
 
 // ============================================
@@ -2642,50 +2643,95 @@ const avgScore = betsWithScores.length > 0
         
         {/* Action header */}
 
-<div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
-  <button
-    onClick={onNewBet}
+<div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 32 }}>
+  {/* New Bet */}
+  <button 
+    onClick={() => setScreen('bet')}
     style={{
-      padding: '10px 20px',
+      padding: '16px 20px',
       background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
       border: 'none',
-      borderRadius: 8,
+      borderRadius: 10,
       color: '#0a0f1a',
-      fontWeight: 600,
-      cursor: 'pointer'
+      fontWeight: 700,
+      cursor: 'pointer',
+      fontSize: '0.95rem',
+      textAlign: 'left',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 4
     }}
   >
-    + New Bet
+    <div>+ New Bet</div>
+    <div style={{ fontSize: '0.7rem', opacity: 0.7 }}>Create prediction</div>
   </button>
-  
-  <button
+
+  {/* Submit Idea */}
+  <button 
     onClick={() => setScreen('submit_idea')}
     style={{
-      padding: '10px 20px',
-      background: 'rgba(251, 191, 36, 0.15)',
-      border: '1px solid rgba(251, 191, 36, 0.3)',
-      borderRadius: 8,
-      color: '#fbbf24',
-      fontWeight: 600,
-      cursor: 'pointer'
+      padding: '16px 20px',
+      background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+      border: 'none',
+      borderRadius: 10,
+      color: '#0a0f1a',
+      fontWeight: 700,
+      cursor: 'pointer',
+      fontSize: '0.95rem',
+      textAlign: 'left',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 4
     }}
   >
-    💡 Submit Idea
+    <div>💡 Submit Idea</div>
+    <div style={{ fontSize: '0.7rem', opacity: 0.7 }}>Share suggestion</div>
   </button>
-  
-  <button
+
+  {/* Ideas Queue */}
+  <button 
     onClick={() => setScreen('ideas_queue')}
     style={{
-      padding: '10px 20px',
-      background: 'rgba(125, 211, 252, 0.15)',
-      border: '1px solid rgba(125, 211, 252, 0.3)',
-      borderRadius: 8,
-      color: '#7dd3fc',
-      fontWeight: 600,
-      cursor: 'pointer'
+      padding: '16px 20px',
+      background: 'linear-gradient(135deg, #7dd3fc 0%, #38bdf8 100%)',
+      border: 'none',
+      borderRadius: 10,
+      color: '#0a0f1a',
+      fontWeight: 700,
+      cursor: 'pointer',
+      fontSize: '0.95rem',
+      textAlign: 'left',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 4
     }}
   >
-    📋 Ideas Queue
+    <div>📋 Ideas Queue</div>
+    <div style={{ fontSize: '0.7rem', opacity: 0.7 }}>Review ideas</div>
+  </button>
+
+  {/* Review Bets - NEW */}
+  <button 
+    onClick={() => setScreen('sponsor_review')}
+    style={{
+      padding: '16px 20px',
+      background: 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)',
+      border: 'none',
+      borderRadius: 10,
+      color: '#0a0f1a',
+      fontWeight: 700,
+      cursor: 'pointer',
+      fontSize: '0.95rem',
+      textAlign: 'left',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 4
+    }}
+  >
+    <div>⚡ Review Bets</div>
+    <div style={{ fontSize: '0.7rem', opacity: 0.7 }}>
+      {bets.filter(b => b.approvalStatus === 'pending_approval').length} waiting
+    </div>
   </button>
 </div>
 
@@ -2991,10 +3037,9 @@ export default function App() {
     getContextCheck
   } = useOrganizations();
   
-const { bets, loading: betsLoading, createBet, createPastBets, recordOutcome, scoreBet } = useBets(currentOrg?.orgId, currentOrg?.mode);
-const { updateIdeaStatus, claimIdea } = useIdeas(currentOrg?.orgId);
+const { bets, loading: betsLoading, createBet, createPastBets, recordOutcome, scoreBet, approveBet, rejectBet } = useBets(currentOrg?.orgId, currentOrg?.mode);
+  const { updateIdeaStatus, claimIdea } = useIdeas(currentOrg?.orgId);
   const { submitIdea } = useIdeas(currentOrg?.orgId);
-  
   const [screen, setScreen] = useState('landing');
   const [currentBet, setCurrentBet] = useState(null);
   const [betToRecord, setBetToRecord] = useState(null);
@@ -3280,6 +3325,15 @@ const handleStructureBetFromIdea = (idea) => {
       {screen === 'baseline' && <SeedBaseline profile={profile} onComplete={handleBaselineComplete} />}
       {screen === 'record_outcome' && <RecordOutcome bet={betToRecord} onComplete={handleOutcomeComplete} onCancel={handleOutcomeCancel} />}
       {screen === 'dashboard' && <Dashboard profile={profile} bets={bets} currentOrg={currentOrg} organizations={organizations} onSwitchOrg={switchCurrentOrg} onEditMode={updateCompanyMode} onAddOrg={() => setScreen('orgsetup')} onNewBet={handleNewBet} email={user?.email} onRecordOutcome={handleRecordOutcome} setScreen={setScreen} />}
+      {screen === 'sponsor_review' && (
+  <SponsorReview
+    bets={bets}
+    currentOrg={currentOrg}
+    onApprove={handleApproveBet}
+    onReject={handleRejectBet}
+    onCancel={() => setScreen('dashboard')}
+  />
+)}
       {screen === 'submit_idea' && (
   <IdeaSubmission 
     onSubmit={handleIdeaSubmitted}
