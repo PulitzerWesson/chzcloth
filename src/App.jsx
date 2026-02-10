@@ -8,7 +8,7 @@ import { useOrganizations } from './hooks/useOrganizations';
 import { OrganizationSetup, ContextCheck, shouldShowContextCheck, OrgSwitcher } from './components';
 import IdeaSubmission from './components/IdeaSubmission';
 import IdeasQueue from './components/IdeasQueue';
-import { useIdeas } from './hooks/useIdeas';
+
 
 // ============================================
 // CHZCLOTH Free - Where Bets Get Smarter
