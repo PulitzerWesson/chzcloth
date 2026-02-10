@@ -2867,8 +2867,7 @@ function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEd
     </div>
 
     {/* Expanded Details */}
-    {expandedBet === bet.id && (
-      <div style={{
+{expandedBets[bet.id] && (      <div style={{
         background: 'rgba(0,0,0,0.2)',
         borderRadius: 6,
         padding: 16,
@@ -2913,8 +2912,7 @@ function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEd
     }}>
       {/* Details Toggle */}
       <button
-        onClick={() => setExpandedBet(expandedBet === bet.id ? null : bet.id)}
-        style={{
+onClick={() => setExpandedBets(prev => ({...prev, [bet.id]: !prev[bet.id]}))}        style={{
           padding: '6px 0',
           background: 'transparent',
           border: 'none',
@@ -2926,8 +2924,7 @@ function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEd
           gap: 6
         }}
       >
-        <span>{expandedBet === bet.id ? '▾' : '▸'}</span>
-        Details
+<span>{expandedBets[bet.id] ? '▾' : '▸'}</span>        Details
       </button>
 
       {/* Record Outcome Button */}
