@@ -2777,7 +2777,7 @@ function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEd
 
         {/* Active bets - clean cards */}
         {activeBets.length > 0 && (
-          <div style={{ marginBottom: 40 }}>
+          <div style={{ marginBottom: 40, maxWidth: 900, margin: '0 auto 40px' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: 16, color: '#fff' }}>
               Active Bets ({activeBets.length})
             </h2>
@@ -2905,7 +2905,6 @@ function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEd
                   <button
                     onClick={() => onRecordOutcome(bet)}
                     style={{
-                      display: 'inline-block',
                       padding: '10px 16px',
                       background: 'rgba(125, 211, 252, 0.1)',
                       border: '1px solid rgba(125, 211, 252, 0.25)',
