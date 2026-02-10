@@ -2918,6 +2918,9 @@ const avgScore = betsWithScores.length > 0
               
               {/* Rationale */}
               <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+  AI Scoring Rationale
+</div>
                 <div style={{ marginBottom: 8 }}>
                   <span style={{ color: '#2dd4bf', fontWeight: 600 }}>Approach:</span>
                   <span style={{ color: '#94a3b8', marginLeft: 8 }}>{bet.scoringRationale?.approach?.rationale}</span>
