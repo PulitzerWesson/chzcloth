@@ -2779,146 +2779,176 @@ function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEd
 <div style={{ marginBottom: 40 }}>            <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: 16, color: '#fff' }}>
               Active Bets ({activeBets.length})
             </h2>
-            {activeBets.map((bet, i) => {
-              const hasAIScores = bet.approachScore != null;
-              return (
-                <div key={bet.id || i} style={{
-                  background: 'rgba(255,255,255,0.02)',
-                  border: '1px solid rgba(125, 211, 252, 0.08)',
-                  borderRadius: 10,
-                  padding: 20,
-                  marginBottom: 12
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                    <div style={{ 
-                      color: '#e0e0e0', 
-                      lineHeight: 1.5, 
-                      flex: 1, 
-                      marginRight: 16,
-                      fontWeight: 500
-                    }}>
-                      {bet.hypothesis}
-                    </div>
-                    
-                    <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexShrink: 0 }}>
-                      {/* Subtle badges */}
-                      <span style={{
-                        fontSize: '0.7rem',
-                        fontWeight: 600,
-                        padding: '2px 8px',
-                        borderRadius: 4,
-                        color: bet.isOwnIdea !== false ? '#7dd3fc' : '#fbbf24',
-                        background: bet.isOwnIdea !== false ? 'rgba(125, 211, 252, 0.12)' : 'rgba(251, 191, 36, 0.12)',
-                        border: bet.isOwnIdea !== false ? '1px solid rgba(125, 211, 252, 0.25)' : '1px solid rgba(251, 191, 36, 0.25)'
-                      }}>
-                        {bet.isOwnIdea !== false ? 'yours' : bet.ideaSource || 'tracking'}
-                      </span>
-                      
-                      <span style={{
-                        fontSize: '0.7rem',
-                        fontWeight: 600,
-                        padding: '2px 8px',
-                        borderRadius: 4,
-                        color: bet.approvalStatus === 'approved' ? '#86efac' : '#fbbf24',
-                        background: bet.approvalStatus === 'approved' ? 'rgba(134, 239, 172, 0.12)' : 'rgba(251, 191, 36, 0.12)',
-                        border: bet.approvalStatus === 'approved' ? '1px solid rgba(134, 239, 172, 0.25)' : '1px solid rgba(251, 191, 36, 0.25)'
-                      }}>
-                        {bet.approvalStatus === 'approved' ? 'approved' : 'pending'}
-                      </span>
-                      
-                      {/* AI Scores */}
-                      {hasAIScores && (
-                        <div style={{ display: 'flex', gap: 8 }}>
-                          <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '0.6rem', color: '#555', marginBottom: 2 }}>APR</div>
-                            <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#7dd3fc' }}>{bet.approachScore}</div>
-                          </div>
-                          <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '0.6rem', color: '#555', marginBottom: 2 }}>POT</div>
-                            <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#fbbf24' }}>{bet.potentialScore}</div>
-                          </div>
-                          <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '0.6rem', color: '#555', marginBottom: 2 }}>FIT</div>
-                            <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#86efac' }}>{bet.fitScore}</div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* Expandable details */}
-                  {hasAIScores && bet.scoringRationale && (
-                    <>
-                      <button
-                        onClick={() => setExpandedBets(prev => ({ ...prev, [bet.id]: !prev[bet.id] }))}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: '#555',
-                          fontSize: '0.75rem',
-                          cursor: 'pointer',
-                          padding: '4px 0',
-                          marginBottom: 8
-                        }}
-                      >
-                        {expandedBets[bet.id] ? '▼ Hide' : '▶ Details'}
-                      </button>
-                      
-                      {expandedBets[bet.id] && (
-                        <div style={{
-                          background: 'rgba(0,0,0,0.2)',
-                          borderRadius: 8,
-                          padding: 16,
-                          marginBottom: 12,
-                          fontSize: '0.85rem',
-                          color: '#888'
-                        }}>
-                          <div style={{ marginBottom: 10 }}>
-                            <span style={{ color: '#666', fontSize: '0.75rem' }}>Metric: </span>
-                            <span style={{ color: '#7dd3fc' }}>{bet.metric}</span>
-                            <span style={{ color: '#666', marginLeft: 8 }}>
-                              (measure in {bet.timeframe} days)
-                            </span>
-                          </div>
-                          
-                          <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                            <div style={{ marginBottom: 8 }}>
-                              <span style={{ color: '#7dd3fc', fontWeight: 600, fontSize: '0.75rem' }}>Approach:</span>
-                              <span style={{ color: '#888', marginLeft: 8, fontSize: '0.8rem' }}>{bet.scoringRationale?.approach?.rationale}</span>
-                            </div>
-                            <div style={{ marginBottom: 8 }}>
-                              <span style={{ color: '#fbbf24', fontWeight: 600, fontSize: '0.75rem' }}>Potential:</span>
-                              <span style={{ color: '#888', marginLeft: 8, fontSize: '0.8rem' }}>{bet.scoringRationale?.potential?.rationale}</span>
-                            </div>
-                            <div>
-                              <span style={{ color: '#86efac', fontWeight: 600, fontSize: '0.75rem' }}>Fit:</span>
-                              <span style={{ color: '#888', marginLeft: 8, fontSize: '0.8rem' }}>{bet.scoringRationale?.fit?.rationale}</span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
-                  
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
-  <button
-    onClick={() => onRecordOutcome(bet)}
+{activeBets.map((bet) => (
+  <div
+    key={bet.id}
     style={{
-      padding: '10px 16px',
-      background: 'rgba(125, 211, 252, 0.1)',
-      border: '1px solid rgba(125, 211, 252, 0.25)',
-      borderRadius: 6,
-      color: '#7dd3fc',
-      fontSize: '0.85rem',
-      fontWeight: 500,
-      cursor: 'pointer'
+      background: 'rgba(255, 255, 255, 0.03)',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      borderRadius: 8,
+      padding: 20,
+      marginBottom: 16
     }}
   >
-    Record Outcome →
-  </button>
-</div>
-                </div>
-              );
+    {/* Header Row - Sponsor, Status, Scores */}
+    <div style={{ 
+      display: 'flex', 
+      justifyContent: 'space-between', 
+      alignItems: 'flex-start',
+      marginBottom: 12 
+    }}>
+      {/* Left side - badges */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <span style={{
+          padding: '4px 10px',
+          background: 'rgba(251, 191, 36, 0.15)',
+          border: '1px solid rgba(251, 191, 36, 0.3)',
+          borderRadius: 4,
+          color: '#fbbf24',
+          fontSize: '0.75rem',
+          fontWeight: 500
+        }}>
+          {bet.sponsor_email || 'yours'}
+        </span>
+        <span style={{
+          padding: '4px 10px',
+          background: bet.status === 'approved' 
+            ? 'rgba(34, 197, 94, 0.15)' 
+            : 'rgba(251, 191, 36, 0.15)',
+          border: bet.status === 'approved'
+            ? '1px solid rgba(34, 197, 94, 0.3)'
+            : '1px solid rgba(251, 191, 36, 0.3)',
+          borderRadius: 4,
+          color: bet.status === 'approved' ? '#22c55e' : '#fbbf24',
+          fontSize: '0.75rem',
+          fontWeight: 500
+        }}>
+          {bet.status}
+        </span>
+      </div>
+
+      {/* Right side - scores */}
+      <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', marginBottom: 2 }}>
+            APR
+          </div>
+          <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#7dd3fc' }}>
+            {bet.appetite_score || '—'}
+          </div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', marginBottom: 2 }}>
+            POT
+          </div>
+          <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#a78bfa' }}>
+            {bet.potential_score || '—'}
+          </div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', marginBottom: 2 }}>
+            EIT
+          </div>
+          <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#34d399' }}>
+            {bet.effort_score || '—'}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Bet Text */}
+    <div style={{ 
+      fontSize: '0.95rem', 
+      lineHeight: 1.6, 
+      color: 'rgba(255,255,255,0.9)',
+      marginBottom: 16
+    }}>
+      {bet.bet_text}
+    </div>
+
+    {/* Expanded Details */}
+    {expandedBet === bet.id && (
+      <div style={{
+        background: 'rgba(0,0,0,0.2)',
+        borderRadius: 6,
+        padding: 16,
+        marginBottom: 16,
+        fontSize: '0.85rem',
+        lineHeight: 1.8
+      }}>
+        <div style={{ marginBottom: 8 }}>
+          <span style={{ color: 'rgba(255,255,255,0.5)' }}>Submitted:</span>{' '}
+          <span style={{ color: 'rgba(255,255,255,0.9)' }}>
+            {new Date(bet.created_at).toLocaleDateString()}
+          </span>
+        </div>
+        {bet.estimated_cost && (
+          <div style={{ marginBottom: 8 }}>
+            <span style={{ color: 'rgba(255,255,255,0.5)' }}>Cost:</span>{' '}
+            <span style={{ color: 'rgba(255,255,255,0.9)' }}>${bet.estimated_cost.toLocaleString()}</span>
+          </div>
+        )}
+        {bet.outcome_metric && (
+          <div style={{ marginBottom: 8 }}>
+            <span style={{ color: 'rgba(255,255,255,0.5)' }}>Outcome metric:</span>{' '}
+            <span style={{ color: 'rgba(255,255,255,0.9)' }}>{bet.outcome_metric}</span>
+          </div>
+        )}
+        {bet.predicted_impact && (
+          <div>
+            <span style={{ color: 'rgba(255,255,255,0.5)' }}>Predicted impact:</span>{' '}
+            <span style={{ color: 'rgba(255,255,255,0.9)' }}>{bet.predicted_impact}</span>
+          </div>
+        )}
+      </div>
+    )}
+
+    {/* Footer Row - Details Toggle & Record Outcome */}
+    <div style={{ 
+      display: 'flex', 
+      justifyContent: 'space-between', 
+      alignItems: 'center',
+      paddingTop: 12,
+      borderTop: '1px solid rgba(255,255,255,0.1)'
+    }}>
+      {/* Details Toggle */}
+      <button
+        onClick={() => setExpandedBet(expandedBet === bet.id ? null : bet.id)}
+        style={{
+          padding: '6px 0',
+          background: 'transparent',
+          border: 'none',
+          color: 'rgba(255,255,255,0.5)',
+          fontSize: '0.85rem',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6
+        }}
+      >
+        <span>{expandedBet === bet.id ? '▾' : '▸'}</span>
+        Details
+      </button>
+
+      {/* Record Outcome Button */}
+      <button
+        onClick={() => onRecordOutcome(bet)}
+        style={{
+          padding: '8px 16px',
+          background: 'rgba(125, 211, 252, 0.1)',
+          border: '1px solid rgba(125, 211, 252, 0.25)',
+          borderRadius: 6,
+          color: '#7dd3fc',
+          fontSize: '0.85rem',
+          fontWeight: 500,
+          cursor: 'pointer'
+        }}
+      >
+        Record Outcome →
+      </button>
+    </div>
+  </div>
+))}
             })}
           </div>
         )}
