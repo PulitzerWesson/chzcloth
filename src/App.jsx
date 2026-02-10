@@ -2616,7 +2616,6 @@ const avgScore = betsWithScores.length > 0
         </div>
         
         {/* Action header */}
-// REPLACE the single "+ New Bet" button with this three-button layout:
 
 <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
   <button
@@ -2665,13 +2664,7 @@ const avgScore = betsWithScores.length > 0
   </button>
 </div>
 
-// NOTE: The Dashboard component also needs to accept setScreen as a prop
-// So update the Dashboard function signature from:
-// function Dashboard({ profile, bets, currentOrg, ... onRecordOutcome }) {
-// TO:
-// function Dashboard({ profile, bets, currentOrg, ... onRecordOutcome, setScreen }) {
 
-// And pass it from App.jsx:
 {screen === 'dashboard' && (
   <Dashboard 
     profile={profile} 
