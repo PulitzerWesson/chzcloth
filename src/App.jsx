@@ -8,6 +8,7 @@ import { useOrganizations } from './hooks/useOrganizations';
 import { OrganizationSetup, ContextCheck, shouldShowContextCheck, OrgSwitcher } from './components';
 import IdeaSubmission from './components/IdeaSubmission';
 import IdeasQueue from './components/IdeasQueue';
+import { useIdeas } from './hooks/useIdeas';
 
 // ============================================
 // CHZCLOTH Free - Where Bets Get Smarter
@@ -986,27 +987,27 @@ function ProfileSetup({ onComplete }) {
 }
 
 // FIX: BetSubmission now destructures currentOrg prop
-function BetSubmission({ profile, currentOrg, onComplete }) {
+function BetSubmission({ profile, currentOrg, onComplete, ideaFromQueue = null }) {
   const [step, setStep] = useState(1);
-  const [bet, setBet] = useState({
-    metricDomain: '',
-    metric: '',
-    customMetric: '',
-    betType: '',
-    hypothesis: '',
-    baseline: '',
-    prediction: '',
-    confidence: 70,
-    timeframe: '90',
-    assumptions: '',
-    cheapTest: '',
-    measurementTool: '',
-    isOwnIdea: true,
-    ideaSource: '',
-    strategicAlignment: '',
-    estimatedEffort: '',
-    inactionImpact: ''
-  });
+const [bet, setBet] = useState({
+  metricDomain: '',
+  metric: '',
+  customMetric: '',
+  betType: '',
+  hypothesis: ideaFromQueue?.description || '',
+  baseline: '',
+  prediction: ideaFromQueue?.expectedImpact || '',
+  confidence: 70,
+  timeframe: '90',
+  assumptions: ideaFromQueue?.problem || '',
+  cheapTest: '',
+  measurementTool: '',
+  isOwnIdea: false,
+  ideaSource: ideaFromQueue?.submittedByEmail || '',
+  strategicAlignment: '',
+  estimatedEffort: '',
+  inactionImpact: ''
+});
   
   const currentDomain = bet.metricDomain ? METRICS[bet.metricDomain] : null;
   const relevantExample = currentDomain?.examples.find(e => e.type === bet.betType);
@@ -1032,6 +1033,29 @@ const stepLabels = ['Metric Area', 'Specific Metric', 'Bet Type', 'Strategic Fit
             }} />
           ))}
         </div>
+        {/* Idea banner if structuring from queue */}
+          {ideaFromQueue && (
+            <div style={{
+              background: 'rgba(251, 191, 36, 0.1)',
+              border: '1px solid rgba(251, 191, 36, 0.3)',
+              borderRadius: 8,
+              padding: 12,
+              marginBottom: 24,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8
+            }}>
+              <span style={{ fontSize: '1.2rem' }}>💡</span>
+              <div>
+                <div style={{ color: '#fbbf24', fontSize: '0.85rem', fontWeight: 600 }}>
+                  Structuring idea: {ideaFromQueue.title}
+                </div>
+                <div style={{ color: '#94a3b8', fontSize: '0.75rem' }}>
+                  Submitted by {ideaFromQueue.submittedByEmail || 'team member'}
+                </div>
+              </div>
+            </div>
+          )}
         
         {/* Step 1: Metric domain */}
         {step === 1 && (
@@ -1611,11 +1635,11 @@ const stepLabels = ['Metric Area', 'Specific Metric', 'Bet Type', 'Strategic Fit
               <button onClick={() => setStep(9)} style={{ padding: '12px 20px', background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: 8, color: '#94a3b8', cursor: 'pointer' }}>
                 ← Back
               </button>
-              <button 
-                onClick={async () => {
-                  setSubmitting(true);
-                  await onComplete(bet);
-                  }}
+                  <button 
+                    onClick={async () => {
+                      setSubmitting(true);
+                      await onComplete(bet, ideaFromQueue?.id);  // <-- ADD ideaFromQueue?.id here
+                    }}
                   disabled={submitting}
                   style={{
                     flex: 1,
@@ -2968,6 +2992,7 @@ export default function App() {
   } = useOrganizations();
   
 const { bets, loading: betsLoading, createBet, createPastBets, recordOutcome, scoreBet } = useBets(currentOrg?.orgId, currentOrg?.mode);
+  const { updateIdeaStatus } = useIdeas(currentOrg?.orgId);
   const { submitIdea } = useIdeas(currentOrg?.orgId);
   
   const [screen, setScreen] = useState('landing');
@@ -3053,16 +3078,16 @@ const { bets, loading: betsLoading, createBet, createPastBets, recordOutcome, sc
     }
   };
   
-  const handleBetComplete = async (betData) => {
-    const { data, error } = await createBet(betData);
-    if (error) {
-      console.error('Error creating bet:', error);
-      alert('Error saving bet. Please try again.');
-    } else {
-      setCurrentBet(data);
-      setScreen('score');
-    }
-  };
+const handleBetComplete = async (betData, ideaId = null) => {
+  const { data, error } = await createBet(betData, ideaId);
+  if (error) {
+    console.error('Error creating bet:', error);
+    alert('Error saving bet. Please try again.');
+  } else {
+    setCurrentBet(data);
+    setScreen('score');
+  }
+};
   
   const handleSeedBaseline = () => {
     setScreen('baseline');
@@ -3137,12 +3162,9 @@ const handleIdeaSubmitted = async (ideaData) => {
 };
 
 const handleStructureBetFromIdea = (idea) => {
-  // When executor clicks "Structure Bet" from IdeasQueue
-  // TODO: Pre-populate bet form with idea data
-  setCurrentBet(null); // For now, start fresh
+  setCurrentBet({ fromIdea: idea });
   setScreen('bet');
 };
-
   
   // FIX: Removed pendingDashboard (was set but never used in routing)
   const handleDashboardClick = () => {
@@ -3226,7 +3248,14 @@ const handleStructureBetFromIdea = (idea) => {
       {screen === 'email' && <EmailAuth onComplete={handleEmailSubmit} emailSent={emailSent} />}
       {screen === 'profile' && <ProfileSetup onComplete={handleProfileComplete} />}
       {screen === 'orgsetup' && <OrganizationSetup onComplete={handleOrgSetupComplete} />}
-      {screen === 'bet' && <BetSubmission profile={profile} currentOrg={currentOrg} onComplete={handleBetComplete} />}
+      {screen === 'bet' && (
+            <BetSubmission 
+              profile={profile} 
+              currentOrg={currentOrg} 
+              onComplete={handleBetComplete}
+              ideaFromQueue={currentBet?.fromIdea || null}
+            />
+          )}
       {screen === 'score' && <ScoreResult profile={profile} bet={currentBet} onNewBet={handleNewBet} onSeedBaseline={handleSeedBaseline} onSkipToDashboard={handleSkipToDashboard} />}
       {screen === 'baseline' && <SeedBaseline profile={profile} onComplete={handleBaselineComplete} />}
       {screen === 'record_outcome' && <RecordOutcome bet={betToRecord} onComplete={handleOutcomeComplete} onCancel={handleOutcomeCancel} />}
