@@ -2837,6 +2837,18 @@ const avgScore = betsWithScores.length > 0
                 }}>
                   {bet.isOwnIdea !== false ? 'Your idea' : `Tracking: ${bet.ideaSource || "other"}`}
                 </span>
+                  {/* ADD THIS APPROVAL STATUS BADGE: */}
+  <span style={{
+    fontSize: '0.7rem',
+    fontWeight: 600,
+    color: bet.approvalStatus === 'approved' ? '#86efac' : '#fbbf24',
+    background: bet.approvalStatus === 'approved' ? 'rgba(134, 239, 172, 0.15)' : 'rgba(251, 191, 36, 0.15)',
+    padding: '2px 8px',
+    borderRadius: 4
+  }}>
+    {bet.approvalStatus === 'approved' ? '✓ Approved' : '⏳ Pending'}
+  </span>
+</div>
               </div>
               <div style={{ color: '#f1f5f9', lineHeight: 1.5, marginBottom: 8 }}>{bet.hypothesis}</div>
               <div style={{ display: 'flex', gap: 16, fontSize: '0.85rem' }}>
