@@ -63,9 +63,9 @@ function IdeasQueue({ currentOrg, onClaimIdea, onStructureBet }) {
             textAlign: 'center' 
           }}>
             <div style={{ color: '#2dd4bf', fontSize: '1.75rem', fontWeight: 800 }}>
-              {stats.Ideas}
+              {stats.pendingIdeas}
             </div>
-            <div style={{ color: '#64748b', fontSize: '0.8rem' }}></div>
+            <div style={{ color: '#64748b', fontSize: '0.8rem' }}>Pending</div>
           </div>
           <div style={{ 
             background: 'rgba(255,255,255,0.03)', 
