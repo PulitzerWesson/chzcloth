@@ -3219,7 +3219,14 @@ const handleStructureBetFromIdea = (idea) => {
     return;
   }
 
-    const handleApproveBet = async (betId) => {
+
+  
+  // Then open bet form immediately
+  setCurrentBet({ fromIdea: idea });
+  setScreen('bet');
+};
+
+      const handleApproveBet = async (betId) => {
   const { error } = await approveBet(betId);
   if (error) {
     console.error('Error approving bet:', error);
@@ -3233,11 +3240,6 @@ const handleRejectBet = async (betId, reason) => {
     console.error('Error rejecting bet:', error);
     alert('Error rejecting bet');
   }
-};
-  
-  // Then open bet form immediately
-  setCurrentBet({ fromIdea: idea });
-  setScreen('bet');
 };
 
   const handleClaimIdea = async (ideaId) => {
