@@ -3218,6 +3218,22 @@ const handleStructureBetFromIdea = (idea) => {
     console.error('Error claiming idea:', error);
     return;
   }
+
+    const handleApproveBet = async (betId) => {
+  const { error } = await approveBet(betId);
+  if (error) {
+    console.error('Error approving bet:', error);
+    alert('Error approving bet');
+  }
+};
+
+const handleRejectBet = async (betId, reason) => {
+  const { error } = await rejectBet(betId, reason);
+  if (error) {
+    console.error('Error rejecting bet:', error);
+    alert('Error rejecting bet');
+  }
+};
   
   // Then open bet form immediately
   setCurrentBet({ fromIdea: idea });
