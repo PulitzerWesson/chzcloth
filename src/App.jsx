@@ -5,6 +5,8 @@ import { useAuth } from './hooks/useAuth';
 import { useBets } from './hooks/useBets';
 import { useOrganizations } from './hooks/useOrganizations';
 import { OrganizationSetup, ContextCheck, shouldShowContextCheck, OrgSwitcher } from './components';
+import IdeaSubmission from './components/IdeaSubmission';
+import IdeasQueue from './components/IdeasQueue';
 
 // ============================================
 // CHZCLOTH Free - Where Bets Get Smarter
@@ -2614,23 +2616,77 @@ const avgScore = betsWithScores.length > 0
         </div>
         
         {/* Action header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#f1f5f9', margin: 0 }}>Your Dashboard</h1>
-          <button
-            onClick={onNewBet}
-            style={{
-              padding: '10px 20px',
-              background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
-              border: 'none',
-              borderRadius: 8,
-              color: '#0a0f1a',
-              fontWeight: 600,
-              cursor: 'pointer'
-            }}
-          >
-            + New Bet
-          </button>
-        </div>
+// REPLACE the single "+ New Bet" button with this three-button layout:
+
+<div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
+  <button
+    onClick={onNewBet}
+    style={{
+      padding: '10px 20px',
+      background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
+      border: 'none',
+      borderRadius: 8,
+      color: '#0a0f1a',
+      fontWeight: 600,
+      cursor: 'pointer'
+    }}
+  >
+    + New Bet
+  </button>
+  
+  <button
+    onClick={() => setScreen('submit_idea')}
+    style={{
+      padding: '10px 20px',
+      background: 'rgba(251, 191, 36, 0.15)',
+      border: '1px solid rgba(251, 191, 36, 0.3)',
+      borderRadius: 8,
+      color: '#fbbf24',
+      fontWeight: 600,
+      cursor: 'pointer'
+    }}
+  >
+    💡 Submit Idea
+  </button>
+  
+  <button
+    onClick={() => setScreen('ideas_queue')}
+    style={{
+      padding: '10px 20px',
+      background: 'rgba(125, 211, 252, 0.15)',
+      border: '1px solid rgba(125, 211, 252, 0.3)',
+      borderRadius: 8,
+      color: '#7dd3fc',
+      fontWeight: 600,
+      cursor: 'pointer'
+    }}
+  >
+    📋 Ideas Queue
+  </button>
+</div>
+
+// NOTE: The Dashboard component also needs to accept setScreen as a prop
+// So update the Dashboard function signature from:
+// function Dashboard({ profile, bets, currentOrg, ... onRecordOutcome }) {
+// TO:
+// function Dashboard({ profile, bets, currentOrg, ... onRecordOutcome, setScreen }) {
+
+// And pass it from App.jsx:
+{screen === 'dashboard' && (
+  <Dashboard 
+    profile={profile} 
+    bets={bets} 
+    currentOrg={currentOrg} 
+    organizations={organizations} 
+    onSwitchOrg={switchCurrentOrg} 
+    onEditMode={updateCompanyMode} 
+    onAddOrg={() => setScreen('orgsetup')} 
+    onNewBet={handleNewBet} 
+    email={user?.email} 
+    onRecordOutcome={handleRecordOutcome}
+    setScreen={setScreen}  // ADD THIS LINE
+  />
+)}
 
         {/* Stats cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 16, marginBottom: 24 }}>
@@ -3059,6 +3115,30 @@ const { bets, loading: betsLoading, createBet, createPastBets, recordOutcome, sc
     setBetToRecord(null);
     setScreen('dashboard');
   };
+
+  // ADD THESE HANDLERS after handleOutcomeCancel:
+
+const handleSubmitIdea = () => {
+  setScreen('submit_idea');
+};
+
+const handleViewIdeasQueue = () => {
+  setScreen('ideas_queue');
+};
+
+const handleIdeaSubmitted = async (ideaData) => {
+  // For now, just navigate back to dashboard
+  // Later we'll add success notifications
+  setScreen('dashboard');
+};
+
+const handleStructureBetFromIdea = (idea) => {
+  // When executor clicks "Structure Bet" from IdeasQueue
+  // TODO: Pre-populate bet form with idea data
+  setCurrentBet(null); // For now, start fresh
+  setScreen('bet');
+};
+
   
   // FIX: Removed pendingDashboard (was set but never used in routing)
   const handleDashboardClick = () => {
@@ -3147,6 +3227,22 @@ const { bets, loading: betsLoading, createBet, createPastBets, recordOutcome, sc
       {screen === 'baseline' && <SeedBaseline profile={profile} onComplete={handleBaselineComplete} />}
       {screen === 'record_outcome' && <RecordOutcome bet={betToRecord} onComplete={handleOutcomeComplete} onCancel={handleOutcomeCancel} />}
       {screen === 'dashboard' && <Dashboard profile={profile} bets={bets} currentOrg={currentOrg} organizations={organizations} onSwitchOrg={switchCurrentOrg} onEditMode={updateCompanyMode} onAddOrg={() => setScreen('orgsetup')} onNewBet={handleNewBet} email={user?.email} onRecordOutcome={handleRecordOutcome} />}
+   // ADD THESE TWO BLOCKS before the final closing </div>:
+
+{screen === 'submit_idea' && (
+  <IdeaSubmission 
+    onSubmit={handleIdeaSubmitted}
+    onCancel={() => setScreen('dashboard')}
+  />
+)}
+
+{screen === 'ideas_queue' && (
+  <IdeasQueue 
+    currentOrg={currentOrg}
+    onStructureBet={handleStructureBetFromIdea}
+  />
+)}
+    
     </div>
   );
 }
