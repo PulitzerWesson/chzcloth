@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './hooks/useAuth';
+import { useIdeas } from './hooks/useIdeas';
 import { useBets } from './hooks/useBets';
 import { useOrganizations } from './hooks/useOrganizations';
 import { OrganizationSetup, ContextCheck, shouldShowContextCheck, OrgSwitcher } from './components';
@@ -2967,6 +2968,7 @@ export default function App() {
   } = useOrganizations();
   
 const { bets, loading: betsLoading, createBet, createPastBets, recordOutcome, scoreBet } = useBets(currentOrg?.orgId, currentOrg?.mode);
+  const { submitIdea } = useIdeas(currentOrg?.orgId);
   
   const [screen, setScreen] = useState('landing');
   const [currentBet, setCurrentBet] = useState(null);
@@ -3120,9 +3122,18 @@ const handleViewIdeasQueue = () => {
 };
 
 const handleIdeaSubmitted = async (ideaData) => {
-  // For now, just navigate back to dashboard
-  // Later we'll add success notifications
-  setScreen('dashboard');
+  if (!currentOrg?.orgId) {
+    alert('No organization selected');
+    return;
+  }
+  
+  const { error } = await submitIdea(ideaData);
+  if (error) {
+    console.error('Error submitting idea:', error);
+    alert('Error submitting idea. Please try again.');
+  } else {
+    setScreen('dashboard');
+  }
 };
 
 const handleStructureBetFromIdea = (idea) => {
