@@ -2992,7 +2992,7 @@ export default function App() {
   } = useOrganizations();
   
 const { bets, loading: betsLoading, createBet, createPastBets, recordOutcome, scoreBet } = useBets(currentOrg?.orgId, currentOrg?.mode);
-  const { updateIdeaStatus } = useIdeas(currentOrg?.orgId);
+const { updateIdeaStatus, claimIdea } = useIdeas(currentOrg?.orgId);
   const { submitIdea } = useIdeas(currentOrg?.orgId);
   
   const [screen, setScreen] = useState('landing');
@@ -3165,6 +3165,26 @@ const handleStructureBetFromIdea = (idea) => {
   setCurrentBet({ fromIdea: idea });
   setScreen('bet');
 };
+
+  const handleClaimAndStructure = async (idea) => {
+  // Claim first
+  const { error } = await claimIdea(idea.id);
+  if (error) {
+    console.error('Error claiming idea:', error);
+    return;
+  }
+  
+  // Then open bet form immediately
+  setCurrentBet({ fromIdea: idea });
+  setScreen('bet');
+};
+
+  const handleClaimIdea = async (ideaId) => {
+  const { error } = await claimIdea(ideaId);
+  if (error) {
+    console.error('Error claiming idea:', error);
+  }
+};
   
   // FIX: Removed pendingDashboard (was set but never used in routing)
   const handleDashboardClick = () => {
@@ -3270,6 +3290,8 @@ const handleStructureBetFromIdea = (idea) => {
 {screen === 'ideas_queue' && (
   <IdeasQueue 
     currentOrg={currentOrg}
+    onClaimIdea={handleClaimIdea}
+    onClaimAndStructure={handleClaimAndStructure}
     onStructureBet={handleStructureBetFromIdea}
   />
 )}
