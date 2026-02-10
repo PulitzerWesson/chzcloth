@@ -155,9 +155,10 @@ const createBet = async (betData, ideaId = null) => {
           measurement_tool: betData.measurementTool,
           is_past_bet: false,
           // New score fields
-          approach_score: scores?.approach?.score || null,
-          potential_score: scores?.potential?.score || null,
-          fit_score: scores?.fit?.score || null,
+// New score fields
+          approach_score: scores?.approach?.score ?? null,
+          potential_score: scores?.potential?.score ?? null,
+          fit_score: scores?.fit?.score ?? null,
           scoring_rationale: scores || null,
           strategic_alignment: betData.strategicAlignment || null,
           estimated_effort: betData.estimatedEffort || null,
