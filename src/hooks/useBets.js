@@ -119,8 +119,8 @@ const transformedBets = (betsData || []).map(bet => {
     fetchBets()
   }, [fetchBets])
 
-  const createBet = async (betData) => {
-    if (!user) return { error: { message: 'Not authenticated' } }
+const createBet = async (betData, ideaId = null) => {
+  if (!user) return { error: { message: 'Not authenticated' } }
 
     try {
       // Get AI scores first
@@ -154,11 +154,24 @@ const transformedBets = (betsData || []).map(bet => {
           strategic_alignment: betData.strategicAlignment || null,
           estimated_effort: betData.estimatedEffort || null,
           inaction_impact: betData.inactionImpact || null,
+              idea_id: ideaId,
+    approval_status: ideaId ? 'pending_approval' : 'draft',
+    structured_by: ideaId ? user.id : null,
         })
         .select()
         .single()
 
       if (error) throw error
+      if (ideaId && data) {
+  const { error: updateError } = await supabase
+    .from('ideas')
+    .update({ status: 'structured' })
+    .eq('id', ideaId);
+  
+  if (updateError) {
+    console.error('Error updating idea status:', updateError);
+  }
+}
 
       const newBet = {
         ...betData,
