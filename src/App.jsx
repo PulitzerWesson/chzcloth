@@ -2629,8 +2629,7 @@ function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEd
     
   return (
     <div style={{ padding: '40px' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        
+    <div style={{ maxWidth: 900, margin: '0 auto' }}>          
         {/* Organization switcher */}
         <div style={{ marginBottom: 32 }}>
           <OrgSwitcher
@@ -2777,8 +2776,7 @@ function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEd
 
         {/* Active bets - clean cards */}
         {activeBets.length > 0 && (
-          <div style={{ marginBottom: 40, maxWidth: 900, margin: '0 auto 40px' }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: 16, color: '#fff' }}>
+<div style={{ marginBottom: 40 }}>            <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: 16, color: '#fff' }}>
               Active Bets ({activeBets.length})
             </h2>
             {activeBets.map((bet, i) => {
@@ -2902,21 +2900,23 @@ function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEd
                     </>
                   )}
                   
-                  <button
-                    onClick={() => onRecordOutcome(bet)}
-                    style={{
-                      padding: '10px 16px',
-                      background: 'rgba(125, 211, 252, 0.1)',
-                      border: '1px solid rgba(125, 211, 252, 0.25)',
-                      borderRadius: 6,
-                      color: '#7dd3fc',
-                      fontSize: '0.85rem',
-                      fontWeight: 500,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Record Outcome →
-                  </button>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
+  <button
+    onClick={() => onRecordOutcome(bet)}
+    style={{
+      padding: '10px 16px',
+      background: 'rgba(125, 211, 252, 0.1)',
+      border: '1px solid rgba(125, 211, 252, 0.25)',
+      borderRadius: 6,
+      color: '#7dd3fc',
+      fontSize: '0.85rem',
+      fontWeight: 500,
+      cursor: 'pointer'
+    }}
+  >
+    Record Outcome →
+  </button>
+</div>
                 </div>
               );
             })}
