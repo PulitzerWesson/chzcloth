@@ -2956,26 +2956,7 @@ const avgScore = betsWithScores.length > 0
     </div>
   );
 })}
-          
-          <button
-            onClick={() => onRecordOutcome(bet)}
-            style={{
-              width: '100%',
-              padding: '10px 16px',
-              background: 'rgba(45, 212, 191, 0.1)',
-              border: '1px solid rgba(45, 212, 191, 0.3)',
-              borderRadius: 8,
-              color: '#2dd4bf',
-              fontSize: '0.9rem',
-              fontWeight: 500,
-              cursor: 'pointer'
-            }}
-          >
-            Record Outcome →
-          </button>
-        </div>
-      );
-    })}
+
   </div>
 )}
         
