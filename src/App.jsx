@@ -2905,7 +2905,7 @@ function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEd
                   <button
                     onClick={() => onRecordOutcome(bet)}
                     style={{
-                      width: 'inline-block',
+                      display: 'inline-block',
                       padding: '10px 16px',
                       background: 'rgba(125, 211, 252, 0.1)',
                       border: '1px solid rgba(125, 211, 252, 0.25)',
