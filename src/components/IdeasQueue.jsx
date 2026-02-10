@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useIdeas } from '../hooks/useIdeas';
 
-function IdeasQueue({ currentOrg, onClaimIdea, onStructureBet }) {
+function IdeasQueue({ currentOrg, onClaimIdea, onClaimAndStructure, onStructureBet }) {
   const { ideas, loading, claimIdea, unclaimIdea, getStats } = useIdeas(currentOrg?.orgId);
   const [filter, setFilter] = useState('all'); // pending, claimed, all
   
@@ -242,22 +242,40 @@ function IdeasQueue({ currentOrg, onClaimIdea, onStructureBet }) {
                 {/* Actions */}
                 <div style={{ display: 'flex', gap: 12 }}>
                   {idea.status === 'pending' && (
-                    <button
-                      onClick={() => handleClaim(idea.id)}
-                      style={{
-                        flex: 1,
-                        padding: '10px 16px',
-                        background: 'rgba(45, 212, 191, 0.15)',
-                        border: '1px solid rgba(45, 212, 191, 0.3)',
-                        borderRadius: 8,
-                        color: '#2dd4bf',
-                        fontSize: '0.9rem',
-                        fontWeight: 500,
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Claim & Structure →
-                    </button>
+                    <>
+                      <button
+                        onClick={() => handleClaim(idea.id)}
+                        style={{
+                          flex: 1,
+                          padding: '10px 16px',
+                          background: 'rgba(251, 191, 36, 0.15)',
+                          border: '1px solid rgba(251, 191, 36, 0.3)',
+                          borderRadius: 8,
+                          color: '#fbbf24',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          fontSize: '0.9rem'
+                        }}
+                      >
+                        Claim to Review
+                      </button>
+                      <button
+                        onClick={() => onClaimAndStructure && onClaimAndStructure(idea)}
+                        style={{
+                          flex: 1,
+                          padding: '10px 16px',
+                          background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
+                          border: 'none',
+                          borderRadius: 8,
+                          color: '#0a0f1a',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          fontSize: '0.9rem'
+                        }}
+                      >
+                        Structure Now →
+                      </button>
+                    </>
                   )}
 
                   {idea.status === 'claimed' && (
