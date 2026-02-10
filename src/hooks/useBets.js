@@ -190,9 +190,9 @@ const createBet = async (betData, ideaId = null) => {
         outcome: null,
         status: null,
         createdAt: data.created_at,
-        approachScore: scores?.approach?.score,
-        potentialScore: scores?.potential?.score,
-        fitScore: scores?.fit?.score,
+  approachScore: scores?.approach?.score ?? null,
+  potentialScore: scores?.potential?.score ?? null,
+  fitScore: scores?.fit?.score ?? null,
         scoringRationale: scores
       }
       setBets(prev => [newBet, ...prev])
