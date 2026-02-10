@@ -2997,118 +2997,98 @@ const avgScore = betsWithScores.length > 0
   );
 })}
         
-// COMPLETED BETS SECTION - Replace the completed bets mapping with this
-
-{completedBets.map((bet, i) => {
-  const status = bet.status || bet.outcome;
-  
-  const statusConfig = {
-    succeeded: {
-      label: 'SUCCEEDED',
-      color: '#22c55e',
-      bg: 'rgba(34, 197, 94, 0.15)',
-      border: 'rgba(34, 197, 94, 0.3)'
-    },
-    partial: {
-      label: 'PARTIAL',
-      color: '#fbbf24',
-      bg: 'rgba(251, 191, 36, 0.15)',
-      border: 'rgba(251, 191, 36, 0.3)'
-    },
-    failed: {
-      label: 'FAILED',
-      color: '#f87171',
-      bg: 'rgba(248, 113, 113, 0.15)',
-      border: 'rgba(248, 113, 113, 0.3)'
-    },
-    inconclusive: {
-      label: 'INCONCLUSIVE',
-      color: '#64748b',
-      bg: 'rgba(100, 116, 139, 0.15)',
-      border: 'rgba(100, 116, 139, 0.3)'
-    },
-    never_shipped: {
-      label: 'NEVER SHIPPED',
-      color: '#475569',
-      bg: 'rgba(71, 85, 105, 0.15)',
-      border: 'rgba(71, 85, 105, 0.3)'
-    },
-    unknown: {
-      label: 'UNKNOWN',
-      color: '#64748b',
-      bg: 'rgba(100, 116, 139, 0.15)',
-      border: 'rgba(100, 116, 139, 0.3)'
-    }
-  };
-  
-  const config = statusConfig[status] || statusConfig.unknown;
-  
-  return (
-    <div key={bet.id || i} style={{
-      background: 'rgba(255,255,255,0.03)',
-      border: '1px solid rgba(255,255,255,0.1)',
-      borderRadius: 12,
-      padding: 20,
-      marginBottom: 12
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-        <div style={{ color: '#cbd5e1', flex: 1, lineHeight: 1.5 }}>{bet.hypothesis || bet.description}</div>
-        <span style={{ 
-          padding: '6px 12px',
-          borderRadius: 6,
-          fontSize: '0.7rem',
-          fontWeight: 700,
-          background: config.bg,
-          color: config.color,
-          border: `1px solid ${config.border}`,
-          flexShrink: 0,
-          marginLeft: 12,
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px'
-        }}>
-          {config.label}
-        </span>
-      </div>
-      {bet.learned && (
-        <div style={{ 
-          marginTop: 12, 
-          paddingTop: 12, 
-          borderTop: '1px solid rgba(255,255,255,0.05)',
-          fontSize: '0.85rem'
-        }}>
-          <span style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Learned: </span>
-          <span style={{ color: '#94a3b8' }}>{bet.learned}</span>
-        </div>
-      )}
-    </div>
-  );
-})}
+{/* Completed bets */}
+        {completedBets.length > 0 && (
+          <div>
+            <h2 style={{ color: '#f1f5f9', fontSize: '1.25rem', fontWeight: 600, marginBottom: 16 }}>
+              Completed Bets ({completedBets.length})
+            </h2>
+            {completedBets.map((bet, i) => {
+              const status = bet.status || bet.outcome;
+              
+              const statusConfig = {
+                succeeded: {
+                  label: 'SUCCEEDED',
+                  color: '#22c55e',
+                  bg: 'rgba(34, 197, 94, 0.15)',
+                  border: 'rgba(34, 197, 94, 0.3)'
+                },
+                partial: {
+                  label: 'PARTIAL',
+                  color: '#fbbf24',
+                  bg: 'rgba(251, 191, 36, 0.15)',
+                  border: 'rgba(251, 191, 36, 0.3)'
+                },
+                failed: {
+                  label: 'FAILED',
+                  color: '#f87171',
+                  bg: 'rgba(248, 113, 113, 0.15)',
+                  border: 'rgba(248, 113, 113, 0.3)'
+                },
+                inconclusive: {
+                  label: 'INCONCLUSIVE',
+                  color: '#64748b',
+                  bg: 'rgba(100, 116, 139, 0.15)',
+                  border: 'rgba(100, 116, 139, 0.3)'
+                },
+                never_shipped: {
+                  label: 'NEVER SHIPPED',
+                  color: '#475569',
+                  bg: 'rgba(71, 85, 105, 0.15)',
+                  border: 'rgba(71, 85, 105, 0.3)'
+                },
+                unknown: {
+                  label: 'UNKNOWN',
+                  color: '#64748b',
+                  bg: 'rgba(100, 116, 139, 0.15)',
+                  border: 'rgba(100, 116, 139, 0.3)'
+                }
+              };
+              
+              const config = statusConfig[status] || statusConfig.unknown;
+              
+              return (
+                <div key={bet.id || i} style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 12,
+                  padding: 20,
+                  marginBottom: 12
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                    <div style={{ color: '#cbd5e1', flex: 1, lineHeight: 1.5 }}>{bet.hypothesis || bet.description}</div>
+                    <span style={{ 
+                      padding: '6px 12px',
+                      borderRadius: 6,
+                      fontSize: '0.7rem',
+                      fontWeight: 700,
+                      background: config.bg,
+                      color: config.color,
+                      border: `1px solid ${config.border}`,
+                      flexShrink: 0,
+                      marginLeft: 12,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px'
+                    }}>
+                      {config.label}
+                    </span>
+                  </div>
+                  {bet.learned && (
+                    <div style={{ 
+                      marginTop: 12, 
+                      paddingTop: 12, 
+                      borderTop: '1px solid rgba(255,255,255,0.05)',
+                      fontSize: '0.85rem'
+                    }}>
+                      <span style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Learned: </span>
+                      <span style={{ color: '#94a3b8' }}>{bet.learned}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
-        
-        {safeBets.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-            <div style={{ color: '#64748b', marginBottom: 24 }}>No bets yet. Submit your first one!</div>
-            <button
-              onClick={onNewBet}
-              style={{
-                padding: '14px 32px',
-                background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
-                border: 'none',
-                borderRadius: 10,
-                color: '#0a0f1a',
-                fontWeight: 600,
-                cursor: 'pointer'
-              }}
-            >
-              Submit a Bet →
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 // ============================================
 // MAIN APP
