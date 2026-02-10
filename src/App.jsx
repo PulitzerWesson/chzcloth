@@ -32,7 +32,7 @@ function AppHeader({ isLoggedIn, onDashboardClick, onLogoClick, showTeamsBanner 
           gap: 12
         }}>
           <span style={{ color: '#cbd5e1', fontSize: '0.85rem' }}>
-            🚀 <strong style={{ color: '#2dd4bf' }}>CHZCLOTH for Teams</strong> — Decision Intelligence for Teams That Build.
+            🚀 <strong style={{ color: '#2dd4bf' }}>Welcome Project Visitors</strong> — Glad you're here, it's a work in progress.
           </span>
           <a 
             style={{ 
@@ -42,7 +42,7 @@ function AppHeader({ isLoggedIn, onDashboardClick, onLogoClick, showTeamsBanner 
               textDecoration: 'none'
             }}
           >
-            Coming Soon
+            
           </a>
           <button
             onClick={() => setBannerDismissed(true)}
