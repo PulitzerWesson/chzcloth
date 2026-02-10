@@ -99,7 +99,15 @@ const transformedBets = (betsData || []).map(bet => {
           approachScore: bet.approach_score,
           potentialScore: bet.potential_score,
           fitScore: bet.fit_score,
-          scoringRationale: bet.scoring_rationale
+          scoringRationale: bet.scoring_rationale,
+        approvalStatus: bet.approval_status,
+        rejectionReason: bet.rejection_reason,
+        approvedAt: bet.approved_at,
+        approvedBy: bet.approved_by,
+        rejectedAt: bet.rejected_at,
+        rejectedBy: bet.rejected_by,
+        ideaId: bet.idea_id,
+        structuredBy: bet.structured_by
         }
       })
 
@@ -278,6 +286,104 @@ const createBet = async (betData, ideaId = null) => {
     }
   }
 
+  const approveBet = async (betId) => {
+  if (!user) return { error: { message: 'Not authenticated' } }
+
+  try {
+    // Update bet approval status
+    const { data: betData, error: betError } = await supabase
+      .from('bets')
+      .update({ 
+        approval_status: 'approved',
+        approved_at: new Date().toISOString(),
+        approved_by: user.id
+      })
+      .eq('id', betId)
+      .select()
+      .single()
+
+    if (betError) throw betError
+
+    // If bet was linked to an idea, update idea status too
+    if (betData.idea_id) {
+      const { error: ideaError } = await supabase
+        .from('ideas')
+        .update({ 
+          status: 'approved',
+          approved_at: new Date().toISOString(),
+          approved_by: user.id
+        })
+        .eq('id', betData.idea_id)
+
+      if (ideaError) {
+        console.error('Error updating idea status:', ideaError)
+      }
+    }
+
+    // Update local state
+    setBets(prev => prev.map(bet => 
+      bet.id === betId 
+        ? { ...bet, approvalStatus: 'approved' }
+        : bet
+    ))
+
+    return { data: betData, error: null }
+  } catch (err) {
+    console.error('Error approving bet:', err)
+    return { data: null, error: err }
+  }
+}
+
+  const rejectBet = async (betId, reason) => {
+  if (!user) return { error: { message: 'Not authenticated' } }
+
+  try {
+    // Update bet approval status
+    const { data: betData, error: betError } = await supabase
+      .from('bets')
+      .update({ 
+        approval_status: 'rejected',
+        rejection_reason: reason,
+        rejected_at: new Date().toISOString(),
+        rejected_by: user.id
+      })
+      .eq('id', betId)
+      .select()
+      .single()
+
+    if (betError) throw betError
+
+    // If bet was linked to an idea, update idea status too
+    if (betData.idea_id) {
+      const { error: ideaError } = await supabase
+        .from('ideas')
+        .update({ 
+          status: 'rejected',
+          rejection_reason: reason,
+          rejected_at: new Date().toISOString(),
+          rejected_by: user.id
+        })
+        .eq('id', betData.idea_id)
+
+      if (ideaError) {
+        console.error('Error updating idea status:', ideaError)
+      }
+    }
+
+    // Update local state
+    setBets(prev => prev.map(bet => 
+      bet.id === betId 
+        ? { ...bet, approvalStatus: 'rejected', rejectionReason: reason }
+        : bet
+    ))
+
+    return { data: betData, error: null }
+  } catch (err) {
+    console.error('Error rejecting bet:', err)
+    return { data: null, error: err }
+  }
+}
+  
   const deleteBet = async (betId) => {
     if (!user) return { error: { message: 'Not authenticated' } }
 
@@ -339,6 +445,8 @@ const createBet = async (betData, ideaId = null) => {
     deleteBet,
     refreshBets: fetchBets,
     getStats,
-    scoreBet  // Export for preview scoring without saving
+    scoreBet,
+     approveBet,
+  rejectBet
   }
 }
