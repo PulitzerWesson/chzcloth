@@ -3050,13 +3050,23 @@ const { ideas, loading: ideasLoading, updateIdeaStatus, claimIdea, submitIdea, u
   };
   
 const handleBetComplete = async (betData, ideaId = null) => {
-  // Check if this is a marketplace bet or regular bet
   if (isMarketplaceBet) {
-    // Marketplace bet - just show score, let them refine or submit
-    setCurrentBet(betData);
+    // Marketplace bet - score it first, then show score screen
+    const scores = await scoreBet(betData, {
+      name: currentOrg?.name,
+      strategy: currentOrg?.strategy,
+      industry: currentOrg?.industry
+    });
+    
+    const enrichedBet = {
+      ...betData,
+      ...scores
+    };
+    
+    setCurrentBet(enrichedBet);
     setScreen('score');
   } else {
-    // Regular bet - original flow (goes to bets table)
+    // Regular bet - createBet handles scoring internally
     const { data, error } = await createBet(betData, ideaId);
     if (error) {
       console.error('Error creating bet:', error);
