@@ -10,7 +10,7 @@ import { OrganizationSetup, ContextCheck, shouldShowContextCheck, OrgSwitcher } 
 import IdeaSubmission from './components/IdeaSubmission';
 import IdeasQueue from './components/IdeasQueue';
 import SponsorReview from './components/SponsorReview';
-import NewEntryForm from './components/NewEntryForm';
+import EntryTypeChooser from './components/EntryTypeChooser';
 
 
 // ============================================
@@ -3036,7 +3036,6 @@ const { ideas, loading: ideasLoading, updateIdeaStatus, claimIdea, submitIdea, u
       setScreen('bet');
     }
   };
-  const [newEntryMode, setNewEntryMode] = useState(false);
   const handleOrgSetupComplete = async ({ organization, userOrg }) => {
     const { error } = await createOrganization(organization, userOrg);
     if (error) {
@@ -3264,6 +3263,22 @@ const handleRejectBet = async (betId, reason) => {
               ideaFromQueue={currentBet?.fromIdea || null}
             />
           )}
+      {screen === 'choose_entry_type' && (
+  <EntryTypeChooser
+    onSelect={(type) => {
+      if (type === 'bet') {
+        setScreen('bet');
+      } else if (type === 'idea') {
+        alert('Idea submission coming soon!');
+        setScreen('ideas_queue');
+      } else if (type === 'signal') {
+        alert('Signal submission coming soon!');
+        setScreen('ideas_queue');
+      }
+    }}
+    onCancel={() => setScreen('ideas_queue')}
+  />
+)}
       {screen === 'score' && <ScoreResult profile={profile} bet={currentBet} onNewBet={handleNewBet} onSeedBaseline={handleSeedBaseline} onSkipToDashboard={handleSkipToDashboard} />}
       {screen === 'baseline' && <SeedBaseline profile={profile} onComplete={handleBaselineComplete} />}
       {screen === 'record_outcome' && <RecordOutcome bet={betToRecord} onComplete={handleOutcomeComplete} onCancel={handleOutcomeCancel} />}
@@ -3377,7 +3392,7 @@ const handleRejectBet = async (betId, reason) => {
             <div style={{ color: '#94a3b8' }}>Priority Queue content coming soon</div>
           )}
           
-{screen === 'ideas_queue' && !newEntryMode && (
+{screen === 'ideas_queue' && (
   <IdeasQueue 
     ideas={ideas || []}
     loading={ideasLoading}
@@ -3388,21 +3403,10 @@ const handleRejectBet = async (betId, reason) => {
     onClaimAndStructure={handleClaimAndStructure}
     onStructureBet={handleStructureBetFromIdea}
     setScreen={setScreen}
-    setNewEntryMode={setNewEntryMode}
   />
 )}
     
-    {screen === 'ideas_queue' && newEntryMode && (
-      <NewEntryForm
-        currentOrg={currentOrg}
-        currentUser={user}
-        onCancel={() => setNewEntryMode(false)}
-        onSuccess={(entry) => {
-          setNewEntryMode(false);
-          alert('Entry submitted to marketplace!');
-        }}
-      />
-    )}
+
           
         </div>
       </div>
