@@ -3056,6 +3056,41 @@ const handleBetComplete = async (betData, ideaId = null) => {
     setScreen('score');
   }
 };
+
+  const handleMarketplaceBetComplete = async (betData) => {
+  // Convert bet to marketplace entry
+  const ideaEntry = {
+    title: betData.hypothesis || 'Untitled Bet',
+    description: `Hypothesis: ${betData.hypothesis}\n\nMetrics: ${betData.metrics}\n\nEffort: ${betData.effort}`,
+    entry_type: 'bet',
+    // Include the full bet data for later
+    bet_data: JSON.stringify({
+      hypothesis: betData.hypothesis,
+      metrics: betData.metrics,
+      effort: betData.effort,
+      approachScore: betData.approachScore,
+      potentialScore: betData.potentialScore,
+      fitScore: betData.fitScore,
+      scoringRationale: betData.scoringRationale
+    }),
+    viability_score: betData.approachScore,
+    relevance_score: betData.fitScore,
+    overall_score: Math.round((betData.approachScore + betData.potentialScore + betData.fitScore) / 3),
+    scoring_rationale: betData.scoringRationale ? 
+      `Approach: ${betData.scoringRationale.approach?.rationale}\nPotential: ${betData.scoringRationale.potential?.rationale}\nFit: ${betData.scoringRationale.fit?.rationale}` 
+      : null
+  };
+
+  const { data, error } = await submitIdea(ideaEntry);
+  
+  if (error) {
+    console.error('Error submitting bet to marketplace:', error);
+    alert('Error submitting bet. Please try again.');
+  } else {
+    alert('Bet submitted to marketplace! Others can now sponsor it.');
+    setScreen('ideas_queue');
+  }
+};
   
   const handleSeedBaseline = () => {
     setScreen('baseline');
@@ -3255,14 +3290,14 @@ const handleRejectBet = async (betId, reason) => {
       {screen === 'email' && <EmailAuth onComplete={handleEmailSubmit} emailSent={emailSent} />}
       {screen === 'profile' && <ProfileSetup onComplete={handleProfileComplete} />}
       {screen === 'orgsetup' && <OrganizationSetup onComplete={handleOrgSetupComplete} />}
-      {screen === 'bet' && (
-            <BetSubmission 
-              profile={profile} 
-              currentOrg={currentOrg} 
-              onComplete={handleBetComplete}
-              ideaFromQueue={currentBet?.fromIdea || null}
-            />
-          )}
+{screen === 'bet' && (
+  <BetSubmission 
+    profile={profile} 
+    currentOrg={currentOrg} 
+    onComplete={currentBet?.fromIdea ? handleBetComplete : handleMarketplaceBetComplete}
+    ideaFromQueue={currentBet?.fromIdea || null}
+  />
+)}
       {screen === 'choose_entry_type' && (
   <EntryTypeChooser
     onSelect={(type) => {
