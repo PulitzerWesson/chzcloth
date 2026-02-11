@@ -69,8 +69,35 @@ Return JSON only:
       return res.status(500).json({ error: 'Invalid API response format' });
     }
     
-    const scores = JSON.parse(jsonMatch[0]);
-    return res.status(200).json(scores);
+const scores = JSON.parse(jsonMatch[0]);
+
+// Strip citation tags from rationale text
+const stripCitations = (text) => {
+  if (!text) return text;
+  return text.replace(/<cite[^>]*>|<\/cite>/g, '');
+};
+
+// Clean up all rationale fields
+if (scores.approach?.rationale) {
+  scores.approach.rationale = stripCitations(scores.approach.rationale);
+}
+if (scores.potential?.rationale) {
+  scores.potential.rationale = stripCitations(scores.potential.rationale);
+}
+if (scores.fit?.rationale) {
+  scores.fit.rationale = stripCitations(scores.fit.rationale);
+}
+if (scores.market_context) {
+  scores.market_context = stripCitations(scores.market_context);
+}
+if (scores.suggestion?.reasoning) {
+  scores.suggestion.reasoning = stripCitations(scores.suggestion.reasoning);
+}
+if (scores.suggestion?.market_evidence) {
+  scores.suggestion.market_evidence = stripCitations(scores.suggestion.market_evidence);
+}
+
+return res.status(200).json(scores);
     
   } catch (error) {
     console.error('Scoring error:', error);
