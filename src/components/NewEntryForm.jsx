@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { supabase } from '../config/supabaseClient';
+import { useIdeas } from '../hooks/useIdeas';
 
 function NewEntryForm({ currentOrg, currentUser, onCancel, onSuccess }) {
+  const { submitIdea } = useIdeas(currentOrg?.orgId);
   const [entryType, setEntryType] = useState('idea'); // signal, idea, bet
   const [formData, setFormData] = useState({
     title: '',
@@ -22,25 +23,19 @@ function NewEntryForm({ currentOrg, currentUser, onCancel, onSuccess }) {
     setSubmitting(true);
 
     try {
-      const { data, error } = await supabase
-        .from('ideas')
-        .insert([{
-          org_id: currentOrg.orgId,
-          entry_type: entryType,
-          title: formData.title,
-          description: formData.description,
-          problem: formData.problem || null,
-          expected_impact: formData.expectedImpact || null,
-          submitted_by: currentUser.id,
-          submitted_by_email: currentUser.email,
-          status: 'pending',
-          created_at: new Date().toISOString()
-        }])
-        .select();
+      const ideaData = {
+        title: formData.title,
+        description: formData.description,
+        problem: formData.problem || null,
+        expectedImpact: formData.expectedImpact || null,
+        entry_type: entryType
+      };
+
+      const { data, error } = await submitIdea(ideaData);
 
       if (error) throw error;
 
-      if (onSuccess) onSuccess(data[0]);
+      if (onSuccess) onSuccess(data);
       
       // Reset form
       setFormData({
