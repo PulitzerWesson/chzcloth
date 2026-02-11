@@ -2663,10 +2663,14 @@ const avgScore = betsWithScores.length > 0
         fontSize: '0.95rem',
         fontWeight: 500,
         cursor: 'pointer',
-        transition: 'all 0.2s'
+        transition: 'all 0.2s',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px'
       }}
     >
-      ◆ Contributors
+      <span style={{ color: screen === 'dashboard' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>◆</span>
+      Contributors
     </button>
 
     <button
@@ -2680,10 +2684,14 @@ const avgScore = betsWithScores.length > 0
         fontSize: '0.95rem',
         fontWeight: 500,
         cursor: 'pointer',
-        transition: 'all 0.2s'
+        transition: 'all 0.2s',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px'
       }}
     >
-      ▭ Priority Queue
+      <span style={{ color: screen === 'priority_queue' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>▤</span>
+      Priority Queue
     </button>
 
     <button
@@ -2697,29 +2705,17 @@ const avgScore = betsWithScores.length > 0
         fontSize: '0.95rem',
         fontWeight: 500,
         cursor: 'pointer',
-        transition: 'all 0.2s'
+        transition: 'all 0.2s',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px'
       }}
     >
-      ◯ Marketplace
+      <span style={{ color: screen === 'ideas_queue' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>◎</span>
+      Marketplace
     </button>
   </div>
 </div>
-
-{screen === 'dashboard' && (
-  <Dashboard 
-    profile={profile} 
-    bets={bets} 
-    currentOrg={currentOrg} 
-    organizations={organizations} 
-    onSwitchOrg={switchCurrentOrg} 
-    onEditMode={updateCompanyMode} 
-    onAddOrg={() => setScreen('orgsetup')} 
-    onNewBet={handleNewBet} 
-    email={user?.email} 
-    onRecordOutcome={handleRecordOutcome}
-    setScreen={setScreen}
-  />
-)}
         {/* Stats cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 16, marginBottom: 24 }}>
           <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
