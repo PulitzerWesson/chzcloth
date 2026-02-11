@@ -11,6 +11,9 @@ import IdeaSubmission from './components/IdeaSubmission';
 import IdeasQueue from './components/IdeasQueue';
 import SponsorReview from './components/SponsorReview';
 import EntryTypeChooser from './components/EntryTypeChooser';
+import SignalSubmission from './components/SignalSubmission';
+import SuggestionCard from './components/SuggestionCard';
+import { scoreBet, formatOrgContext } from './utils/aiScoring';
 
 
 // ============================================
@@ -2966,6 +2969,7 @@ const { bets, loading: betsLoading, createBet, createPastBets, recordOutcome, sc
 const { ideas, loading: ideasLoading, updateIdeaStatus, claimIdea, submitIdea, unclaimIdea } = useIdeas(currentOrg?.orgId);
   const [screen, setScreen] = useState('landing');
   const [currentBet, setCurrentBet] = useState(null);
+  const [isMarketplaceBet, setIsMarketplaceBet] = useState(false);
   const [betToRecord, setBetToRecord] = useState(null);
   const [emailSent, setEmailSent] = useState(false);
   
@@ -3047,13 +3051,59 @@ const { ideas, loading: ideasLoading, updateIdeaStatus, claimIdea, submitIdea, u
   };
   
 const handleBetComplete = async (betData, ideaId = null) => {
-  const { data, error } = await createBet(betData, ideaId);
-  if (error) {
-    console.error('Error creating bet:', error);
-    alert('Error saving bet. Please try again.');
-  } else {
-    setCurrentBet(data);
+  // Check if this is a marketplace bet or regular bet
+  if (isMarketplaceBet) {
+    // Marketplace bet - just show score, let them refine or submit
+    setCurrentBet(betData);
     setScreen('score');
+  } else {
+    // Regular bet - original flow (goes to bets table)
+    const { data, error } = await createBet(betData, ideaId);
+    if (error) {
+      console.error('Error creating bet:', error);
+      alert('Error saving bet. Please try again.');
+    } else {
+      setCurrentBet(data);
+      setScreen('score');
+    }
+  }
+};
+
+  const handleRefineBet = () => {
+  // User wants to refine their bet - go back to form with current data
+  setScreen('bet');
+};
+
+const handleSubmitToMarketplace = async () => {
+  const betData = currentBet;
+  
+  // Convert bet to marketplace entry
+  const ideaEntry = {
+    title: betData.hypothesis || 'Untitled Bet',
+    description: `Hypothesis: ${betData.hypothesis}\n\nMetrics: ${betData.metrics || betData.prediction}\n\nEffort: ${betData.effort || betData.estimatedEffort}`,
+    entry_type: 'bet',
+    bet_data: JSON.stringify(betData),
+    viability_score: betData.approachScore,
+    relevance_score: betData.fitScore,
+    overall_score: Math.round((betData.approachScore + betData.potentialScore + betData.fitScore) / 3),
+    scoring_rationale: betData.scoringRationale ? 
+      `Approach: ${betData.scoringRationale.approach?.rationale}\nPotential: ${betData.scoringRationale.potential?.rationale}\nFit: ${betData.scoringRationale.fit?.rationale}` 
+      : null,
+    market_context: betData.scoringRationale?.marketContext,
+    risk_factors: betData.scoringRationale?.riskFactors,
+    success_factors: betData.scoringRationale?.successFactors,
+    refinement_count: betData.refinementCount || 0
+  };
+
+  const { data, error } = await submitIdea(ideaEntry);
+  
+  if (error) {
+    console.error('Error submitting bet to marketplace:', error);
+    alert('Error submitting bet. Please try again.');
+  } else {
+    setCurrentBet(null);
+    setIsMarketplaceBet(false);
+    setScreen('ideas_queue');
   }
 };
 
@@ -3290,12 +3340,54 @@ const handleRejectBet = async (betId, reason) => {
       {screen === 'email' && <EmailAuth onComplete={handleEmailSubmit} emailSent={emailSent} />}
       {screen === 'profile' && <ProfileSetup onComplete={handleProfileComplete} />}
       {screen === 'orgsetup' && <OrganizationSetup onComplete={handleOrgSetupComplete} />}
+      {screen === 'choose_entry_type' && (
+  <EntryTypeChooser
+    onSelect={(type) => {
+      if (type === 'bet') {
+        setIsMarketplaceBet(true);
+        setCurrentBet(null);
+        setScreen('bet');
+      } else if (type === 'idea') {
+        setScreen('submit_idea');
+      } else if (type === 'signal') {
+        setScreen('submit_signal');
+      }
+    }}
+    onCancel={() => setScreen('ideas_queue')}
+  />
+)}
 {screen === 'bet' && (
   <BetSubmission 
     profile={profile} 
     currentOrg={currentOrg} 
-    onComplete={currentBet?.fromIdea ? handleBetComplete : handleMarketplaceBetComplete}
+    onComplete={handleBetComplete}
     ideaFromQueue={currentBet?.fromIdea || null}
+    initialBetData={currentBet}
+  />
+)}
+
+      {screen === 'submit_signal' && (
+  <SignalSubmission
+    currentOrg={currentOrg}
+    currentUser={user}
+    onSubmit={async (signalData) => {
+      await submitIdea(signalData);
+      setScreen('ideas_queue');
+    }}
+    onCancel={() => setScreen('ideas_queue')}
+  />
+)}
+
+{screen === 'submit_idea' && (
+  <IdeaSubmission
+    currentOrg={currentOrg}
+    currentUser={user}
+    ideas={ideas}
+    onSubmit={async (ideaData) => {
+      await submitIdea(ideaData);
+      setScreen('ideas_queue');
+    }}
+    onCancel={() => setScreen('ideas_queue')}
   />
 )}
       {screen === 'choose_entry_type' && (
@@ -3314,7 +3406,18 @@ const handleRejectBet = async (betId, reason) => {
     onCancel={() => setScreen('ideas_queue')}
   />
 )}
-      {screen === 'score' && <ScoreResult profile={profile} bet={currentBet} onNewBet={handleNewBet} onSeedBaseline={handleSeedBaseline} onSkipToDashboard={handleSkipToDashboard} />}
+{screen === 'score' && (
+  <ScoreResult 
+    profile={profile} 
+    bet={currentBet} 
+    onNewBet={handleNewBet} 
+    onSeedBaseline={handleSeedBaseline} 
+    onSkipToDashboard={handleSkipToDashboard}
+    isMarketplaceBet={isMarketplaceBet}
+    onRefine={handleRefineBet}
+    onSubmitToMarketplace={handleSubmitToMarketplace}
+  />
+)}
       {screen === 'baseline' && <SeedBaseline profile={profile} onComplete={handleBaselineComplete} />}
       {screen === 'record_outcome' && <RecordOutcome bet={betToRecord} onComplete={handleOutcomeComplete} onCancel={handleOutcomeCancel} />}
 {(screen === 'dashboard' || screen === 'ideas_queue' || screen === 'priority_queue') && (
