@@ -10,22 +10,28 @@ export function useBets(orgId, orgMode) {
   const fetchingRef = useRef(false)
 
   // AI scoring function
-  const scoreBet = async (betData) => {
-    try {
-      const response = await fetch('/api/score-bet', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bet: betData, orgMode: orgMode || 'growth' })
-      });
-      
-      if (!response.ok) throw new Error('Scoring failed');
-      
-      return await response.json();
-    } catch (err) {
-      console.error('Scoring error:', err);
-      return null;
-    }
-  };
+const scoreBet = async (betData, orgContext) => {
+  try {
+    const response = await fetch('/api/score-bet', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        bet: betData, 
+        orgMode: orgMode || 'growth',
+        orgName: orgContext?.name,
+        orgStrategy: orgContext?.strategy,
+        orgIndustry: orgContext?.industry
+      })
+    });
+    
+    if (!response.ok) throw new Error('Scoring failed');
+    
+    return await response.json();
+  } catch (err) {
+    console.error('Scoring error:', err);
+    return null;
+  }
+};
 
   const fetchBets = useCallback(async () => {
     if (!user) {
@@ -132,7 +138,11 @@ const createBet = async (betData, ideaId = null) => {
 
     try {
       // Get AI scores first
-      const scores = await scoreBet(betData);
+      const scores = await scoreBet(betData, { 
+  name: orgId, 
+  strategy: null, 
+  industry: null 
+});
 
       const { data, error } = await supabase
         .from('bets')
