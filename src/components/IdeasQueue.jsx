@@ -1,33 +1,28 @@
 import React, { useState } from 'react';
-import { useIdeas } from '../hooks/useIdeas';
 
-function IdeasQueue({ currentOrg, onClaimIdea, onClaimAndStructure, onStructureBet, setScreen, setNewEntryMode }) {
-  const { ideas, loading, claimIdea, unclaimIdea, getStats } = useIdeas(currentOrg?.orgId);
+function IdeasQueue({ 
+  ideas = [], 
+  loading = false,
+  currentOrg, 
+  currentUser, 
+  onClaimIdea, 
+  onUnclaimIdea,
+  onClaimAndStructure, 
+  onStructureBet, 
+  setScreen
+}) {
   const [filter, setFilter] = useState('all'); // all, signal, idea, bet
   const [expandedRationale, setExpandedRationale] = useState(null);
-  
-  const stats = getStats();
   
   // Filter by entry_type
   const filteredIdeas = filter === 'all' 
     ? ideas 
     : ideas.filter(i => i.entry_type === filter);
 
-  const handleClaim = async (ideaId) => {
-    const { error } = await claimIdea(ideaId);
-    if (error) {
-      alert('Error claiming entry: ' + error.message);
-    } else if (onClaimIdea) {
-      onClaimIdea(ideaId);
-    }
-  };
-
-  const handleUnclaim = async (ideaId) => {
-    const { error } = await unclaimIdea(ideaId);
-    if (error) {
-      alert('Error unclaiming entry: ' + error.message);
-    }
-  };
+  // Count by entry type
+  const signalCount = ideas.filter(i => i.entry_type === 'signal').length;
+  const ideaCount = ideas.filter(i => i.entry_type === 'idea').length;
+  const betCount = ideas.filter(i => i.entry_type === 'bet').length;
 
   if (loading) {
     return (
@@ -36,11 +31,6 @@ function IdeasQueue({ currentOrg, onClaimIdea, onClaimAndStructure, onStructureB
       </div>
     );
   }
-
-  // Count by entry type
-  const signalCount = ideas.filter(i => i.entry_type === 'signal').length;
-  const ideaCount = ideas.filter(i => i.entry_type === 'idea').length;
-  const betCount = ideas.filter(i => i.entry_type === 'bet').length;
 
   // Entry type badge component
   const EntryTypeBadge = ({ type }) => {
@@ -115,7 +105,7 @@ function IdeasQueue({ currentOrg, onClaimIdea, onClaimAndStructure, onStructureB
           </p>
         </div>
         <button
-          onClick={() => setNewEntryMode(true)}
+          onClick={() => setScreen('choose_entry_type')}
           style={{
             padding: '10px 20px',
             background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
@@ -331,7 +321,7 @@ function IdeasQueue({ currentOrg, onClaimIdea, onClaimAndStructure, onStructureB
                   {idea.status === 'pending' && (
                     <>
                       <button
-                        onClick={() => handleClaim(idea.id)}
+                        onClick={() => onClaimIdea && onClaimIdea(idea.id)}
                         style={{
                           flex: 1,
                           padding: '10px 16px',
@@ -368,7 +358,7 @@ function IdeasQueue({ currentOrg, onClaimIdea, onClaimAndStructure, onStructureB
                   {idea.status === 'claimed' && (
                     <>
                       <button
-                        onClick={() => handleUnclaim(idea.id)}
+                        onClick={() => onUnclaimIdea && onUnclaimIdea(idea.id)}
                         style={{
                           padding: '10px 16px',
                           background: 'rgba(255,255,255,0.05)',
