@@ -2642,100 +2642,68 @@ const avgScore = betsWithScores.length > 0
           />
         </div>
         
-        {/* Action header */}
+{/* Clean Tab Navigation */}
+<div style={{
+  borderBottom: '1px solid rgba(255,255,255,0.1)',
+  marginBottom: 40
+}}>
+  <div style={{
+    display: 'flex',
+    gap: 40,
+    paddingLeft: 0
+  }}>
+    <button
+      onClick={() => setScreen('dashboard')}
+      style={{
+        background: 'transparent',
+        border: 'none',
+        borderBottom: screen === 'dashboard' ? '2px solid #7dd3fc' : '2px solid transparent',
+        padding: '12px 0',
+        color: screen === 'dashboard' ? '#fff' : 'rgba(255,255,255,0.5)',
+        fontSize: '0.95rem',
+        fontWeight: 500,
+        cursor: 'pointer',
+        transition: 'all 0.2s'
+      }}
+    >
+      ◆ Contributors
+    </button>
 
-<div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 32 }}>
-  {/* New Bet */}
-  <button 
-    onClick={() => setScreen('bet')}
-    style={{
-      padding: '16px 20px',
-      background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
-      border: 'none',
-      borderRadius: 10,
-      color: '#0a0f1a',
-      fontWeight: 700,
-      cursor: 'pointer',
-      fontSize: '0.95rem',
-      textAlign: 'left',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 4
-    }}
-  >
-    <div>+ New Bet</div>
-    <div style={{ fontSize: '0.7rem', opacity: 0.7 }}>Create prediction</div>
-  </button>
+    <button
+      onClick={() => setScreen('priority_queue')}
+      style={{
+        background: 'transparent',
+        border: 'none',
+        borderBottom: screen === 'priority_queue' ? '2px solid #7dd3fc' : '2px solid transparent',
+        padding: '12px 0',
+        color: screen === 'priority_queue' ? '#fff' : 'rgba(255,255,255,0.5)',
+        fontSize: '0.95rem',
+        fontWeight: 500,
+        cursor: 'pointer',
+        transition: 'all 0.2s'
+      }}
+    >
+      ▭ Priority Queue
+    </button>
 
-  {/* Submit Idea */}
-  <button 
-    onClick={() => setScreen('submit_idea')}
-    style={{
-      padding: '16px 20px',
-      background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-      border: 'none',
-      borderRadius: 10,
-      color: '#0a0f1a',
-      fontWeight: 700,
-      cursor: 'pointer',
-      fontSize: '0.95rem',
-      textAlign: 'left',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 4
-    }}
-  >
-    <div>💡 Submit Idea</div>
-    <div style={{ fontSize: '0.7rem', opacity: 0.7 }}>Share suggestion</div>
-  </button>
-
-  {/* Ideas Queue */}
-  <button 
-    onClick={() => setScreen('ideas_queue')}
-    style={{
-      padding: '16px 20px',
-      background: 'linear-gradient(135deg, #7dd3fc 0%, #38bdf8 100%)',
-      border: 'none',
-      borderRadius: 10,
-      color: '#0a0f1a',
-      fontWeight: 700,
-      cursor: 'pointer',
-      fontSize: '0.95rem',
-      textAlign: 'left',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 4
-    }}
-  >
-    <div>📋 Ideas Queue</div>
-    <div style={{ fontSize: '0.7rem', opacity: 0.7 }}>Review ideas</div>
-  </button>
-
-  {/* Review Bets - NEW */}
-  <button 
-    onClick={() => setScreen('sponsor_review')}
-    style={{
-      padding: '16px 20px',
-      background: 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)',
-      border: 'none',
-      borderRadius: 10,
-      color: '#0a0f1a',
-      fontWeight: 700,
-      cursor: 'pointer',
-      fontSize: '0.95rem',
-      textAlign: 'left',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 4
-    }}
-  >
-    <div>⚡ Review Bets</div>
-    <div style={{ fontSize: '0.7rem', opacity: 0.7 }}>
-      {bets.filter(b => b.approvalStatus === 'pending_approval').length} waiting
-    </div>
-  </button>
+    <button
+      onClick={() => setScreen('ideas_queue')}
+      style={{
+        background: 'transparent',
+        border: 'none',
+        borderBottom: screen === 'ideas_queue' ? '2px solid #7dd3fc' : '2px solid transparent',
+        padding: '12px 0',
+        color: screen === 'ideas_queue' ? '#fff' : 'rgba(255,255,255,0.5)',
+        fontSize: '0.95rem',
+        fontWeight: 500,
+        cursor: 'pointer',
+        transition: 'all 0.2s'
+      }}
+    >
+      ◯ Marketplace
+    </button>
+  </div>
 </div>
-
 
 {screen === 'dashboard' && (
   <Dashboard 
@@ -2749,10 +2717,9 @@ const avgScore = betsWithScores.length > 0
     onNewBet={handleNewBet} 
     email={user?.email} 
     onRecordOutcome={handleRecordOutcome}
-    setScreen={setScreen}  // ADD THIS LINE
+    setScreen={setScreen}
   />
 )}
-
         {/* Stats cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 16, marginBottom: 24 }}>
           <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
