@@ -3058,10 +3058,10 @@ const handleBetComplete = async (betData, ideaId = null) => {
       industry: currentOrg?.industry
     });
     
-    const enrichedBet = {
-      ...betData,
-      ...scores
-    };
+const enrichedBet = {
+  ...betData,
+  scoringRationale: scores
+};
     
     setCurrentBet(enrichedBet);
     setScreen('score');
