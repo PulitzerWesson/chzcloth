@@ -3404,14 +3404,6 @@ const handleRejectBet = async (betId, reason) => {
   />
 )}
 
-{screen === 'ideas_queue' && (
-  <IdeasQueue 
-    currentOrg={currentOrg}
-    onClaimIdea={handleClaimIdea}
-    onClaimAndStructure={handleClaimAndStructure}
-    onStructureBet={handleStructureBetFromIdea}
-  />
-)}
     
     </div>
   );
