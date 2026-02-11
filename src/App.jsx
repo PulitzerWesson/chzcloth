@@ -10,6 +10,7 @@ import { OrganizationSetup, ContextCheck, shouldShowContextCheck, OrgSwitcher } 
 import IdeaSubmission from './components/IdeaSubmission';
 import IdeasQueue from './components/IdeasQueue';
 import SponsorReview from './components/SponsorReview';
+import NewEntryForm from './components/NewEntryForm';
 
 
 // ============================================
@@ -3036,7 +3037,7 @@ const { bets, loading: betsLoading, createBet, createPastBets, recordOutcome, sc
       setScreen('bet');
     }
   };
-  
+  const [newEntryMode, setNewEntryMode] = useState(false);
   const handleOrgSetupComplete = async ({ organization, userOrg }) => {
     const { error } = await createOrganization(organization, userOrg);
     if (error) {
@@ -3108,7 +3109,8 @@ const handleBetComplete = async (betData, ideaId = null) => {
   // ADD THESE HANDLERS after handleOutcomeCancel:
 
 const handleSubmitIdea = () => {
-  setScreen('submit_idea');
+  setScreen('ideas_queue');
+  setNewEntryMode(true);
 };
 
 const handleViewIdeasQueue = () => {
@@ -3369,40 +3371,50 @@ const handleRejectBet = async (betId, reason) => {
           email={user?.email} 
           onRecordOutcome={handleRecordOutcome}
           setScreen={setScreen}
-        />
-      )}
-      
-      {screen === 'priority_queue' && (
-        <div style={{ color: '#94a3b8' }}>Priority Queue content coming soon</div>
-      )}
-      
-      {screen === 'ideas_queue' && (
-        <IdeasQueue 
-          currentOrg={currentOrg}
-          onClaimIdea={handleClaimIdea}
-          onClaimAndStructure={handleClaimAndStructure}
-          onStructureBet={handleStructureBetFromIdea}
-        />
-      )}
-      
-    </div>
-  </div>
+            />
+          )}
+          
+          {screen === 'priority_queue' && (
+            <div style={{ color: '#94a3b8' }}>Priority Queue content coming soon</div>
+          )}
+          
+    {screen === 'ideas_queue' && !newEntryMode && (
+      <IdeasQueue 
+        currentOrg={currentOrg}
+        currentUser={user}
+        onClaimIdea={handleClaimIdea}
+        onClaimAndStructure={handleClaimAndStructure}
+        onStructureBet={handleStructureBetFromIdea}
+        setScreen={setScreen}
+        setNewEntryMode={setNewEntryMode}
+      />
+    )}
+    
+    {screen === 'ideas_queue' && newEntryMode && (
+      <NewEntryForm
+        currentOrg={currentOrg}
+        currentUser={user}
+        onCancel={() => setNewEntryMode(false)}
+        onSuccess={(entry) => {
+          setNewEntryMode(false);
+          alert('Entry submitted to marketplace!');
+        }}
+      />
+    )}
+          
+        </div>
+      </div>
+    )}
+          {screen === 'sponsor_review' && (
+      <SponsorReview
+        bets={bets}
+        currentOrg={currentOrg}
+        onApprove={handleApproveBet}
+        onReject={handleRejectBet}
+        onCancel={() => setScreen('dashboard')}
+      />
 )}
-      {screen === 'sponsor_review' && (
-  <SponsorReview
-    bets={bets}
-    currentOrg={currentOrg}
-    onApprove={handleApproveBet}
-    onReject={handleRejectBet}
-    onCancel={() => setScreen('dashboard')}
-  />
-)}
-      {screen === 'submit_idea' && (
-  <IdeaSubmission 
-    onSubmit={handleIdeaSubmitted}
-    onCancel={() => setScreen('dashboard')}
-  />
-)}
+
 
     
     </div>
