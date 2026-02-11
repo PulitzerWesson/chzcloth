@@ -2963,8 +2963,7 @@ export default function App() {
   } = useOrganizations();
   
 const { bets, loading: betsLoading, createBet, createPastBets, recordOutcome, scoreBet, approveBet, rejectBet } = useBets(currentOrg?.orgId, currentOrg?.mode);
-  const { updateIdeaStatus, claimIdea } = useIdeas(currentOrg?.orgId);
-  const { submitIdea } = useIdeas(currentOrg?.orgId);
+const { ideas, loading: ideasLoading, updateIdeaStatus, claimIdea, submitIdea, unclaimIdea } = useIdeas(currentOrg?.orgId);
   const [screen, setScreen] = useState('landing');
   const [currentBet, setCurrentBet] = useState(null);
   const [betToRecord, setBetToRecord] = useState(null);
@@ -3378,17 +3377,20 @@ const handleRejectBet = async (betId, reason) => {
             <div style={{ color: '#94a3b8' }}>Priority Queue content coming soon</div>
           )}
           
-    {screen === 'ideas_queue' && !newEntryMode && (
-      <IdeasQueue 
-        currentOrg={currentOrg}
-        currentUser={user}
-        onClaimIdea={handleClaimIdea}
-        onClaimAndStructure={handleClaimAndStructure}
-        onStructureBet={handleStructureBetFromIdea}
-        setScreen={setScreen}
-        setNewEntryMode={setNewEntryMode}
-      />
-    )}
+{screen === 'ideas_queue' && !newEntryMode && (
+  <IdeasQueue 
+    ideas={ideas || []}
+    loading={ideasLoading}
+    currentOrg={currentOrg}
+    currentUser={user}
+    onClaimIdea={claimIdea}
+    onUnclaimIdea={unclaimIdea}
+    onClaimAndStructure={handleClaimAndStructure}
+    onStructureBet={handleStructureBetFromIdea}
+    setScreen={setScreen}
+    setNewEntryMode={setNewEntryMode}
+  />
+)}
     
     {screen === 'ideas_queue' && newEntryMode && (
       <NewEntryForm
