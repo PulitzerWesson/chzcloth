@@ -15,70 +15,32 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 3000,
+        max_tokens: 2000,
         messages: [{
           role: 'user',
-          content: `You are evaluating a product bet with measurable metrics. Provide detailed scoring with real-time market research.
+          content: `Score this ${orgMode || 'startup'} product bet. Search web for similar initiatives, benchmarks, and competitive intel.
 
-BET DETAILS:
-- Hypothesis: ${bet.hypothesis || 'Not provided'}
-- Metrics: ${bet.metric || bet.customMetric || bet.prediction || 'Not provided'}
-- Estimated Effort: ${bet.estimatedEffort || bet.timeframe ? bet.timeframe + ' days' : 'Not provided'}
-- Strategic Alignment: ${bet.strategicAlignment || 'Not provided'}
-- Assumptions: ${bet.assumptions || 'Not provided'}
-- Bet Type: ${bet.betType || 'Not provided'}
+BET: ${bet.hypothesis || 'Not provided'}
+METRICS: ${bet.metric || bet.prediction || 'Not provided'}
+EFFORT: ${bet.estimatedEffort || bet.timeframe || 'Not provided'}
+COMPANY: ${orgName || 'Unknown'}, ${orgStrategy || 'N/A'}, ${orgIndustry || 'N/A'}
 
-ORGANIZATION CONTEXT:
-- Company: ${orgName || 'Unknown Company'}
-- Mode: ${orgMode || 'startup'} (startup/enterprise)
-- Strategy: ${orgStrategy || 'Not specified'}
-- Industry: ${orgIndustry || 'Not specified'}
-
-INSTRUCTIONS:
-1. Search the web for similar initiatives in the industry
-2. Look for success/failure case studies
-3. Check industry benchmarks for similar metrics
-4. Find recent research on this approach
-5. Assess competitive landscape and market timing
-
-Based on ALL this context, provide:
-
+Return JSON only:
 {
-  "approach": {
-    "score": <0-100>,
-    "rationale": "<Detailed assessment of execution plan quality, citing similar cases from web research>"
-  },
-  "potential": {
-    "score": <0-100>,
-    "rationale": "<Assessment of upside magnitude based on industry benchmarks and market research>"
-  },
-  "fit": {
-    "score": <0-100>,
-    "rationale": "<Strategic alignment considering competitive landscape and market timing>"
-  },
-  "market_context": "<Key findings from web search about industry trends, benchmarks, and competitive intelligence>",
-  "risk_factors": "<Potential risks identified from research>",
-  "success_factors": "<Critical success factors based on industry best practices>",
+  "approach": {"score": <0-100>, "rationale": "<cite web findings>"},
+  "potential": {"score": <0-100>, "rationale": "<cite benchmarks>"},
+  "fit": {"score": <0-100>, "rationale": "<cite market timing>"},
+  "market_context": "<key web findings>",
   "suggestion": {
-    "type": "<'alternative' if overall_score < 60, 'complement' if 60-85, null if >85>",
-    "reasoning": "<Why this suggestion would score higher, citing market research>",
-    "hypothesis": "<Alternative/complementary hypothesis>",
-    "metrics": "<Alternative/complementary success metrics>",
-    "effort": "<Effort estimate>",
-    "expected_score": <projected score 0-100>,
-    "market_evidence": "<Specific web search findings supporting this>",
-    "competitive_insight": "<How competitors approached similar challenges>"
+    "type": "<'alternative' if avg<60, 'complement' if 60-85, null if >85>",
+    "reasoning": "<why, citing research>",
+    "hypothesis": "<alternative/complement>",
+    "metrics": "<alternative metrics>",
+    "effort": "<estimate>",
+    "expected_score": <0-100>,
+    "market_evidence": "<supporting findings>"
   }
-}
-
-SUGGESTION GUIDELINES:
-- If overall score < 60 (ALTERNATIVE): Suggest a different approach based on market research
-- If score 60-85 (COMPLEMENT): Suggest an enhancement that strengthens the bet
-- If score > 85: Set suggestion to null
-
-Frame with market evidence, not criticism.
-
-Return ONLY the JSON object, no other text.`
+}`
         }],
         tools: [{
           type: 'web_search_20250305',
@@ -94,7 +56,6 @@ Return ONLY the JSON object, no other text.`
       return res.status(500).json({ error: data.error.message || 'API error' });
     }
     
-    // Extract text from response (handling tool use)
     let fullText = '';
     for (const block of data.content) {
       if (block.type === 'text') {
@@ -102,7 +63,6 @@ Return ONLY the JSON object, no other text.`
       }
     }
     
-    // Parse JSON from response
     const jsonMatch = fullText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       console.error('No JSON found in response:', fullText);
@@ -110,7 +70,6 @@ Return ONLY the JSON object, no other text.`
     }
     
     const scores = JSON.parse(jsonMatch[0]);
-    
     return res.status(200).json(scores);
     
   } catch (error) {
