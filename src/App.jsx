@@ -13,7 +13,6 @@ import SponsorReview from './components/SponsorReview';
 import EntryTypeChooser from './components/EntryTypeChooser';
 import SignalSubmission from './components/SignalSubmission';
 import SuggestionCard from './components/SuggestionCard';
-import { scoreBet, formatOrgContext } from './utils/aiScoring';
 
 
 // ============================================
@@ -1642,36 +1641,10 @@ const stepLabels = ['Metric Area', 'Specific Metric', 'Bet Type', 'Strategic Fit
                 ← Back
               </button>
                   <button 
-                    onClick={async () => {
-                      setSubmitting(true);
-                      
-                      try {
-                        // Prepare bet data for scoring
-                        const betData = {
-                          hypothesis: bet.hypothesis,
-                          metrics: bet.prediction,
-                          effort: bet.estimatedEffort,
-                          strategicAlignment: bet.strategicAlignment,
-                          assumptions: bet.assumptions
-                        };
-                        
-                        // Import at top of App.jsx: import { scoreBet, formatOrgContext } from './utils/aiScoring';
-                        const orgContext = formatOrgContext(currentOrg);
-                        const scores = await scoreBet(betData, orgContext);
-                        
-                        // Merge AI scores with bet data
-                        const enrichedBet = {
-                          ...bet,
-                          ...scores
-                        };
-                        
-                        await onComplete(enrichedBet, ideaFromQueue?.id);
-                      } catch (error) {
-                        console.error('Error scoring bet:', error);
-                        alert('Error scoring bet: ' + error.message);
-                        setSubmitting(false);
-                      }
-                    }}
+onClick={async () => {
+  setSubmitting(true);
+  await onComplete(bet, ideaFromQueue?.id);
+}}
                                       disabled={submitting}
                   style={{
                     flex: 1,
