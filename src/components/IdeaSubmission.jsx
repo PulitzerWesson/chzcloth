@@ -23,35 +23,53 @@ function IdeaSubmission({
   const [ignoredSuggestion, setIgnoredSuggestion] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const handleScoreIdea = async (e) => {
-    e.preventDefault();
+const handleScoreIdea = async (e) => {
+  e.preventDefault();
+  
+  if (!formData.title || !formData.problem || !formData.proposal) {
+    alert('Please fill in title, problem, and proposal');
+    return;
+  }
+
+  setScoring(true);
+
+  try {
+    // Count related signals (simple keyword matching)
+    const signalCount = ideas.filter(i => {
+      if (i.entry_type !== 'signal') return false;
+      const signalText = i.description?.toLowerCase() || '';
+      const problemKeywords = formData.problem.toLowerCase().split(' ').filter(w => w.length > 4);
+      return problemKeywords.some(keyword => signalText.includes(keyword));
+    }).length;
+
+    // Call backend API for scoring
+    const response = await fetch('/api/score-idea', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        idea: formData,
+        orgMode: currentOrg?.mode || 'startup',
+        orgName: currentOrg?.name,
+        orgStrategy: currentOrg?.strategy,
+        orgIndustry: currentOrg?.industry,
+        signalCount
+      })
+    });
     
-    if (!formData.title || !formData.problem || !formData.proposal) {
-      alert('Please fill in title, problem, and proposal');
-      return;
-    }
-
-    setScoring(true);
-
-    try {
-      // 1. Search for related signals
-      const signals = ideas.filter(i => i.entry_type === 'signal');
-      const relatedSignals = await searchRelatedSignals(formData, signals);
-      
-      // 2. Score with AI + web search
-      const orgContext = formatOrgContext(currentOrg);
-      const aiScores = await scoreIdea(formData, orgContext, relatedSignals);
-      
-      setScores(aiScores);
-      setStep(2); // Move to score view
-      
-    } catch (error) {
-      console.error('Scoring error:', error);
-      alert('Error scoring idea: ' + error.message);
-    } finally {
-      setScoring(false);
-    }
-  };
+    if (!response.ok) throw new Error('Scoring failed');
+    
+    const aiScores = await response.json();
+    
+    setScores(aiScores);
+    setStep(2);
+    
+  } catch (error) {
+    console.error('Scoring error:', error);
+    alert('Error scoring idea: ' + error.message);
+  } finally {
+    setScoring(false);
+  }
+};
 
   const handleSubmitToMarketplace = async () => {
     setSubmitting(true);
