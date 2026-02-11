@@ -2652,68 +2652,68 @@ const avgScore = betsWithScores.length > 0
     gap: 40,
     paddingLeft: 0
   }}>
-    <button
-      onClick={() => setScreen('dashboard')}
-      style={{
-        background: 'transparent',
-        border: 'none',
-        borderBottom: screen === 'dashboard' ? '2px solid #7dd3fc' : '2px solid transparent',
-        padding: '12px 0',
-        color: screen === 'dashboard' ? '#fff' : 'rgba(255,255,255,0.5)',
-        fontSize: '0.95rem',
-        fontWeight: 500,
-        cursor: 'pointer',
-        transition: 'all 0.2s',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px'
-      }}
-    >
-      <span style={{ color: screen === 'dashboard' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>◆</span>
-      Contributors
-    </button>
+<button
+  onClick={() => setScreen('dashboard')}
+  style={{
+    background: 'transparent',
+    border: 'none',
+    borderBottom: screen === 'dashboard' ? '2px solid #7dd3fc' : '2px solid transparent',
+    padding: '16px 0',
+    color: screen === 'dashboard' ? '#e0e0e0' : '#666',
+    fontSize: '0.9rem',
+    fontWeight: 500,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
+  }}
+>
+  <span style={{ color: screen === 'dashboard' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>◆</span>
+  Contributors
+</button>
 
-    <button
-      onClick={() => setScreen('priority_queue')}
-      style={{
-        background: 'transparent',
-        border: 'none',
-        borderBottom: screen === 'priority_queue' ? '2px solid #7dd3fc' : '2px solid transparent',
-        padding: '12px 0',
-        color: screen === 'priority_queue' ? '#fff' : 'rgba(255,255,255,0.5)',
-        fontSize: '0.95rem',
-        fontWeight: 500,
-        cursor: 'pointer',
-        transition: 'all 0.2s',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px'
-      }}
-    >
-      <span style={{ color: screen === 'priority_queue' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>▤</span>
-      Priority Queue
-    </button>
+<button
+  onClick={() => setScreen('priority_queue')}
+  style={{
+    background: 'transparent',
+    border: 'none',
+    borderBottom: screen === 'priority_queue' ? '2px solid #7dd3fc' : '2px solid transparent',
+    padding: '16px 0',
+    color: screen === 'priority_queue' ? '#e0e0e0' : '#666',
+    fontSize: '0.9rem',
+    fontWeight: 500,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
+  }}
+>
+  <span style={{ color: screen === 'priority_queue' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>▤</span>
+  Priority Queue
+</button>
 
-    <button
-      onClick={() => setScreen('ideas_queue')}
-      style={{
-        background: 'transparent',
-        border: 'none',
-        borderBottom: screen === 'ideas_queue' ? '2px solid #7dd3fc' : '2px solid transparent',
-        padding: '12px 0',
-        color: screen === 'ideas_queue' ? '#fff' : 'rgba(255,255,255,0.5)',
-        fontSize: '0.95rem',
-        fontWeight: 500,
-        cursor: 'pointer',
-        transition: 'all 0.2s',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px'
-      }}
-    >
-      <span style={{ color: screen === 'ideas_queue' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>◎</span>
-      Marketplace
-    </button>
+<button
+  onClick={() => setScreen('ideas_queue')}
+  style={{
+    background: 'transparent',
+    border: 'none',
+    borderBottom: screen === 'ideas_queue' ? '2px solid #7dd3fc' : '2px solid transparent',
+    padding: '16px 0',
+    color: screen === 'ideas_queue' ? '#e0e0e0' : '#666',
+    fontSize: '0.9rem',
+    fontWeight: 500,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
+  }}
+>
+  <span style={{ color: screen === 'ideas_queue' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>◎</span>
+  Marketplace
+</button>
   </div>
 </div>
         {/* Stats cards */}
