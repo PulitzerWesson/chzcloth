@@ -2642,80 +2642,7 @@ const avgScore = betsWithScores.length > 0
           />
         </div>
         
-{/* Clean Tab Navigation */}
-<div style={{
-  borderBottom: '1px solid rgba(255,255,255,0.1)',
-  marginBottom: 40
-}}>
-  <div style={{
-    display: 'flex',
-    gap: 40,
-    paddingLeft: 0
-  }}>
-<button
-  onClick={() => setScreen('dashboard')}
-  style={{
-    background: 'transparent',
-    border: 'none',
-    borderBottom: screen === 'dashboard' ? '2px solid #7dd3fc' : '2px solid transparent',
-    padding: '16px 0',
-    color: screen === 'dashboard' ? '#e0e0e0' : '#666',
-    fontSize: '0.9rem',
-    fontWeight: 500,
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px'
-  }}
->
-  <span style={{ color: screen === 'dashboard' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>◆</span>
-  Contributors
-</button>
 
-<button
-  onClick={() => setScreen('priority_queue')}
-  style={{
-    background: 'transparent',
-    border: 'none',
-    borderBottom: screen === 'priority_queue' ? '2px solid #7dd3fc' : '2px solid transparent',
-    padding: '16px 0',
-    color: screen === 'priority_queue' ? '#e0e0e0' : '#666',
-    fontSize: '0.9rem',
-    fontWeight: 500,
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px'
-  }}
->
-  <span style={{ color: screen === 'priority_queue' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>▤</span>
-  Priority Queue
-</button>
-
-<button
-  onClick={() => setScreen('ideas_queue')}
-  style={{
-    background: 'transparent',
-    border: 'none',
-    borderBottom: screen === 'ideas_queue' ? '2px solid #7dd3fc' : '2px solid transparent',
-    padding: '16px 0',
-    color: screen === 'ideas_queue' ? '#e0e0e0' : '#666',
-    fontSize: '0.9rem',
-    fontWeight: 500,
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px'
-  }}
->
-  <span style={{ color: screen === 'ideas_queue' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>◎</span>
-  Marketplace
-</button>
-  </div>
-</div>
         {/* Stats cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 16, marginBottom: 24 }}>
           <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
@@ -3339,7 +3266,128 @@ const handleRejectBet = async (betId, reason) => {
       {screen === 'score' && <ScoreResult profile={profile} bet={currentBet} onNewBet={handleNewBet} onSeedBaseline={handleSeedBaseline} onSkipToDashboard={handleSkipToDashboard} />}
       {screen === 'baseline' && <SeedBaseline profile={profile} onComplete={handleBaselineComplete} />}
       {screen === 'record_outcome' && <RecordOutcome bet={betToRecord} onComplete={handleOutcomeComplete} onCancel={handleOutcomeCancel} />}
-      {screen === 'dashboard' && <Dashboard profile={profile} bets={bets} currentOrg={currentOrg} organizations={organizations} onSwitchOrg={switchCurrentOrg} onEditMode={updateCompanyMode} onAddOrg={() => setScreen('orgsetup')} onNewBet={handleNewBet} email={user?.email} onRecordOutcome={handleRecordOutcome} setScreen={setScreen} />}
+{(screen === 'dashboard' || screen === 'ideas_queue' || screen === 'priority_queue') && (
+  <div style={{ padding: '40px 24px' }}>
+    <div style={{ maxWidth: 900, margin: '0 auto' }}>
+      
+      {/* Organization switcher */}
+      <div style={{ marginBottom: 24 }}>
+        <OrgSwitcher
+          organizations={organizations || []}
+          currentOrg={currentOrg}
+          onSwitch={switchCurrentOrg}
+          onAddOrg={() => setScreen('orgsetup')}
+          onEditMode={(orgId) => {
+            const newMode = prompt('Enter new mode (pmf, growth, efficiency, expansion, unsure):');
+            if (newMode) updateCompanyMode(orgId, newMode);
+          }}
+        />
+      </div>
+
+      {/* Tabs - always visible */}
+      <div style={{
+        borderBottom: '1px solid rgba(255,255,255,0.1)',
+        marginBottom: 40
+      }}>
+        <div style={{ display: 'flex', gap: 40, paddingLeft: 0 }}>
+          <button
+            onClick={() => setScreen('dashboard')}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              borderBottom: screen === 'dashboard' ? '2px solid #7dd3fc' : '2px solid transparent',
+              padding: '16px 0',
+              color: screen === 'dashboard' ? '#e0e0e0' : '#666',
+              fontSize: '0.9rem',
+              fontWeight: 500,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            <span style={{ color: screen === 'dashboard' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>◆</span>
+            Contributors
+          </button>
+
+          <button
+            onClick={() => setScreen('priority_queue')}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              borderBottom: screen === 'priority_queue' ? '2px solid #7dd3fc' : '2px solid transparent',
+              padding: '16px 0',
+              color: screen === 'priority_queue' ? '#e0e0e0' : '#666',
+              fontSize: '0.9rem',
+              fontWeight: 500,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            <span style={{ color: screen === 'priority_queue' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>▤</span>
+            Priority Queue
+          </button>
+
+          <button
+            onClick={() => setScreen('ideas_queue')}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              borderBottom: screen === 'ideas_queue' ? '2px solid #7dd3fc' : '2px solid transparent',
+              padding: '16px 0',
+              color: screen === 'ideas_queue' ? '#e0e0e0' : '#666',
+              fontSize: '0.9rem',
+              fontWeight: 500,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            <span style={{ color: screen === 'ideas_queue' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>◎</span>
+            Marketplace
+          </button>
+        </div>
+      </div>
+
+      {/* Content area swaps */}
+      {screen === 'dashboard' && (
+        <Dashboard 
+          profile={profile} 
+          bets={bets} 
+          currentOrg={currentOrg} 
+          organizations={organizations} 
+          onSwitchOrg={switchCurrentOrg} 
+          onEditMode={updateCompanyMode} 
+          onAddOrg={() => setScreen('orgsetup')} 
+          onNewBet={handleNewBet} 
+          email={user?.email} 
+          onRecordOutcome={handleRecordOutcome}
+          setScreen={setScreen}
+        />
+      )}
+      
+      {screen === 'priority_queue' && (
+        <div style={{ color: '#94a3b8' }}>Priority Queue content coming soon</div>
+      )}
+      
+      {screen === 'ideas_queue' && (
+        <IdeasQueue 
+          currentOrg={currentOrg}
+          onClaimIdea={handleClaimIdea}
+          onClaimAndStructure={handleClaimAndStructure}
+          onStructureBet={handleStructureBetFromIdea}
+        />
+      )}
+      
+    </div>
+  </div>
+)}
       {screen === 'sponsor_review' && (
   <SponsorReview
     bets={bets}
