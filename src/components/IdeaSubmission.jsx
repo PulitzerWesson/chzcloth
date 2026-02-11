@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { scoreIdea, searchRelatedSignals, formatOrgContext } from '../utils/aiScoring';
 import SuggestionCard from './SuggestionCard';
 
 function IdeaSubmission({ 
