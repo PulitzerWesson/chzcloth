@@ -71,35 +71,41 @@ const handleScoreIdea = async (e) => {
   }
 };
 
-  const handleSubmitToMarketplace = async () => {
-    setSubmitting(true);
+const handleSubmitToMarketplace = async () => {
+  setSubmitting(true);
 
-    try {
-      const ideaEntry = {
-        title: formData.title,
-        description: `${formData.problem}\n\nProposal: ${formData.proposal}`,
-        problem: formData.problem,
-        proposal: formData.proposal,
-        reach: formData.reach,
-        expected_impact: formData.impact,
-        entry_type: 'idea',
-        status: 'pending',
-        submitted_by: currentUser.id,
-        submitted_by_email: currentUser.email,
-        org_id: currentOrg.orgId,
-        ...scores, // Include all AI scores
-        created_at: new Date().toISOString()
-      };
+  try {
+    const ideaEntry = {
+      title: formData.title,
+      description: `${formData.problem}\n\nProposal: ${formData.proposal}`,
+      problem: formData.problem,
+      proposal: formData.proposal,
+      reach: formData.reach,
+      expected_impact: formData.impact,
+      entry_type: 'idea',
+      status: 'pending',
+      submitted_by: currentUser.id,
+      submitted_by_email: currentUser.email,
+      org_id: currentOrg.orgId,
+      viability_score: scores.viability_score,
+      relevance_score: scores.relevance_score,
+      overall_score: scores.overall_score,
+      scoring_rationale: scores.scoring_rationale,
+      market_insights: scores.market_insights,
+      signal_count: scores.signal_support ? parseInt(scores.signal_support.match(/\d+/)?.[0] || 0) : 0, // Extract number from text
+      suggestion: scores.suggestion ? JSON.stringify(scores.suggestion) : null, // Store as JSON
+      created_at: new Date().toISOString()
+    };
 
-      await onSubmit(ideaEntry);
-      
-    } catch (error) {
-      console.error('Error submitting idea:', error);
-      alert('Error submitting idea. Please try again.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+    await onSubmit(ideaEntry);
+    
+  } catch (error) {
+    console.error('Error submitting idea:', error);
+    alert('Error submitting idea. Please try again.');
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   const handleReplaceSuggestion = () => {
     if (!scores?.suggestion) return;
