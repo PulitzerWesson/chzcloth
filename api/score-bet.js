@@ -91,10 +91,10 @@ SCORING CRITERIA:
 - What is the market timing for this type of initiative? (search for trends)
 
 SUGGESTION RULES:
-- Only suggest improvements if average score < 70
-- Keep the core intent but improve specificity
-- Cite web research findings in your suggestion
-- Provide ONE improved bet, not multiple options
+- Calculate average score first
+- If avg >= 70: return suggestion as null (bet is good enough)
+- If avg 60-69: provide "complement" type - keep core intent, polish the specifics, make it more measurable
+- If avg < 60: provide "alternative" type - suggest a different approach to achieve the same underlying goal
 
 Return ONLY valid JSON (no markdown, no preamble):
 {
@@ -112,9 +112,10 @@ Return ONLY valid JSON (no markdown, no preamble):
   },
   "market_context": "Key web findings about similar initiatives",
   "suggestion": {
-    "hypothesis": "Improved hypothesis if avg < 70, otherwise null",
-    "metrics": "Improved prediction if avg < 70, otherwise null",
-    "effort": "Estimated effort if avg < 70, otherwise null",
+    "type": "alternative|complement",
+    "hypothesis": "Improved/alternative hypothesis",
+    "metrics": "Improved/alternative prediction",
+    "effort": "Estimated effort",
     "reasoning": "Why this improvement, citing research",
     "expected_score": estimated score with improvements,
     "market_evidence": "Supporting web findings"
