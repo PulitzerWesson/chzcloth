@@ -13,6 +13,7 @@ import SponsorReview from './components/SponsorReview';
 import EntryTypeChooser from './components/EntryTypeChooser';
 import SignalSubmission from './components/SignalSubmission';
 import SuggestionCard from './components/SuggestionCard';
+import { getOrgLearnings } from './utils/orgLearnings';
 
 
 // ============================================
@@ -1778,6 +1779,33 @@ function ScoreResult({ profile, bet, onNewBet, onSeedBaseline, onSkipToDashboard
           </div>
         )}
 
+            const scores = await scoreBet(betData, {
+      name: currentOrg?.name,
+      strategy: currentOrg?.strategy,
+      industry: currentOrg?.industry,
+      learnings: orgLearnings
+    });
+    
+    const enrichedBet = {
+      ...betData,
+      scoringRationale: scores
+    };
+    
+    setCurrentBet(enrichedBet);
+    setScreen('score');
+  } else {
+    // Regular bet - createBet handles scoring internally
+    const { data, error } = await createBet(betData, ideaId);
+    if (error) {
+      console.error('Error creating bet:', error);
+      alert('Error saving bet. Please try again.');
+    } else {
+      setCurrentBet(data);
+      setScreen('score');
+    }
+  }
+};
+
         {/* Your bet summary */}
         <div style={{ marginBottom: 32 }}>
           <h3 style={{ color: '#f1f5f9', fontSize: '1.1rem', fontWeight: 600, marginBottom: 16 }}>Your Bet</h3>
@@ -3051,12 +3079,12 @@ const { ideas, loading: ideasLoading, updateIdeaStatus, claimIdea, submitIdea, u
   
 const handleBetComplete = async (betData, ideaId = null) => {
   if (isMarketplaceBet) {
-    // Marketplace bet - score it first, then show score screen
-    const scores = await scoreBet(betData, {
-      name: currentOrg?.name,
-      strategy: currentOrg?.strategy,
-      industry: currentOrg?.industry
-    });
+    // Gather org learnings first
+    const orgLearnings = await getOrgLearnings(
+      currentOrg?.orgId, 
+      user?.id, 
+      'bet'
+    );
     
 const enrichedBet = {
   ...betData,
