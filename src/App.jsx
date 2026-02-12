@@ -1949,6 +1949,7 @@ function ScoreResult({ bet, onNewBet, onSkipToDashboard, onSavePersonal, onAddTo
     : oldScore.total;
   
   const hasSuggestion = aiScores?.suggestion && avgScore < 70;
+  const suggestionType = aiScores?.suggestion?.type; // 'alternative' or 'complement'
 
   return (
     <div style={{ padding: '60px 24px' }}>
@@ -2016,17 +2017,42 @@ function ScoreResult({ bet, onNewBet, onSkipToDashboard, onSavePersonal, onAddTo
         {hasSuggestion && !enhancementDecided && (
           <div style={{ marginBottom: 32 }}>
             <div style={{
-              background: 'rgba(139, 92, 246, 0.1)',
-              border: '1px solid rgba(139, 92, 246, 0.3)',
+              background: suggestionType === 'alternative' 
+                ? 'rgba(239, 68, 68, 0.1)' 
+                : 'rgba(139, 92, 246, 0.1)',
+              border: suggestionType === 'alternative'
+                ? '1px solid rgba(239, 68, 68, 0.3)'
+                : '1px solid rgba(139, 92, 246, 0.3)',
               borderRadius: 12,
               padding: 24
             }}>
-              <h3 style={{ color: '#a78bfa', marginBottom: 16, fontSize: '1.1rem', fontWeight: 600 }}>
-                AI Recommendation
+              <h3 style={{ 
+                color: suggestionType === 'alternative' ? '#f87171' : '#a78bfa',
+                marginBottom: 8, 
+                fontSize: '1.1rem', 
+                fontWeight: 600 
+              }}>
+                {suggestionType === 'alternative' 
+                  ? 'AI Alternative Recommendation' 
+                  : 'AI Enhancement Suggestion'}
               </h3>
+              <p style={{
+                color: '#64748b',
+                fontSize: '0.85rem',
+                marginBottom: 16,
+                fontStyle: 'italic'
+              }}>
+                {suggestionType === 'alternative'
+                  ? 'Your bet scored below 60. Here\'s a different approach to achieve your goal:'
+                  : 'Your bet scored 60-69. Here are improvements to strengthen it:'}
+              </p>
               
               <div style={{ color: '#cbd5e1', marginBottom: 16 }}>
-                <strong style={{ color: '#a78bfa' }}>Improved Hypothesis:</strong>
+                <strong style={{ 
+                  color: suggestionType === 'alternative' ? '#f87171' : '#a78bfa' 
+                }}>
+                  {suggestionType === 'alternative' ? 'Alternative Hypothesis:' : 'Improved Hypothesis:'}
+                </strong>
                 <div style={{ 
                   marginTop: 8, 
                   padding: 12, 
@@ -2040,19 +2066,47 @@ function ScoreResult({ bet, onNewBet, onSkipToDashboard, onSavePersonal, onAddTo
               
               {aiScores.suggestion.metrics && (
                 <div style={{ color: '#cbd5e1', marginBottom: 16 }}>
-                  <strong style={{ color: '#a78bfa' }}>Metrics:</strong> {aiScores.suggestion.metrics}
+                  <strong style={{ 
+                    color: suggestionType === 'alternative' ? '#f87171' : '#a78bfa' 
+                  }}>
+                    Metrics:
+                  </strong> {aiScores.suggestion.metrics}
                 </div>
               )}
               
               {aiScores.suggestion.effort && (
                 <div style={{ color: '#cbd5e1', marginBottom: 16 }}>
-                  <strong style={{ color: '#a78bfa' }}>Effort:</strong> {aiScores.suggestion.effort}
+                  <strong style={{ 
+                    color: suggestionType === 'alternative' ? '#f87171' : '#a78bfa' 
+                  }}>
+                    Effort:
+                  </strong> {aiScores.suggestion.effort}
                 </div>
               )}
               
               {aiScores.suggestion.reasoning && (
-                <div style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: 24, fontStyle: 'italic' }}>
+                <div style={{ 
+                  color: '#64748b', 
+                  fontSize: '0.85rem', 
+                  marginBottom: 16,
+                  fontStyle: 'italic',
+                  borderLeft: suggestionType === 'alternative' 
+                    ? '3px solid rgba(239, 68, 68, 0.5)' 
+                    : '3px solid rgba(139, 92, 246, 0.5)',
+                  paddingLeft: 12
+                }}>
                   {aiScores.suggestion.reasoning}
+                </div>
+              )}
+              
+              {aiScores.suggestion.expected_score && (
+                <div style={{
+                  color: '#2dd4bf',
+                  fontSize: '0.9rem',
+                  marginBottom: 24,
+                  fontWeight: 600
+                }}>
+                  Expected score with {suggestionType === 'alternative' ? 'alternative' : 'improvements'}: ~{aiScores.suggestion.expected_score}
                 </div>
               )}
               
@@ -2065,7 +2119,9 @@ function ScoreResult({ bet, onNewBet, onSkipToDashboard, onSavePersonal, onAddTo
                   style={{
                     flex: 1,
                     padding: '14px 24px',
-                    background: 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)',
+                    background: suggestionType === 'alternative'
+                      ? 'linear-gradient(135deg, #f87171 0%, #ef4444 100%)'
+                      : 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)',
                     border: 'none',
                     borderRadius: 10,
                     color: '#fff',
@@ -2074,7 +2130,9 @@ function ScoreResult({ bet, onNewBet, onSkipToDashboard, onSavePersonal, onAddTo
                     cursor: 'pointer'
                   }}
                 >
-                  Use AI Enhancement
+                  {suggestionType === 'alternative' 
+                    ? 'Replace with Alternative' 
+                    : 'Use Enhancement'}
                 </button>
                 <button
                   onClick={() => setEnhancementDecided(true)}
@@ -2097,7 +2155,7 @@ function ScoreResult({ bet, onNewBet, onSkipToDashboard, onSavePersonal, onAddTo
           </div>
         )}
 
-        {enhancementDecided && (
+        {(enhancementDecided || !hasSuggestion) && (
           <>
             <div style={{ marginBottom: 32 }}>
               <h3 style={{ 
