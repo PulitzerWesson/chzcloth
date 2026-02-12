@@ -198,19 +198,44 @@ const createBet = async (betData, ideaId = null) => {
   }
 }
 
-      const newBet = {
-        ...betData,
-        id: data.id,
-        orgId: data.org_id,
-        isPastBet: false,
-        outcome: null,
-        status: null,
-        createdAt: data.created_at,
+// Transform to match what App.jsx expects
+const newBet = {
+  id: data.id,
+  orgId: data.org_id,
+  hypothesis: betData.hypothesis,
+  metricDomain: betData.metricDomain,
+  metric: betData.metric,
+  customMetric: betData.customMetric,
+  betType: betData.betType,
+  baseline: betData.baseline,
+  prediction: betData.prediction,
+  confidence: betData.confidence,
+  timeframe: betData.timeframe,
+  assumptions: betData.assumptions,
+  cheapTest: betData.cheapTest,
+  isOwnIdea: betData.isOwnIdea !== false,
+  ideaSource: betData.ideaSource,
+  measurementTool: betData.measurementTool,
+  strategicAlignment: betData.strategicAlignment,
+  estimatedEffort: betData.estimatedEffort,
+  inactionImpact: betData.inactionImpact,
+  isPastBet: false,
+  outcome: null,
+  status: null,
+  createdAt: data.created_at,
+  // AI scores - CRITICAL for ScoreResult component
   approachScore: scores?.approach?.score ?? null,
   potentialScore: scores?.potential?.score ?? null,
   fitScore: scores?.fit?.score ?? null,
-        scoringRationale: scores
-      }
+  scoringRationale: scores,
+  // Approval workflow
+  approvalStatus: data.approval_status,
+  ideaId: data.idea_id,
+  structuredBy: data.structured_by,
+  // AI enhancement tracking
+  aiEnhanced: betData.aiEnhanced || false,
+  originalHypothesis: betData.originalHypothesis
+}
       setBets(prev => [newBet, ...prev])
 
       return { data: newBet, error: null, scores }
