@@ -3182,30 +3182,7 @@ const { ideas, loading: ideasLoading, updateIdeaStatus, claimIdea, submitIdea, u
   };
   
 const handleBetComplete = async (betData, ideaId = null) => {
-  // ALWAYS get AI scores for every bet
-  const orgLearnings = await getOrgLearnings(
-    currentOrg?.orgId, 
-    user?.id, 
-    'bet'
-  );
-  
-  const scores = await scoreBet(betData, {
-    name: currentOrg?.name,
-    strategy: currentOrg?.strategy,
-    industry: currentOrg?.industry,
-    learnings: orgLearnings
-  });
-  
-  // Save bet to DB with AI scores
-  const enrichedBet = {
-    ...betData,
-    scoringRationale: scores,
-    approachScore: scores.approach.score,
-    potentialScore: scores.potential.score,
-    fitScore: scores.fit.score
-  };
-  
-  const { data, error } = await createBet(enrichedBet, ideaId);
+  const { data, error } = await createBet(betData, ideaId);
   
   if (error) {
     console.error('Error creating bet:', error);
