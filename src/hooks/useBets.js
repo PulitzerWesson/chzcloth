@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './useAuth'
+import { getOrgLearnings } from '../utils/orgLearnings';
+
 
 export function useBets(orgId, orgMode) {
   const { user } = useAuth()
@@ -20,7 +22,8 @@ const scoreBet = async (betData, orgContext) => {
         orgMode: orgMode || 'growth',
         orgName: orgContext?.name,
         orgStrategy: orgContext?.strategy,
-        orgIndustry: orgContext?.industry
+        orgIndustry: orgContext?.industry,
+        orgLearnings: orgContext?.learnings
       })
     });
     
@@ -136,17 +139,20 @@ const transformedBets = (betsData || []).map(bet => {
 const createBet = async (betData, ideaId = null) => {
   if (!user) return { error: { message: 'Not authenticated' } }
 
-    try {
-      // Get AI scores first
-      const scores = await scoreBet(betData, { 
-  name: orgId, 
-  strategy: null, 
-  industry: null 
-});
+  try {
+    // Get AI scores first - include org learnings
+    const orgLearnings = await getOrgLearnings(orgId, user.id, 'bet');
+    
+    const scores = await scoreBet(betData, { 
+      name: orgId, 
+      strategy: null, 
+      industry: null,
+      learnings: orgLearnings
+    });
 
-      const { data, error } = await supabase
-        .from('bets')
-        .insert({
+    const { data, error } = await supabase
+      .from('bets')
+      .insert({
           user_id: user.id,
           org_id: orgId || null,
           hypothesis: betData.hypothesis,
