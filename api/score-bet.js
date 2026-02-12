@@ -77,12 +77,15 @@ Return ONLY JSON:
     const assessmentData = await assessmentResponse.json();
     let needsSearch = false;
     
+let searchReason = null;
+    
     try {
       const assessmentText = assessmentData.content[0].text;
       const assessmentMatch = assessmentText.match(/\{[\s\S]*\}/);
       if (assessmentMatch) {
         const assessment = JSON.parse(assessmentMatch[0]);
         needsSearch = assessment.needs_search;
+        searchReason = assessment.reason;  // ← Capture it
         console.log('Web search decision:', assessment.reason);
       }
     } catch (e) {
@@ -237,6 +240,7 @@ Return ONLY valid JSON (no markdown, no preamble):
 
         // Add web search metadata
     scores.web_search_used = needsSearch;
+    scores.web_search_reason = searchReason; 
     
     return res.status(200).json(scores);
     
