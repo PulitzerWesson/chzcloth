@@ -15,7 +15,6 @@ import SignalSubmission from './components/SignalSubmission';
 import SuggestionCard from './components/SuggestionCard';
 import { getOrgLearnings } from './utils/orgLearnings';
 
-
 // ============================================
 // CHZCLOTH Free - Where Bets Get Smarter
 // ============================================
@@ -993,26 +992,56 @@ function ProfileSetup({ onComplete }) {
 }
 
 // FIX: BetSubmission now destructures currentOrg prop
-function BetSubmission({ profile, currentOrg, onComplete, ideaFromQueue = null }) {
-  const [step, setStep] = useState(1);
-const [bet, setBet] = useState({
-  metricDomain: '',
-  metric: '',
-  customMetric: '',
-  betType: '',
-  hypothesis: ideaFromQueue?.description || '',
-  baseline: '',
-  prediction: ideaFromQueue?.expectedImpact || '',
-  confidence: 70,
-  timeframe: '90',
-  assumptions: ideaFromQueue?.problem || '',
-  cheapTest: '',
-  measurementTool: '',
-  isOwnIdea: false,
-  ideaSource: ideaFromQueue?.submittedByEmail || '',
-  strategicAlignment: '',
-  estimatedEffort: '',
-  inactionImpact: ''
+function BetSubmission({ profile, currentOrg, onComplete, onCancel, ideaFromQueue = null, initialBet = null }) {  const [step, setStep] = useState(1);
+const [bet, setBet] = useState(() => {
+  // If AI suggestion provided, use it
+  if (initialBet) {
+    return initialBet;
+  }
+  
+  // If idea from queue, use that
+  if (ideaFromQueue) {
+    return {
+      metricDomain: '',
+      metric: '',
+      customMetric: '',
+      betType: '',
+      hypothesis: ideaFromQueue?.description || '',
+      baseline: '',
+      prediction: ideaFromQueue?.expectedImpact || '',
+      confidence: 70,
+      timeframe: '90',
+      assumptions: ideaFromQueue?.problem || '',
+      cheapTest: '',
+      measurementTool: '',
+      isOwnIdea: false,
+      ideaSource: ideaFromQueue?.submittedByEmail || '',
+      strategicAlignment: '',
+      estimatedEffort: '',
+      inactionImpact: ''
+    };
+  }
+  
+  // Otherwise blank form
+  return {
+    metricDomain: '',
+    metric: '',
+    customMetric: '',
+    betType: '',
+    hypothesis: '',
+    baseline: '',
+    prediction: '',
+    confidence: 70,
+    timeframe: '90',
+    assumptions: '',
+    cheapTest: '',
+    measurementTool: '',
+    isOwnIdea: true,
+    ideaSource: '',
+    strategicAlignment: '',
+    estimatedEffort: '',
+    inactionImpact: ''
+  };
 });
   
   const currentDomain = bet.metricDomain ? METRICS[bet.metricDomain] : null;
@@ -1051,6 +1080,7 @@ const stepLabels = ['Metric Area', 'Specific Metric', 'Bet Type', 'Strategic Fit
               alignItems: 'center',
               gap: 8
             }}>
+              
               <span style={{ fontSize: '1.2rem' }}>💡</span>
               <div>
                 <div style={{ color: '#fbbf24', fontSize: '0.85rem', fontWeight: 600 }}>
@@ -1062,6 +1092,24 @@ const stepLabels = ['Metric Area', 'Specific Metric', 'Bet Type', 'Strategic Fit
               </div>
             </div>
           )}
+
+        {/* AI Suggestion banner */}
+{initialBet && !ideaFromQueue && (
+  <div style={{
+    background: 'rgba(139, 92, 246, 0.1)',
+    border: '1px solid rgba(139, 92, 246, 0.3)',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 24
+  }}>
+    <div style={{ color: '#a78bfa', fontSize: '0.9rem', fontWeight: 600, marginBottom: 4 }}>
+      AI SUGGESTION LOADED
+    </div>
+    <div style={{ color: '#cbd5e1', fontSize: '0.85rem' }}>
+      This bet was pre-filled with an AI-suggested alternative. Review and adjust as needed.
+    </div>
+  </div>
+)}
         
         {/* Step 1: Metric domain */}
         {step === 1 && (
@@ -1637,33 +1685,50 @@ const stepLabels = ['Metric Area', 'Specific Metric', 'Bet Type', 'Strategic Fit
               />
             </div>
             
-            <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-              <button onClick={() => setStep(9)} style={{ padding: '12px 20px', background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: 8, color: '#94a3b8', cursor: 'pointer' }}>
-                ← Back
-              </button>
-                  <button 
-onClick={async () => {
-  setSubmitting(true);
-  await onComplete(bet, ideaFromQueue?.id);
-}}
-                                      disabled={submitting}
-                  style={{
-                    flex: 1,
-                    padding: '14px 20px',
-                    background: submitting 
-                      ? 'rgba(45, 212, 191, 0.5)' 
-                      : 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
-                    border: 'none',
-                    borderRadius: 8,
-                    color: '#0a0f1a',
-                    fontWeight: 700,
-                    cursor: submitting ? 'not-allowed' : 'pointer',
-                    opacity: submitting ? 0.7 : 1
-                  }}
-                >
-                  {submitting ? 'Scoring your bet...' : 'Get My Score →'}
-                </button>
-            </div>
+<div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+  <button onClick={() => setStep(9)} style={{ padding: '12px 20px', background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: 8, color: '#94a3b8', cursor: 'pointer' }}>
+    ← Back
+  </button>
+  
+  <button 
+    onClick={() => {
+      if (onCancel) onCancel();
+    }}
+    style={{ 
+      padding: '12px 20px', 
+      background: 'rgba(255,255,255,0.05)', 
+      border: '1px solid rgba(255, 255, 255, 0.2)', 
+      borderRadius: 8, 
+      color: '#94a3b8', 
+      cursor: 'pointer' 
+    }}
+  >
+    Cancel
+  </button>
+  
+  <button 
+    onClick={async () => {
+      setSubmitting(true);
+      await onComplete(bet, ideaFromQueue?.id);
+    }}
+    disabled={submitting}
+    style={{
+      flex: 1,
+      padding: '14px 20px',
+      background: submitting 
+        ? 'rgba(45, 212, 191, 0.5)' 
+        : 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
+      border: 'none',
+      borderRadius: 8,
+      color: '#0a0f1a',
+      fontWeight: 700,
+      cursor: submitting ? 'not-allowed' : 'pointer',
+      opacity: submitting ? 0.7 : 1
+    }}
+  >
+    {submitting ? 'Scoring your bet...' : 'Get My Score →'}
+  </button>
+</div>
           </div>
         )}
       </div>
@@ -1672,6 +1737,7 @@ onClick={async () => {
 }
 
 function ScoreResult({ profile, bet, onNewBet, onSeedBaseline, onSkipToDashboard }) {
+   const [ignoredSuggestion, setIgnoredSuggestion] = useState(false);
   // Use AI scores if available, fallback to old scoring
   const aiScores = bet.scoringRationale;
   const hasAIScores = aiScores?.approach && aiScores?.potential && aiScores?.fit;
@@ -1805,6 +1871,43 @@ function ScoreResult({ profile, bet, onNewBet, onSeedBaseline, onSkipToDashboard
     }
   }
 };
+        {/* AI Suggestion for Low-Scoring Bets */}
+{hasAIScores && aiScores.suggestion && !ignoredSuggestion && (
+  <SuggestionCard
+    suggestion={aiScores.suggestion}
+    type="bet"
+    onReplace={() => {
+      // Create bet data from AI suggestion
+      const suggestedBet = {
+        hypothesis: aiScores.suggestion.hypothesis,
+        metric: bet.metric, // Keep same metric domain
+        customMetric: aiScores.suggestion.metrics,
+        prediction: aiScores.suggestion.metrics,
+        betType: bet.betType,
+        baseline: bet.baseline,
+        confidence: bet.confidence,
+        timeframe: aiScores.suggestion.effort?.match(/\d+/)?.[0] || bet.timeframe,
+        estimatedEffort: aiScores.suggestion.effort,
+        assumptions: bet.assumptions,
+        cheapTest: bet.cheapTest,
+        isOwnIdea: bet.isOwnIdea,
+        ideaSource: bet.ideaSource,
+        measurementTool: bet.measurementTool,
+        strategicAlignment: bet.strategicAlignment,
+        inactionImpact: bet.inactionImpact
+      };
+      
+      // Call handler to go back to bet form
+      if (onReplaceBet) {
+        onReplaceBet(suggestedBet);
+      }
+    }}
+    onIgnore={() => setIgnoredSuggestion(true)}
+  />
+)}
+
+{/* Your bet summary */}
+<div style={{ marginBottom: 32 }}>
 
         {/* Your bet summary */}
         <div style={{ marginBottom: 32 }}>
@@ -2999,6 +3102,7 @@ const { ideas, loading: ideasLoading, updateIdeaStatus, claimIdea, submitIdea, u
   const [isMarketplaceBet, setIsMarketplaceBet] = useState(false);
   const [betToRecord, setBetToRecord] = useState(null);
   const [emailSent, setEmailSent] = useState(false);
+  const [betToReplace, setBetToReplace] = useState(null);
   
   // FIX: Progressive loading messages for Supabase free tier cold starts (5-8s)
   // Instead of a 3s timeout that forces a wrong routing decision,
@@ -3311,6 +3415,18 @@ const handleRejectBet = async (betId, reason) => {
       setScreen('landing');
     }
   };
+
+  const handleReplaceBet = (suggestedBet) => {
+  // Store the suggested bet data
+  setBetToReplace(suggestedBet);
+  
+  // Reset marketplace bet flag if needed
+  // setIsMarketplaceBet(true); // Keep this if it was a marketplace bet
+  
+  // Go back to bet submission screen
+  setScreen('bet');
+  setCurrentBet(null);
+};
   
   // ============================================
   // LOADING SCREEN
@@ -3398,8 +3514,13 @@ const handleRejectBet = async (betId, reason) => {
     profile={profile} 
     currentOrg={currentOrg} 
     onComplete={handleBetComplete}
+    onCancel={() => {
+      setScreen('landing');  // or 'dashboard' if you prefer
+      setBetToReplace(null);  // Clear the AI suggestion
+      setCurrentBet(null);    // Clear current bet
+    }}
     ideaFromQueue={currentBet?.fromIdea || null}
-    initialBetData={currentBet}
+    initialBet={betToReplace || currentBet} 
   />
 )}
 
@@ -3450,6 +3571,7 @@ const handleRejectBet = async (betId, reason) => {
     onNewBet={handleNewBet} 
     onSeedBaseline={handleSeedBaseline} 
     onSkipToDashboard={handleSkipToDashboard}
+    onReplaceBet={handleReplaceBet} 
     isMarketplaceBet={isMarketplaceBet}
     onRefine={handleRefineBet}
     onSubmitToMarketplace={handleSubmitToMarketplace}
