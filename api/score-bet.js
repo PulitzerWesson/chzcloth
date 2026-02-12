@@ -32,6 +32,64 @@ Consider these patterns when scoring.
 `;
     }
     
+    // PASS 1: Determine if web search is needed
+    const assessmentResponse = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 500,
+        messages: [{
+          role: 'user',
+          content: `Quickly assess if this bet needs web search for accurate scoring.
+
+BET: ${bet.hypothesis}
+PREDICTION: ${bet.prediction}
+ORG CONTEXT: ${orgName || 'Unknown'}, ${orgIndustry || 'Unknown'}, ${orgMode || 'growth'} stage
+${learningsSection}
+${clarifyingSection}
+
+SKIP web search if:
+- Bet is clearly broken/nonsensical (missing structure, vague)
+- Bet is well-formed and org context is sufficient
+- Past learnings already cover this territory
+- Standard product bet with no unusual claims
+
+USE web search if:
+- Prediction seems ambitious and needs competitive validation
+- Industry benchmarks would materially change the score
+- Claims about market trends need fact-checking
+- Missing critical competitive/market context
+
+Return ONLY JSON:
+{
+  "needs_search": true/false,
+  "reason": "Brief explanation"
+}`
+        }]
+      })
+    });
+    
+    const assessmentData = await assessmentResponse.json();
+    let needsSearch = false;
+    
+    try {
+      const assessmentText = assessmentData.content[0].text;
+      const assessmentMatch = assessmentText.match(/\{[\s\S]*\}/);
+      if (assessmentMatch) {
+        const assessment = JSON.parse(assessmentMatch[0]);
+        needsSearch = assessment.needs_search;
+        console.log('Web search decision:', assessment.reason);
+      }
+    } catch (e) {
+      console.log('Assessment parse failed, defaulting to no search');
+    }
+    
+    // PASS 2: Score with or without web search
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -44,7 +102,7 @@ Consider these patterns when scoring.
         max_tokens: 4000,
         messages: [{
           role: 'user',
-          content: `You are evaluating a product bet for a ${orgMode || 'growth'} stage company. Search web for similar initiatives, benchmarks, and competitive intelligence.
+          content: `You are evaluating a product bet for a ${orgMode || 'growth'} stage company.${needsSearch ? ' Search web for benchmarks, competitive intelligence, and industry data ONLY when it would materially impact scoring.' : ' Score based on available context - web search was deemed unnecessary.'}
 
 BET DETAILS:
 Hypothesis: "${bet.hypothesis}"
@@ -73,7 +131,7 @@ SCORING CRITERIA:
 - Is the action specific and clear?
 - Is the mechanism explained?
 - Are assumptions identified?
-- How does this compare to similar bets in the industry? (search for examples)
+${needsSearch ? '- How does this compare to similar bets in the industry? (search if needed)' : ''}
 
 2. POTENTIAL (0-100):
 - Is the prediction quantified and specific?
@@ -81,14 +139,14 @@ SCORING CRITERIA:
 - Is the metric measurable?
 - Is the timeframe appropriate for the change?
 - Does the effort match the expected impact?
-- What do benchmarks say about typical results? (search for data)
+${needsSearch ? '- What do benchmarks say about typical results? (search if needed)' : ''}
 
 3. FIT (0-100):
 - Does this align with the company's stage (${orgMode})?
 - Does strategic alignment match effort?
 - Is cost of inaction justified?
 - Does this match patterns from past learnings?
-- What is the market timing for this type of initiative? (search for trends)
+${needsSearch ? '- What is the market timing for this type of initiative? (search if needed)' : ''}
 
 SUGGESTION RULES:
 - Calculate average score first
@@ -100,32 +158,32 @@ Return ONLY valid JSON (no markdown, no preamble):
 {
   "approach": {
     "score": 0-100,
-    "rationale": "Brief explanation citing any relevant web findings"
+    "rationale": "Brief explanation${needsSearch ? ' citing any relevant web findings' : ''}"
   },
   "potential": {
     "score": 0-100,
-    "rationale": "Brief explanation citing benchmarks if found"
+    "rationale": "Brief explanation${needsSearch ? ' citing benchmarks if found' : ''}"
   },
   "fit": {
     "score": 0-100,
-    "rationale": "Brief explanation citing market context if found"
+    "rationale": "Brief explanation${needsSearch ? ' citing market context if found' : ''}"
   },
-  "market_context": "Key web findings about similar initiatives",
+  "market_context": ${needsSearch ? '"Key web findings about similar initiatives"' : 'null'},
   "suggestion": {
     "type": "alternative|complement",
     "hypothesis": "Improved/alternative hypothesis",
     "metrics": "Improved/alternative prediction",
     "effort": "Estimated effort",
-    "reasoning": "Why this improvement, citing research",
+    "reasoning": "Why this improvement${needsSearch ? ', citing research' : ''}",
     "expected_score": estimated score with improvements,
-    "market_evidence": "Supporting web findings"
+    "market_evidence": ${needsSearch ? '"Supporting web findings"' : 'null'}
   } OR null if score >= 70
 }`
         }],
-        tools: [{
+        tools: needsSearch ? [{
           type: 'web_search_20250305',
           name: 'web_search'
-        }]
+        }] : undefined
       })
     });
     
