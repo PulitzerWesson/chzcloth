@@ -3183,14 +3183,12 @@ const { ideas, loading: ideasLoading, updateIdeaStatus, claimIdea, submitIdea, u
   
 const handleBetComplete = async (betData, ideaId = null) => {
   if (isMarketplaceBet) {
-    // Gather org learnings first
     const orgLearnings = await getOrgLearnings(
       currentOrg?.orgId, 
       user?.id, 
       'bet'
     );
     
-    // ← ADD THIS BACK
     const scores = await scoreBet(betData, {
       name: currentOrg?.name,
       strategy: currentOrg?.strategy,
@@ -3206,7 +3204,6 @@ const handleBetComplete = async (betData, ideaId = null) => {
     setCurrentBet(enrichedBet);
     setScreen('score');
   } else {
-    // Regular bet - createBet handles scoring internally
     const { data, error } = await createBet(betData, ideaId);
     if (error) {
       console.error('Error creating bet:', error);
