@@ -1736,8 +1736,8 @@ const stepLabels = ['Metric Area', 'Specific Metric', 'Bet Type', 'Strategic Fit
   );
 }
 
-function ScoreResult({ profile, bet, onNewBet, onSeedBaseline, onSkipToDashboard }) {
-   const [ignoredSuggestion, setIgnoredSuggestion] = useState(false);
+function ScoreResult({ profile, bet, onNewBet, onSeedBaseline, onSkipToDashboard, onReplaceBet }) {
+  const [ignoredSuggestion, setIgnoredSuggestion] = useState(false);
   // Use AI scores if available, fallback to old scoring
   const aiScores = bet.scoringRationale;
   const hasAIScores = aiScores?.approach && aiScores?.potential && aiScores?.fit;
