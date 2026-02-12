@@ -1,274 +1,154 @@
-// AI Scoring Utilities with Web Search
-// Uses Anthropic API with web_search tool for real-time market intelligence
-
-const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
-
-/**
- * Search for related signals to an idea
- */
-export async function searchRelatedSignals(ideaContent, existingSignals) {
-  if (!existingSignals || existingSignals.length === 0) {
-    return { count: 0, matches: [] };
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
-
-  // Simple keyword matching for now
-  // TODO: Could enhance with semantic similarity using embeddings
-  const keywords = ideaContent.problem?.toLowerCase().split(' ').filter(w => w.length > 4) || [];
   
-  const matches = existingSignals.filter(signal => {
-    const signalText = signal.description?.toLowerCase() || '';
-    return keywords.some(keyword => signalText.includes(keyword));
-  });
-
-  return {
-    count: matches.length,
-    matches: matches.slice(0, 5) // Top 5 matches
-  };
-}
-
-/**
- * Score an Idea using AI with web search
- */
-export async function scoreIdea(ideaData, orgContext, relatedSignals) {
-  const prompt = `You are evaluating a product idea for a company. Provide detailed scoring with real-time market research.
-
-IDEA DETAILS:
-- Problem: ${ideaData.problem}
-- Proposal: ${ideaData.proposal || ideaData.description}
-- Reach: ${ideaData.reach || 'Not specified'}
-- Expected Impact: ${ideaData.expectedImpact || ideaData.impact || 'Not specified'}
-
-ORGANIZATION CONTEXT:
-- Company: ${orgContext.name}
-- Mode: ${orgContext.mode} (startup/enterprise)
-- Strategy: ${orgContext.companyInfo?.strategy || 'Not specified'}
-- Industry: ${orgContext.companyInfo?.industry || 'Not specified'}
-
-DEMAND SIGNALS:
-- Found ${relatedSignals.count} related internal signals
-${relatedSignals.matches.map(s => `- "${s.description?.substring(0, 100)}..."`).join('\n')}
-
-INSTRUCTIONS:
-1. Search the web for current industry trends related to this idea
-2. Look for competitive intelligence on similar solutions
-3. Check for recent consulting firm reports or analyses (Deloitte, McKinsey, BCG, Gartner)
-4. Evaluate market timing and momentum
-
-Based on ALL this context, provide:
-
-{
-  "viability_score": <0-100>,
-  "relevance_score": <0-100>,
-  "overall_score": <0-100>,
-  "rationale": "<Comprehensive explanation covering: technical feasibility, market trends from your research, signal support, competitive landscape, and strategic fit. Cite specific findings from web search.>",
-  "market_insights": "<Key findings from web search about industry trends and competitive landscape>",
-  "signal_support": "<How the ${relatedSignals.count} internal signals validate this idea>",
-  "suggestion": {
-    "type": "<'alternative' if overall_score < 60, 'complement' if 60-85, null if >85>",
-    "reasoning": "<Why this suggestion would be stronger, citing market research>",
-    "problem": "<Alternative/complementary problem statement>",
-    "proposal": "<Alternative/complementary solution>",
-    "reach": "<Who this impacts>",
-    "impact": "<Expected outcome>",
-    "expected_score": <projected score 0-100>,
-    "market_evidence": "<Specific web search findings supporting this suggestion>"
-  }
-}
-
-SUGGESTION GUIDELINES:
-- If score < 60 (ALTERNATIVE): Suggest a different angle based on market research. Look for: better market timing, less competition, stronger signal support, or clearer path to value.
-- If score 60-85 (COMPLEMENT): Suggest an addition that strengthens the idea. Examples: expanding scope, adding a feature that research shows improves success, pairing with another capability.
-- If score > 85: Set suggestion to null - the idea is strong as-is.
-
-Frame suggestions positively: "Market research shows..." not "Your idea is weak..."
-
-Return ONLY the JSON object, no other text.`;
-
   try {
-    const response = await fetch(ANTHROPIC_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 2000,
-        messages: [{ role: 'user', content: prompt }],
-        tools: [{
-          type: 'web_search_20250305',
-          name: 'web_search'
-        }]
-      })
-    });
-
-    const data = await response.json();
+    const { bet, orgMode, orgName, orgStrategy, orgIndustry, orgLearnings } = req.body;
     
-    // Extract text from response (handling tool use)
-    let fullText = '';
-    for (const block of data.content) {
-      if (block.type === 'text') {
-        fullText += block.text;
-      }
+    // Build learnings context
+    let learningsContext = '';
+    if (orgLearnings) {
+      learningsContext = `
+ORGANIZATIONAL LEARNINGS:
+- Total completed bets: ${orgLearnings.totalBets || 0}
+- Org success rate: ${orgLearnings.orgAccuracy || 'N/A'}%
+${orgLearnings.userAccuracy ? `- Sponsor accuracy: ${orgLearnings.userAccuracy}% (${orgLearnings.userBetsCount} bets)` : '- Sponsor: New (no history)'}
+${orgLearnings.avgSprintsPerFeature ? `- Avg effort per feature: ${orgLearnings.avgSprintsPerFeature} sprints (${orgLearnings.avgDaysPerFeature} days)` : ''}
+- Effort pattern: ${orgLearnings.effortPatterns || 'Building history...'}
+
+Recent outcomes:
+${orgLearnings.recentOutcomes?.map(o => `- ${o.outcome}: ${o.hypothesis} (${o.metric}, ${o.timeframe ? o.timeframe + ' days' : 'N/A'})`).join('\n') || 'None yet'}
+
+Key learnings:
+${orgLearnings.learnings?.slice(0, 5).map(l => `- [${l.outcome}] ${l.hypothesis}: ${l.learned}`).join('\n') || 'None yet'}
+
+Metric domain patterns:
+${Object.entries(orgLearnings.metricPatterns || {}).map(([domain, stats]) => 
+  `- ${domain}: ${Math.round((stats.succeeded/stats.total)*100)}% success (${stats.total} bets)`
+).join('\n') || 'Building history...'}
+`;
     }
-
-    // Parse JSON from response
-    const jsonMatch = fullText.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const scores = JSON.parse(jsonMatch[0]);
-      return {
-        viability_score: scores.viability_score,
-        relevance_score: scores.relevance_score,
-        overall_score: scores.overall_score,
-        scoring_rationale: scores.rationale,
-        market_insights: scores.market_insights,
-        signal_count: relatedSignals.count,
-        suggestion: scores.suggestion // Include AI suggestion
-      };
-    }
-
-    throw new Error('Could not parse AI scoring response');
-
-  } catch (error) {
-    console.error('Error scoring idea:', error);
-    throw error;
-  }
-}
-
-/**
- * Score a Bet using AI with web search
- */
-export async function scoreBet(betData, orgContext) {
-  const prompt = `You are evaluating a product bet with measurable metrics. Provide detailed scoring with real-time market research.
-
-BET DETAILS:
-- Hypothesis: ${betData.hypothesis}
-- Success Metrics: ${betData.metrics || betData.prediction}
-- Estimated Effort: ${betData.effort || betData.estimatedEffort || 'Not specified'}
-- Strategic Alignment: ${betData.strategicAlignment || 'Not specified'}
-- Assumptions: ${betData.assumptions || 'Not specified'}
-
-ORGANIZATION CONTEXT:
-- Company: ${orgContext.name}
-- Mode: ${orgContext.mode} (startup/enterprise)
-- Strategy: ${orgContext.companyInfo?.strategy || 'Not specified'}
-- Industry: ${orgContext.companyInfo?.industry || 'Not specified'}
-
-INSTRUCTIONS:
-1. Search the web for similar initiatives in the industry
-2. Look for success/failure case studies
-3. Check industry benchmarks for similar metrics
-4. Find recent research on this approach
-5. Assess competitive landscape and market timing
-
-Based on ALL this context, provide:
-
-{
-  "approach_score": <0-100>,
-  "approach_rationale": "<Detailed assessment of execution plan quality, citing similar cases from web research>",
-  "potential_score": <0-100>,
-  "potential_rationale": "<Assessment of upside magnitude based on industry benchmarks and market research>",
-  "fit_score": <0-100>,
-  "fit_rationale": "<Strategic alignment considering competitive landscape and market timing>",
-  "overall_score": <0-100>,
-  "market_context": "<Key findings from web search about industry trends, benchmarks, and competitive intelligence>",
-  "risk_factors": "<Potential risks identified from research>",
-  "success_factors": "<Critical success factors based on industry best practices>",
-  "suggestion": {
-    "type": "<'alternative' if overall_score < 60, 'complement' if 60-85, null if >85>",
-    "reasoning": "<Why this suggestion would score higher, citing market research and competitive intelligence>",
-    "hypothesis": "<Alternative/complementary hypothesis>",
-    "metrics": "<Alternative/complementary success metrics>",
-    "effort": "<Effort estimate>",
-    "expected_score": <projected score 0-100>,
-    "market_evidence": "<Specific web search findings, case studies, or benchmarks supporting this suggestion>",
-    "competitive_insight": "<How competitors approached similar challenges>"
-  }
-}
-
-SUGGESTION GUIDELINES:
-- If score < 60 (ALTERNATIVE): Suggest a fundamentally different approach. Look for: similar goals achieved differently (competitor case studies), faster paths to validation, or pivot based on market trends.
-- If score 60-85 (COMPLEMENT): Suggest an addition that strengthens the bet. Examples: adding a metric that research shows matters, expanding scope based on successful case studies, or phasing approach differently.
-- If score > 85: Set suggestion to null - the bet is strong as-is.
-
-Frame suggestions with market evidence: "3 competitors achieved this by..." or "Industry benchmark shows..." not "You should change this..."
-
-Return ONLY the JSON object, no other text.`;
-
-  try {
-    const response = await fetch(ANTHROPIC_API_URL, {
+    
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 3000,
-        messages: [{ role: 'user', content: prompt }],
+        messages: [{
+          role: 'user',
+          content: `Score this ${orgMode || 'startup'} product bet. Search web for similar initiatives, benchmarks, and competitive intel. ALSO consider this org's historical performance.
+
+BET: ${bet.hypothesis || 'Not provided'}
+METRICS: ${bet.metric || bet.prediction || 'Not provided'}
+USER'S EFFORT ESTIMATE: ${bet.estimatedEffort || bet.timeframe || 'Not provided'}
+COMPANY: ${orgName || 'Unknown'}, ${orgStrategy || 'N/A'}, ${orgIndustry || 'N/A'}
+
+${learningsContext}
+
+IMPORTANT: 
+1. Factor in organizational patterns. If similar bets failed before, note it. If sponsor has strong/weak track record, adjust confidence accordingly.
+2. ESTIMATE REALISTIC EFFORT based on scope, company profile, historical data, and web search for similar implementations. Compare to user's estimate.
+3. If org consistently over/underestimates in a domain, call it out.
+
+Return JSON only:
+{
+  "approach": {"score": <0-100>, "rationale": "<cite web findings AND org patterns>"},
+  "potential": {"score": <0-100>, "rationale": "<cite benchmarks AND org history>"},
+  "fit": {"score": <0-100>, "rationale": "<cite market timing AND org execution capability>"},
+  "market_context": "<key web findings>",
+  "org_insights": "<patterns from org data: sponsor track record, similar bet outcomes, domain patterns>",
+  "effort_estimate": {
+    "ai_estimate": "<X-Y sprints or X-Y weeks>",
+    "confidence": "<low/medium/high>",
+    "user_estimate": "${bet.estimatedEffort || bet.timeframe || 'Not provided'}",
+    "variance": "<on track / optimistic / very optimistic / pessimistic>",
+    "reasoning": "<Why this estimate, citing: scope complexity, org history, industry benchmarks, team capability, similar implementations from web search>",
+    "risk_factors": "<Specific risks: new tech, team gaps, integration complexity, mobile/backend split, third-party dependencies>"
+  },
+  "suggestion": {
+    "type": "<'alternative' if avg<60, 'complement' if 60-85, null if >85>",
+    "reasoning": "<why, citing research AND org learnings>",
+    "hypothesis": "<alternative/complement>",
+    "metrics": "<alternative metrics>",
+    "effort": "<estimate INCLUDING buffer for identified risks>",
+    "expected_score": <0-100>,
+    "market_evidence": "<supporting findings>"
+  }
+}`
+        }],
         tools: [{
           type: 'web_search_20250305',
           name: 'web_search'
         }]
       })
     });
-
+    
     const data = await response.json();
     
-    // Extract text from response (handling tool use)
+    if (data.error) {
+      console.error('Anthropic API error:', data.error);
+      return res.status(500).json({ error: data.error.message || 'API error' });
+    }
+    
     let fullText = '';
     for (const block of data.content) {
       if (block.type === 'text') {
         fullText += block.text;
       }
     }
-
-    // Parse JSON from response
+    
     const jsonMatch = fullText.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const scores = JSON.parse(jsonMatch[0]);
-      return {
-        approachScore: scores.approach_score,
-        potentialScore: scores.potential_score,
-        fitScore: scores.fit_score,
-        scoringRationale: {
-          approach: {
-            score: scores.approach_score,
-            rationale: scores.approach_rationale
-          },
-          potential: {
-            score: scores.potential_score,
-            rationale: scores.potential_rationale
-          },
-          fit: {
-            score: scores.fit_score,
-            rationale: scores.fit_rationale
-          },
-          marketContext: scores.market_context,
-          riskFactors: scores.risk_factors,
-          successFactors: scores.success_factors
-        },
-        suggestion: scores.suggestion // Include AI suggestion
-      };
+    if (!jsonMatch) {
+      console.error('No JSON found in response:', fullText);
+      return res.status(500).json({ error: 'Invalid API response format' });
     }
-
-    throw new Error('Could not parse AI scoring response');
-
+    
+    const scores = JSON.parse(jsonMatch[0]);
+    
+    // Strip citation tags
+    const stripCitations = (text) => {
+      if (!text) return text;
+      return text.replace(/<cite[^>]*>|<\/cite>/g, '');
+    };
+    
+    if (scores.approach?.rationale) {
+      scores.approach.rationale = stripCitations(scores.approach.rationale);
+    }
+    if (scores.potential?.rationale) {
+      scores.potential.rationale = stripCitations(scores.potential.rationale);
+    }
+    if (scores.fit?.rationale) {
+      scores.fit.rationale = stripCitations(scores.fit.rationale);
+    }
+    if (scores.market_context) {
+      scores.market_context = stripCitations(scores.market_context);
+    }
+    if (scores.org_insights) {
+      scores.org_insights = stripCitations(scores.org_insights);
+    }
+    if (scores.effort_estimate?.reasoning) {
+      scores.effort_estimate.reasoning = stripCitations(scores.effort_estimate.reasoning);
+    }
+    if (scores.effort_estimate?.risk_factors) {
+      scores.effort_estimate.risk_factors = stripCitations(scores.effort_estimate.risk_factors);
+    }
+    if (scores.suggestion?.reasoning) {
+      scores.suggestion.reasoning = stripCitations(scores.suggestion.reasoning);
+    }
+    if (scores.suggestion?.market_evidence) {
+      scores.suggestion.market_evidence = stripCitations(scores.suggestion.market_evidence);
+    }
+    
+    return res.status(200).json(scores);
+    
   } catch (error) {
-    console.error('Error scoring bet:', error);
-    throw error;
+    console.error('Scoring error:', error);
+    return res.status(500).json({ error: error.message });
   }
-}
-
-/**
- * Helper to format org context from currentOrg object
- */
-export function formatOrgContext(currentOrg) {
-  return {
-    name: currentOrg?.name || 'Unknown Company',
-    mode: currentOrg?.mode || 'startup',
-    companyInfo: {
-      strategy: currentOrg?.strategy,
-      industry: currentOrg?.industry,
-      website: currentOrg?.website
-    }
-  };
 }
