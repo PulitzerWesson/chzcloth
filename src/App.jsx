@@ -1843,6 +1843,7 @@ function ScoreResult({ profile, bet, onNewBet, onSeedBaseline, onSkipToDashboard
             </div>
             <p style={{ color: '#94a3b8', fontSize: '1.1rem' }}>{oldScoreInfo.desc}</p>
           </div>
+       )}
 
         {/* AI Suggestion for Low-Scoring Bets */}
 {hasAIScores && aiScores.suggestion && !ignoredSuggestion && (
@@ -1879,8 +1880,6 @@ function ScoreResult({ profile, bet, onNewBet, onSeedBaseline, onSkipToDashboard
   />
 )}
 
-{/* Your bet summary */}
-<div style={{ marginBottom: 32 }}>
 
         {/* Your bet summary */}
         <div style={{ marginBottom: 32 }}>
