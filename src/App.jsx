@@ -19,6 +19,176 @@ import { getOrgLearnings } from './utils/orgLearnings';
 // CHZCLOTH Free - Where Bets Get Smarter
 // ============================================
 
+// Add this after imports, before AppHeader
+const CHZCLOTHBadge = () => (
+  <svg 
+    width="14" 
+    height="14" 
+    viewBox="0 0 100 100"
+    title="CHZCLOTH AI Enhanced"
+    style={{ 
+      marginLeft: 6, 
+      cursor: 'help',
+      flexShrink: 0
+    }}
+  >
+    {/* Outer circle */}
+    <circle 
+      cx="50" 
+      cy="50" 
+      r="42" 
+      stroke="#2dd4bf" 
+      strokeWidth="8" 
+      fill="none"
+    />
+    
+    {/* C shape */}
+    <path 
+      d="M50,15 C30,15 15,30 15,50 C15,70 30,85 50,85" 
+      stroke="#2dd4bf" 
+      fill="none" 
+      strokeWidth="12"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+function ClarifyingQuestions({ bet, orgContext, onComplete, onSkip }) {
+  const [questions, setQuestions] = useState([]);
+  const [answers, setAnswers] = useState({});
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    async function loadQuestions() {
+      try {
+        const response = await fetch('/api/generate-questions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bet, orgContext })
+        });
+        const data = await response.json();
+        setQuestions(data.questions || []);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error loading questions:', error);
+        setLoading(false);
+      }
+    }
+    loadQuestions();
+  }, []);
+  
+  if (loading) {
+    return (
+      <div style={{ 
+        minHeight: 'calc(100vh - 120px)', 
+        padding: '60px 24px', 
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'column'
+      }}>
+        <div style={{ color: '#2dd4bf', fontSize: '1.1rem', marginBottom: 16 }}>
+          Analyzing your bet...
+        </div>
+        <div style={{ color: '#64748b', fontSize: '0.9rem' }}>
+          Generating clarifying questions
+        </div>
+      </div>
+    );
+  }
+  
+  if (questions.length === 0) {
+    // No questions needed - proceed to scoring
+    onComplete({});
+    return null;
+  }
+  
+  return (
+    <div style={{ padding: '60px 24px' }}>
+      <div style={{ maxWidth: 600, margin: '0 auto' }}>
+        <h2 style={{ color: '#f1f5f9', fontSize: '1.5rem', fontWeight: 700, marginBottom: 12 }}>
+          A few questions to help score accurately
+        </h2>
+        <p style={{ color: '#64748b', marginBottom: 32, lineHeight: 1.6 }}>
+          Optional - skip if you prefer
+        </p>
+        
+        {questions.map((q, idx) => (
+          <div key={idx} style={{ marginBottom: 32 }}>
+            <label style={{ 
+              display: 'block', 
+              color: '#f1f5f9', 
+              fontWeight: 500, 
+              marginBottom: 8,
+              lineHeight: 1.5
+            }}>
+              {idx + 1}. {q.question}
+            </label>
+            <textarea
+              value={answers[idx] || ''}
+              onChange={e => setAnswers({ ...answers, [idx]: e.target.value })}
+              placeholder="Your answer..."
+              style={{
+                width: '100%',
+                minHeight: 80,
+                padding: 12,
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 8,
+                color: '#f1f5f9',
+                fontSize: '0.95rem',
+                lineHeight: 1.5,
+                resize: 'vertical'
+              }}
+            />
+            <div style={{ 
+              color: '#64748b', 
+              fontSize: '0.8rem', 
+              marginTop: 6,
+              fontStyle: 'italic'
+            }}>
+              Why we're asking: {q.why}
+            </div>
+          </div>
+        ))}
+        
+        <div style={{ display: 'flex', gap: 12, marginTop: 32 }}>
+          <button
+            onClick={() => onSkip()}
+            style={{
+              padding: '14px 24px',
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: 10,
+              color: '#94a3b8',
+              fontSize: '0.95rem',
+              cursor: 'pointer'
+            }}
+          >
+            Skip Questions
+          </button>
+          <button
+            onClick={() => onComplete(answers)}
+            style={{
+              flex: 1,
+              padding: '14px 24px',
+              background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
+              border: 'none',
+              borderRadius: 10,
+              color: '#0a0f1a',
+              fontSize: '0.95rem',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+          >
+            Continue with Answers
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AppHeader({ isLoggedIn, onDashboardClick, onLogoClick, showTeamsBanner = true }) {
   const [bannerDismissed, setBannerDismissed] = useState(false);
   
@@ -1736,14 +1906,12 @@ const stepLabels = ['Metric Area', 'Specific Metric', 'Bet Type', 'Strategic Fit
   );
 }
 
-function ScoreResult({ profile, bet, onNewBet, onSeedBaseline, onSkipToDashboard, onReplaceBet, onSavePersonal, onAddToMarketplace }) {
-  const [ignoredSuggestion, setIgnoredSuggestion] = useState(false);
+function ScoreResult({ bet, onNewBet, onSkipToDashboard, onSavePersonal, onAddToMarketplace, onUseAI }) {
+  const [enhancementDecided, setEnhancementDecided] = useState(!!bet.aiEnhanced);
   
-  // Use AI scores if available, fallback to old scoring
   const aiScores = bet.scoringRationale;
   const hasAIScores = aiScores?.approach && aiScores?.potential && aiScores?.fit;
   
-  // Fallback for old scoring
   const oldScore = calculateScore(bet);
   const oldScoreInfo = getScoreLabel(oldScore.total);
   
@@ -1779,6 +1947,8 @@ function ScoreResult({ profile, bet, onNewBet, onSeedBaseline, onSkipToDashboard
   const avgScore = hasAIScores 
     ? Math.round((aiScores.approach.score + aiScores.potential.score + aiScores.fit.score) / 3)
     : oldScore.total;
+  
+  const hasSuggestion = aiScores?.suggestion && avgScore < 70;
 
   return (
     <div style={{ padding: '60px 24px' }}>
@@ -1786,7 +1956,6 @@ function ScoreResult({ profile, bet, onNewBet, onSeedBaseline, onSkipToDashboard
         
         {hasAIScores ? (
           <>
-            {/* Three AI Scores */}
             <div style={{ marginBottom: 48 }}>
               <h2 style={{ color: '#f1f5f9', fontSize: '1.5rem', fontWeight: 700, textAlign: 'center', marginBottom: 32 }}>
                 Your Bet Score
@@ -1810,7 +1979,6 @@ function ScoreResult({ profile, bet, onNewBet, onSeedBaseline, onSkipToDashboard
               </div>
             </div>
 
-            {/* Average score callout */}
             <div style={{
               background: 'rgba(45, 212, 191, 0.1)',
               border: '1px solid rgba(45, 212, 191, 0.3)',
@@ -1824,7 +1992,6 @@ function ScoreResult({ profile, bet, onNewBet, onSeedBaseline, onSkipToDashboard
             </div>
           </>
         ) : (
-          /* Fallback to old score display */
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <div style={{
               width: 160, height: 160, borderRadius: '50%',
@@ -1846,178 +2013,241 @@ function ScoreResult({ profile, bet, onNewBet, onSeedBaseline, onSkipToDashboard
           </div>
         )}
 
-        {/* AI Suggestion for Low-Scoring Bets */}
-        {hasAIScores && aiScores.suggestion && !ignoredSuggestion && (
-          <SuggestionCard
-            suggestion={aiScores.suggestion}
-            type="bet"
-            onReplace={() => {
-              const suggestedBet = {
-                hypothesis: aiScores.suggestion.hypothesis,
-                metric: bet.metric,
-                customMetric: aiScores.suggestion.metrics,
-                prediction: aiScores.suggestion.metrics,
-                betType: bet.betType,
-                baseline: bet.baseline,
-                confidence: bet.confidence,
-                timeframe: aiScores.suggestion.effort?.match(/\d+/)?.[0] || bet.timeframe,
-                estimatedEffort: aiScores.suggestion.effort,
-                assumptions: bet.assumptions,
-                cheapTest: bet.cheapTest,
-                isOwnIdea: bet.isOwnIdea,
-                ideaSource: bet.ideaSource,
-                measurementTool: bet.measurementTool,
-                strategicAlignment: bet.strategicAlignment,
-                inactionImpact: bet.inactionImpact
-              };
+        {hasSuggestion && !enhancementDecided && (
+          <div style={{ marginBottom: 32 }}>
+            <div style={{
+              background: 'rgba(139, 92, 246, 0.1)',
+              border: '1px solid rgba(139, 92, 246, 0.3)',
+              borderRadius: 12,
+              padding: 24
+            }}>
+              <h3 style={{ color: '#a78bfa', marginBottom: 16, fontSize: '1.1rem', fontWeight: 600 }}>
+                AI Recommendation
+              </h3>
               
-              if (onReplaceBet) {
-                onReplaceBet(suggestedBet);
-              }
-            }}
-            onIgnore={() => setIgnoredSuggestion(true)}
-          />
+              <div style={{ color: '#cbd5e1', marginBottom: 16 }}>
+                <strong style={{ color: '#a78bfa' }}>Improved Hypothesis:</strong>
+                <div style={{ 
+                  marginTop: 8, 
+                  padding: 12, 
+                  background: 'rgba(0,0,0,0.2)', 
+                  borderRadius: 8,
+                  lineHeight: 1.6
+                }}>
+                  {aiScores.suggestion.hypothesis}
+                </div>
+              </div>
+              
+              {aiScores.suggestion.metrics && (
+                <div style={{ color: '#cbd5e1', marginBottom: 16 }}>
+                  <strong style={{ color: '#a78bfa' }}>Metrics:</strong> {aiScores.suggestion.metrics}
+                </div>
+              )}
+              
+              {aiScores.suggestion.effort && (
+                <div style={{ color: '#cbd5e1', marginBottom: 16 }}>
+                  <strong style={{ color: '#a78bfa' }}>Effort:</strong> {aiScores.suggestion.effort}
+                </div>
+              )}
+              
+              {aiScores.suggestion.reasoning && (
+                <div style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: 24, fontStyle: 'italic' }}>
+                  {aiScores.suggestion.reasoning}
+                </div>
+              )}
+              
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button
+                  onClick={() => {
+                    onUseAI();
+                    setEnhancementDecided(true);
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '14px 24px',
+                    background: 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)',
+                    border: 'none',
+                    borderRadius: 10,
+                    color: '#fff',
+                    fontSize: '0.95rem',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Use AI Enhancement
+                </button>
+                <button
+                  onClick={() => setEnhancementDecided(true)}
+                  style={{
+                    flex: 1,
+                    padding: '14px 24px',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 10,
+                    color: '#94a3b8',
+                    fontSize: '0.95rem',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Keep Original
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
-        {/* Your bet summary */}
-        <div style={{ marginBottom: 32 }}>
-          <h3 style={{ color: '#f1f5f9', fontSize: '1.1rem', fontWeight: 600, marginBottom: 16 }}>Your Bet</h3>
-          <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
-              <span style={{
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                color: bet.isOwnIdea ? '#2dd4bf' : '#fbbf24',
-                background: bet.isOwnIdea ? 'rgba(45, 212, 191, 0.15)' : 'rgba(251, 191, 36, 0.15)',
-                padding: '4px 10px',
-                borderRadius: 4
+        {enhancementDecided && (
+          <>
+            <div style={{ marginBottom: 32 }}>
+              <h3 style={{ 
+                color: '#f1f5f9', 
+                fontSize: '1.1rem', 
+                fontWeight: 600, 
+                marginBottom: 16,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8
               }}>
-                {bet.isOwnIdea ? 'Your idea' : `Tracking: ${bet.ideaSource || "someone else's bet"}`}
-              </span>
-              {bet.strategicAlignment && (
-                <span style={{
-                  fontSize: '0.75rem',
+                Your Bet
+                {bet.aiEnhanced && <CHZCLOTHBadge />}
+              </h3>
+              <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
+                  <span style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    color: bet.isOwnIdea ? '#2dd4bf' : '#fbbf24',
+                    background: bet.isOwnIdea ? 'rgba(45, 212, 191, 0.15)' : 'rgba(251, 191, 36, 0.15)',
+                    padding: '4px 10px',
+                    borderRadius: 4
+                  }}>
+                    {bet.isOwnIdea ? 'Your idea' : `Tracking: ${bet.ideaSource || "someone else's bet"}`}
+                  </span>
+                  {bet.strategicAlignment && (
+                    <span style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      color: '#94a3b8',
+                      background: 'rgba(255,255,255,0.05)',
+                      padding: '4px 10px',
+                      borderRadius: 4
+                    }}>
+                      {bet.strategicAlignment === 'bullseye' ? 'Bullseye' : 
+                       bet.strategicAlignment === 'inner' ? 'Inner Ring' :
+                       bet.strategicAlignment === 'outer' ? 'Outer Ring' : 'Edge'}
+                    </span>
+                  )}
+                  {bet.estimatedEffort && (
+                    <span style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      color: '#94a3b8',
+                      background: 'rgba(255,255,255,0.05)',
+                      padding: '4px 10px',
+                      borderRadius: 4
+                    }}>
+                      {bet.estimatedEffort}
+                    </span>
+                  )}
+                </div>
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ color: '#64748b', fontSize: '0.8rem', marginBottom: 4 }}>Hypothesis</div>
+                  <div style={{ color: '#f1f5f9', lineHeight: 1.6 }}>{bet.hypothesis}</div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                  <div>
+                    <div style={{ color: '#64748b', fontSize: '0.8rem', marginBottom: 4 }}>Metric</div>
+                    <div style={{ color: '#2dd4bf' }}>{bet.metric}</div>
+                  </div>
+                  <div>
+                    <div style={{ color: '#64748b', fontSize: '0.8rem', marginBottom: 4 }}>Prediction</div>
+                    <div style={{ color: '#f1f5f9' }}>{bet.prediction}</div>
+                  </div>
+                  <div>
+                    <div style={{ color: '#64748b', fontSize: '0.8rem', marginBottom: 4 }}>Confidence</div>
+                    <div style={{ color: '#fbbf24' }}>{bet.confidence}%</div>
+                  </div>
+                  <div>
+                    <div style={{ color: '#64748b', fontSize: '0.8rem', marginBottom: 4 }}>Measure in</div>
+                    <div style={{ color: '#f1f5f9' }}>{bet.timeframe} days</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <button
+                onClick={onSavePersonal}
+                style={{
+                  padding: '16px 24px',
+                  background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
+                  border: 'none',
+                  borderRadius: 10,
+                  color: '#0a0f1a',
+                  fontSize: '1rem',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                Save to Personal Queue
+              </button>
+              
+              <button
+                onClick={onAddToMarketplace}
+                style={{
+                  padding: '16px 24px',
+                  background: 'rgba(251, 191, 36, 0.15)',
+                  border: '1px solid rgba(251, 191, 36, 0.3)',
+                  borderRadius: 10,
+                  color: '#fbbf24',
+                  fontSize: '1rem',
                   fontWeight: 600,
-                  color: '#94a3b8',
-                  background: 'rgba(255,255,255,0.05)',
-                  padding: '4px 10px',
-                  borderRadius: 4
-                }}>
-                  {bet.strategicAlignment === 'bullseye' ? 'Bullseye' : 
-                   bet.strategicAlignment === 'inner' ? 'Inner Ring' :
-                   bet.strategicAlignment === 'outer' ? 'Outer Ring' : 'Edge'}
-                </span>
-              )}
-              {bet.estimatedEffort && (
-                <span style={{
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  color: '#94a3b8',
-                  background: 'rgba(255,255,255,0.05)',
-                  padding: '4px 10px',
-                  borderRadius: 4
-                }}>
-                  {bet.estimatedEffort}
-                </span>
-              )}
-            </div>
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ color: '#64748b', fontSize: '0.8rem', marginBottom: 4 }}>Hypothesis</div>
-              <div style={{ color: '#f1f5f9', lineHeight: 1.6 }}>{bet.hypothesis}</div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <div>
-                <div style={{ color: '#64748b', fontSize: '0.8rem', marginBottom: 4 }}>Metric</div>
-                <div style={{ color: '#2dd4bf' }}>{bet.metric}</div>
-              </div>
-              <div>
-                <div style={{ color: '#64748b', fontSize: '0.8rem', marginBottom: 4 }}>Prediction</div>
-                <div style={{ color: '#f1f5f9' }}>{bet.prediction}</div>
-              </div>
-              <div>
-                <div style={{ color: '#64748b', fontSize: '0.8rem', marginBottom: 4 }}>Confidence</div>
-                <div style={{ color: '#fbbf24' }}>{bet.confidence}%</div>
-              </div>
-              <div>
-                <div style={{ color: '#64748b', fontSize: '0.8rem', marginBottom: 4 }}>Measure in</div>
-                <div style={{ color: '#f1f5f9' }}>{bet.timeframe} days</div>
+                  cursor: 'pointer'
+                }}
+              >
+                Add to Marketplace for Sponsorship
+              </button>
+              
+              <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+                <button
+                  onClick={onNewBet}
+                  style={{
+                    flex: 1,
+                    padding: '14px',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 10,
+                    color: '#94a3b8',
+                    fontSize: '0.95rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Submit Another Bet
+                </button>
+                <button
+                  onClick={onSkipToDashboard}
+                  style={{
+                    flex: 1,
+                    padding: '14px',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 10,
+                    color: '#94a3b8',
+                    fontSize: '0.95rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Go to Dashboard
+                </button>
               </div>
             </div>
-          </div>
-        </div>
-        
-        {/* Actions */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <button
-            onClick={onSavePersonal}
-            style={{
-              padding: '16px 24px',
-              background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
-              border: 'none',
-              borderRadius: 10,
-              color: '#0a0f1a',
-              fontSize: '1rem',
-              fontWeight: 700,
-              cursor: 'pointer'
-            }}
-          >
-            Save to Personal Queue
-          </button>
-          
-          <button
-            onClick={onAddToMarketplace}
-            style={{
-              padding: '16px 24px',
-              background: 'rgba(251, 191, 36, 0.15)',
-              border: '1px solid rgba(251, 191, 36, 0.3)',
-              borderRadius: 10,
-              color: '#fbbf24',
-              fontSize: '1rem',
-              fontWeight: 600,
-              cursor: 'pointer'
-            }}
-          >
-            Add to Marketplace for Sponsorship
-          </button>
-          
-          <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-            <button
-              onClick={onNewBet}
-              style={{
-                flex: 1,
-                padding: '14px',
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: 10,
-                color: '#94a3b8',
-                fontSize: '0.95rem',
-                cursor: 'pointer'
-              }}
-            >
-              Submit Another Bet
-            </button>
-            <button
-              onClick={onSkipToDashboard}
-              style={{
-                flex: 1,
-                padding: '14px',
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: 10,
-                color: '#94a3b8',
-                fontSize: '0.95rem',
-                cursor: 'pointer'
-              }}
-            >
-              Go to Dashboard
-            </button>
-          </div>
-        </div>
+          </>
+        )}
       </div>
     </div>
   );
 }
-
 function SeedBaseline({ profile, onComplete }) {
   const [currentBetIndex, setCurrentBetIndex] = useState(0);
   const [pastBets, setPastBets] = useState([
@@ -2854,14 +3084,18 @@ const avgScore = betsWithScores.length > 0
       {/* MAIN ROW - Just hypothesis, approval, and scores */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         {/* Hypothesis */}
-        <div style={{ 
-          color: '#f1f5f9', 
-          lineHeight: 1.5, 
-          flex: 1, 
-          marginRight: 16 
-        }}>
-          {bet.hypothesis}
-        </div>
+              <div style={{ 
+                color: '#f1f5f9', 
+                lineHeight: 1.5, 
+                flex: 1, 
+                marginRight: 16,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8
+              }}>
+                {bet.hypothesis}
+                {bet.aiEnhanced && <CHZCLOTHBadge />}
+              </div>
         
         {/* Right side: Approval + Scores */}
         <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexShrink: 0 }}>
@@ -3022,7 +3256,18 @@ const avgScore = betsWithScores.length > 0
                   marginBottom: 12
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                    <div style={{ color: '#cbd5e1', flex: 1 }}>{bet.hypothesis || bet.description}</div>
+                          <div style={{ 
+                            color: '#cbd5e1', 
+                            flex: 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8
+                          }}>
+                            {bet.hypothesis || bet.description}
+                            {bet.aiEnhanced && <CHZCLOTHBadge />}
+                          </div>
+                                              
+                    
                     <span style={{ 
                       padding: '4px 12px',
                       borderRadius: 20,
@@ -3103,6 +3348,7 @@ const { ideas, loading: ideasLoading, updateIdeaStatus, claimIdea, submitIdea, u
   const [betToRecord, setBetToRecord] = useState(null);
   const [emailSent, setEmailSent] = useState(false);
   const [betToReplace, setBetToReplace] = useState(null);
+  const [pendingBet, setPendingBet] = useState(null);
   
   // FIX: Progressive loading messages for Supabase free tier cold starts (5-8s)
   // Instead of a 3s timeout that forces a wrong routing decision,
@@ -3182,17 +3428,78 @@ const { ideas, loading: ideasLoading, updateIdeaStatus, claimIdea, submitIdea, u
   };
   
 const handleBetComplete = async (betData, ideaId = null) => {
-  const { data, error } = await createBet(betData, ideaId);
+  // Store bet data and show clarifying questions
+  setPendingBet({ betData, ideaId });
+  setScreen('clarifying_questions');
+};
+
+  const handleQuestionsComplete = async (answers) => {
+  // Create bet with clarifying answers
+  const { data, error } = await createBet({
+    ...pendingBet.betData,
+    clarifyingAnswers: answers
+  }, pendingBet.ideaId);
   
   if (error) {
     console.error('Error creating bet:', error);
     alert('Error saving bet. Please try again.');
   } else {
     setCurrentBet(data);
+    setPendingBet(null);
     setScreen('score');
   }
 };
 
+const handleSkipQuestions = async () => {
+  // Create bet without answers
+  const { data, error } = await createBet(
+    pendingBet.betData, 
+    pendingBet.ideaId
+  );
+  
+  if (error) {
+    console.error('Error creating bet:', error);
+    alert('Error saving bet. Please try again.');
+  } else {
+    setCurrentBet(data);
+    setPendingBet(null);
+    setScreen('score');
+  }
+};
+
+const handleUseAIEnhancement = async () => {
+  if (!currentBet.scoringRationale?.suggestion) return;
+  
+  const suggestion = currentBet.scoringRationale.suggestion;
+  
+  // Update bet in DB with AI enhancement
+  const { error } = await supabase
+    .from('bets')
+    .update({
+      hypothesis: suggestion.hypothesis,
+      prediction: suggestion.metrics,
+      estimated_effort: suggestion.effort,
+      ai_enhanced: true,
+      original_hypothesis: currentBet.hypothesis
+    })
+    .eq('id', currentBet.id);
+  
+  if (error) {
+    console.error('Error updating bet:', error);
+    alert('Error applying enhancement.');
+  } else {
+    // Update local state
+    setCurrentBet({
+      ...currentBet,
+      hypothesis: suggestion.hypothesis,
+      prediction: suggestion.metrics,
+      estimatedEffort: suggestion.effort,
+      aiEnhanced: true,
+      originalHypothesis: currentBet.hypothesis
+    });
+  }
+};
+  
   const handleSavePersonal = () => {
   // Bet already saved to DB in handleBetComplete
   // Just navigate to dashboard
@@ -3580,16 +3887,23 @@ const handleRejectBet = async (betId, reason) => {
     onCancel={() => setScreen('ideas_queue')}
   />
 )}
+
+      {screen === 'clarifying_questions' && (
+  <ClarifyingQuestions
+    bet={pendingBet?.betData}
+    orgContext={currentOrg}
+    onComplete={handleQuestionsComplete}
+    onSkip={handleSkipQuestions}
+  />
+)}
 {screen === 'score' && (
   <ScoreResult 
-    profile={profile} 
-    bet={currentBet} 
-    onNewBet={handleNewBet} 
-    onSeedBaseline={handleSeedBaseline} 
+    bet={currentBet}
+    onNewBet={handleNewBet}
     onSkipToDashboard={handleSkipToDashboard}
-    onReplaceBet={handleReplaceBet}
     onSavePersonal={handleSavePersonal}
     onAddToMarketplace={handleAddToMarketplace}
+    onUseAI={handleUseAIEnhancement}
   />
 )}
       {screen === 'baseline' && <SeedBaseline profile={profile} onComplete={handleBaselineComplete} />}
