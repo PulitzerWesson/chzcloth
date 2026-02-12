@@ -1843,34 +1843,7 @@ function ScoreResult({ profile, bet, onNewBet, onSeedBaseline, onSkipToDashboard
             </div>
             <p style={{ color: '#94a3b8', fontSize: '1.1rem' }}>{oldScoreInfo.desc}</p>
           </div>
-        )}
 
-            const scores = await scoreBet(betData, {
-      name: currentOrg?.name,
-      strategy: currentOrg?.strategy,
-      industry: currentOrg?.industry,
-      learnings: orgLearnings
-    });
-    
-    const enrichedBet = {
-      ...betData,
-      scoringRationale: scores
-    };
-    
-    setCurrentBet(enrichedBet);
-    setScreen('score');
-  } else {
-    // Regular bet - createBet handles scoring internally
-    const { data, error } = await createBet(betData, ideaId);
-    if (error) {
-      console.error('Error creating bet:', error);
-      alert('Error saving bet. Please try again.');
-    } else {
-      setCurrentBet(data);
-      setScreen('score');
-    }
-  }
-};
         {/* AI Suggestion for Low-Scoring Bets */}
 {hasAIScores && aiScores.suggestion && !ignoredSuggestion && (
   <SuggestionCard
