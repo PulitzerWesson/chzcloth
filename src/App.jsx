@@ -14,6 +14,7 @@ import EntryTypeChooser from './components/EntryTypeChooser';
 import SignalSubmission from './components/SignalSubmission';
 import SuggestionCard from './components/SuggestionCard';
 import { getOrgLearnings } from './utils/orgLearnings';
+import { supabase } from './lib/supabase'
 
 // ============================================
 // CHZCLOTH Free - Where Bets Get Smarter
