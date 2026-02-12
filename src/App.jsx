@@ -1736,8 +1736,9 @@ const stepLabels = ['Metric Area', 'Specific Metric', 'Bet Type', 'Strategic Fit
   );
 }
 
-function ScoreResult({ profile, bet, onNewBet, onSeedBaseline, onSkipToDashboard, onReplaceBet }) {
+function ScoreResult({ profile, bet, onNewBet, onSeedBaseline, onSkipToDashboard, onReplaceBet, onSavePersonal, onAddToMarketplace }) {
   const [ignoredSuggestion, setIgnoredSuggestion] = useState(false);
+  
   // Use AI scores if available, fallback to old scoring
   const aiScores = bet.scoringRationale;
   const hasAIScores = aiScores?.approach && aiScores?.potential && aiScores?.fit;
@@ -1771,7 +1772,7 @@ function ScoreResult({ profile, bet, onNewBet, onSeedBaseline, onSkipToDashboard
         </div>
       </div>
       <div style={{ color: '#f1f5f9', fontWeight: 600, marginBottom: 4 }}>{label}</div>
-<div style={{ color: '#64748b', fontSize: '0.8rem', lineHeight: 1.4, padding: '0 8px', textAlign: 'left' }}>{rationale}</div>
+      <div style={{ color: '#64748b', fontSize: '0.8rem', lineHeight: 1.4, padding: '0 8px', textAlign: 'left' }}>{rationale}</div>
     </div>
   );
 
@@ -1843,43 +1844,40 @@ function ScoreResult({ profile, bet, onNewBet, onSeedBaseline, onSkipToDashboard
             </div>
             <p style={{ color: '#94a3b8', fontSize: '1.1rem' }}>{oldScoreInfo.desc}</p>
           </div>
-       )}
+        )}
 
         {/* AI Suggestion for Low-Scoring Bets */}
-{hasAIScores && aiScores.suggestion && !ignoredSuggestion && (
-  <SuggestionCard
-    suggestion={aiScores.suggestion}
-    type="bet"
-    onReplace={() => {
-      // Create bet data from AI suggestion
-      const suggestedBet = {
-        hypothesis: aiScores.suggestion.hypothesis,
-        metric: bet.metric, // Keep same metric domain
-        customMetric: aiScores.suggestion.metrics,
-        prediction: aiScores.suggestion.metrics,
-        betType: bet.betType,
-        baseline: bet.baseline,
-        confidence: bet.confidence,
-        timeframe: aiScores.suggestion.effort?.match(/\d+/)?.[0] || bet.timeframe,
-        estimatedEffort: aiScores.suggestion.effort,
-        assumptions: bet.assumptions,
-        cheapTest: bet.cheapTest,
-        isOwnIdea: bet.isOwnIdea,
-        ideaSource: bet.ideaSource,
-        measurementTool: bet.measurementTool,
-        strategicAlignment: bet.strategicAlignment,
-        inactionImpact: bet.inactionImpact
-      };
-      
-      // Call handler to go back to bet form
-      if (onReplaceBet) {
-        onReplaceBet(suggestedBet);
-      }
-    }}
-    onIgnore={() => setIgnoredSuggestion(true)}
-  />
-)}
-
+        {hasAIScores && aiScores.suggestion && !ignoredSuggestion && (
+          <SuggestionCard
+            suggestion={aiScores.suggestion}
+            type="bet"
+            onReplace={() => {
+              const suggestedBet = {
+                hypothesis: aiScores.suggestion.hypothesis,
+                metric: bet.metric,
+                customMetric: aiScores.suggestion.metrics,
+                prediction: aiScores.suggestion.metrics,
+                betType: bet.betType,
+                baseline: bet.baseline,
+                confidence: bet.confidence,
+                timeframe: aiScores.suggestion.effort?.match(/\d+/)?.[0] || bet.timeframe,
+                estimatedEffort: aiScores.suggestion.effort,
+                assumptions: bet.assumptions,
+                cheapTest: bet.cheapTest,
+                isOwnIdea: bet.isOwnIdea,
+                ideaSource: bet.ideaSource,
+                measurementTool: bet.measurementTool,
+                strategicAlignment: bet.strategicAlignment,
+                inactionImpact: bet.inactionImpact
+              };
+              
+              if (onReplaceBet) {
+                onReplaceBet(suggestedBet);
+              }
+            }}
+            onIgnore={() => setIgnoredSuggestion(true)}
+          />
+        )}
 
         {/* Your bet summary */}
         <div style={{ marginBottom: 32 }}>
@@ -1905,9 +1903,9 @@ function ScoreResult({ profile, bet, onNewBet, onSeedBaseline, onSkipToDashboard
                   padding: '4px 10px',
                   borderRadius: 4
                 }}>
-                  {bet.strategicAlignment === 'bullseye' ? '🎯 Bullseye' : 
-                   bet.strategicAlignment === 'inner' ? '⭕ Inner Ring' :
-                   bet.strategicAlignment === 'outer' ? '⚪ Outer Ring' : '🔲 Edge'}
+                  {bet.strategicAlignment === 'bullseye' ? 'Bullseye' : 
+                   bet.strategicAlignment === 'inner' ? 'Inner Ring' :
+                   bet.strategicAlignment === 'outer' ? 'Outer Ring' : 'Edge'}
                 </span>
               )}
               {bet.estimatedEffort && (
@@ -1950,6 +1948,37 @@ function ScoreResult({ profile, bet, onNewBet, onSeedBaseline, onSkipToDashboard
         
         {/* Actions */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <button
+            onClick={onSavePersonal}
+            style={{
+              padding: '16px 24px',
+              background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
+              border: 'none',
+              borderRadius: 10,
+              color: '#0a0f1a',
+              fontSize: '1rem',
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
+          >
+            Save to Personal Queue
+          </button>
+          
+          <button
+            onClick={onAddToMarketplace}
+            style={{
+              padding: '16px 24px',
+              background: 'rgba(251, 191, 36, 0.15)',
+              border: '1px solid rgba(251, 191, 36, 0.3)',
+              borderRadius: 10,
+              color: '#fbbf24',
+              fontSize: '1rem',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+          >
+            Add to Marketplace for Sponsorship
+          </button>
           
           <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
             <button
@@ -3071,7 +3100,6 @@ const { bets, loading: betsLoading, createBet, createPastBets, recordOutcome, sc
 const { ideas, loading: ideasLoading, updateIdeaStatus, claimIdea, submitIdea, unclaimIdea } = useIdeas(currentOrg?.orgId);
   const [screen, setScreen] = useState('landing');
   const [currentBet, setCurrentBet] = useState(null);
-  const [isMarketplaceBet, setIsMarketplaceBet] = useState(false);
   const [betToRecord, setBetToRecord] = useState(null);
   const [emailSent, setEmailSent] = useState(false);
   const [betToReplace, setBetToReplace] = useState(null);
@@ -3154,36 +3182,71 @@ const { ideas, loading: ideasLoading, updateIdeaStatus, claimIdea, submitIdea, u
   };
   
 const handleBetComplete = async (betData, ideaId = null) => {
-  if (isMarketplaceBet) {
-    const orgLearnings = await getOrgLearnings(
-      currentOrg?.orgId, 
-      user?.id, 
-      'bet'
-    );
-    
-    const scores = await scoreBet(betData, {
-      name: currentOrg?.name,
-      strategy: currentOrg?.strategy,
-      industry: currentOrg?.industry,
-      learnings: orgLearnings
-    });
-    
-    const enrichedBet = {
-      ...betData,
-      scoringRationale: scores
-    };
-    
-    setCurrentBet(enrichedBet);
-    setScreen('score');
+  // ALWAYS get AI scores for every bet
+  const orgLearnings = await getOrgLearnings(
+    currentOrg?.orgId, 
+    user?.id, 
+    'bet'
+  );
+  
+  const scores = await scoreBet(betData, {
+    name: currentOrg?.name,
+    strategy: currentOrg?.strategy,
+    industry: currentOrg?.industry,
+    learnings: orgLearnings
+  });
+  
+  // Save bet to DB with AI scores
+  const enrichedBet = {
+    ...betData,
+    scoringRationale: scores,
+    approachScore: scores.approach.score,
+    potentialScore: scores.potential.score,
+    fitScore: scores.fit.score
+  };
+  
+  const { data, error } = await createBet(enrichedBet, ideaId);
+  
+  if (error) {
+    console.error('Error creating bet:', error);
+    alert('Error saving bet. Please try again.');
   } else {
-    const { data, error } = await createBet(betData, ideaId);
-    if (error) {
-      console.error('Error creating bet:', error);
-      alert('Error saving bet. Please try again.');
-    } else {
-      setCurrentBet(data);
-      setScreen('score');
-    }
+    setCurrentBet(data);
+    setScreen('score');
+  }
+};
+
+  const handleSavePersonal = () => {
+  // Bet already saved to DB in handleBetComplete
+  // Just navigate to dashboard
+  setCurrentBet(null);
+  setScreen('dashboard');
+};
+
+const handleAddToMarketplace = async () => {
+  // Convert bet to marketplace Idea
+  const ideaEntry = {
+    title: currentBet.hypothesis || 'Untitled Bet',
+    description: `Hypothesis: ${currentBet.hypothesis}\n\nMetrics: ${currentBet.prediction}\n\nEffort: ${currentBet.estimatedEffort}`,
+    entry_type: 'bet',
+    bet_data: JSON.stringify(currentBet),
+    viability_score: currentBet.approachScore,
+    relevance_score: currentBet.fitScore,
+    overall_score: Math.round((currentBet.approachScore + currentBet.potentialScore + currentBet.fitScore) / 3),
+    scoring_rationale: currentBet.scoringRationale ? 
+      `Approach: ${currentBet.scoringRationale.approach?.rationale}\nPotential: ${currentBet.scoringRationale.potential?.rationale}\nFit: ${currentBet.scoringRationale.fit?.rationale}` 
+      : null
+  };
+
+  const { error } = await submitIdea(ideaEntry);
+  
+  if (error) {
+    console.error('Error submitting to marketplace:', error);
+    alert('Error submitting to marketplace. Please try again.');
+  } else {
+    alert('Bet added to marketplace!');
+    setCurrentBet(null);
+    setScreen('ideas_queue');
   }
 };
 
@@ -3548,10 +3611,9 @@ const handleRejectBet = async (betId, reason) => {
     onNewBet={handleNewBet} 
     onSeedBaseline={handleSeedBaseline} 
     onSkipToDashboard={handleSkipToDashboard}
-    onReplaceBet={handleReplaceBet} 
-    isMarketplaceBet={isMarketplaceBet}
-    onRefine={handleRefineBet}
-    onSubmitToMarketplace={handleSubmitToMarketplace}
+    onReplaceBet={handleReplaceBet}
+    onSavePersonal={handleSavePersonal}
+    onAddToMarketplace={handleAddToMarketplace}
   />
 )}
       {screen === 'baseline' && <SeedBaseline profile={profile} onComplete={handleBaselineComplete} />}
