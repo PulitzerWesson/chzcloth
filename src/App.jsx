@@ -3514,7 +3514,6 @@ const handleRejectBet = async (betId, reason) => {
   <EntryTypeChooser
     onSelect={(type) => {
       if (type === 'bet') {
-        setIsMarketplaceBet(true);
         setCurrentBet(null);
         setScreen('bet');
       } else if (type === 'idea') {
