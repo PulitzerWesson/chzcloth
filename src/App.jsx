@@ -3190,10 +3190,18 @@ const handleBetComplete = async (betData, ideaId = null) => {
       'bet'
     );
     
-const enrichedBet = {
-  ...betData,
-  scoringRationale: scores
-};
+    // ← ADD THIS BACK
+    const scores = await scoreBet(betData, {
+      name: currentOrg?.name,
+      strategy: currentOrg?.strategy,
+      industry: currentOrg?.industry,
+      learnings: orgLearnings
+    });
+    
+    const enrichedBet = {
+      ...betData,
+      scoringRationale: scores
+    };
     
     setCurrentBet(enrichedBet);
     setScreen('score');
