@@ -45,17 +45,31 @@ Consider these patterns when scoring.
         max_tokens: 500,
         messages: [{
           role: 'user',
-          content: `Quickly assess if this bet needs web search for accurate scoring.
+content: `Quickly assess if this bet needs web search for accurate scoring.
 
-BET: ${bet.hypothesis}
-PREDICTION: ${bet.prediction}
-ORG CONTEXT: ${orgName || 'Unknown'}, ${orgIndustry || 'Unknown'}, ${orgMode || 'growth'} stage
+BET DETAILS:
+Hypothesis: "${bet.hypothesis}"
+Metric: ${bet.metric}
+Prediction: ${bet.prediction}
+Baseline: ${bet.baseline || 'Not specified'}
+Timeframe: ${bet.timeframe} days
+Confidence: ${bet.confidence}%
+Strategic Alignment: ${bet.strategicAlignment}
+Estimated Effort: ${bet.estimatedEffort}
+Cost of Inaction: ${bet.inactionImpact}
+Assumptions: ${bet.assumptions || 'Not specified'}
+
+ORGANIZATIONAL CONTEXT:
+${orgName ? `Company: ${orgName}` : 'Company: Unknown'}
+${orgIndustry ? `Industry: ${orgIndustry}` : ''}
+${orgStrategy ? `Strategy: ${orgStrategy}` : ''}
+Mode: ${orgMode || 'growth'}
 ${learningsSection}
 ${clarifyingSection}
 
 SKIP web search if:
 - Bet is clearly broken/nonsensical (missing structure, vague)
-- Bet is well-formed and org context is sufficient
+- Bet is well-formed and org context + assumptions provide sufficient basis for scoring
 - Past learnings already cover this territory
 - Standard product bet with no unusual claims
 
@@ -63,7 +77,7 @@ USE web search if:
 - Prediction seems ambitious and needs competitive validation
 - Industry benchmarks would materially change the score
 - Claims about market trends need fact-checking
-- Missing critical competitive/market context
+- Missing critical competitive/market context that can't be inferred from provided details
 
 Return ONLY JSON:
 {
