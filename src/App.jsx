@@ -2111,11 +2111,12 @@ function ScoreResult({ bet, onNewBet, onSkipToDashboard, onSavePersonal, onAddTo
               )}
               
               <div style={{ display: 'flex', gap: 12 }}>
-                <button
-                  onClick={() => {
+             <button
+                  onClick={async () => {
                     await onUseAI();
                     setEnhancementDecided(true);
                   }}
+                                  
                   style={{
                     flex: 1,
                     padding: '14px 24px',
