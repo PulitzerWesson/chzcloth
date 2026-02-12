@@ -234,6 +234,9 @@ Return ONLY valid JSON (no markdown, no preamble):
     if (scores.suggestion?.market_evidence) {
       scores.suggestion.market_evidence = stripCitations(scores.suggestion.market_evidence);
     }
+
+        // Add web search metadata
+    scores.web_search_used = needsSearch;
     
     return res.status(200).json(scores);
     
