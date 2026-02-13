@@ -9,6 +9,8 @@ import { useOrganizations } from './hooks/useOrganizations';
 import { OrganizationSetup, ContextCheck, shouldShowContextCheck, OrgSwitcher } from './components';
 import IdeaSubmission from './components/IdeaSubmission';
 import IdeasQueue from './components/IdeasQueue';
+import BetSubmissionGuided from './components/BetSubmissionGuided';
+import StoryReview from './components/StoryReview';
 import SponsorReview from './components/SponsorReview';
 import EntryTypeChooser from './components/EntryTypeChooser';
 import SignalSubmission from './components/SignalSubmission';
@@ -3409,6 +3411,8 @@ const { ideas, loading: ideasLoading, updateIdeaStatus, claimIdea, submitIdea, u
   const [emailSent, setEmailSent] = useState(false);
   const [betToReplace, setBetToReplace] = useState(null);
   const [pendingBet, setPendingBet] = useState(null);
+  const [showStoryReview, setShowStoryReview] = useState(false);
+  const [pendingBetForReview, setPendingBetForReview] = useState(null);
   
   // FIX: Progressive loading messages for Supabase free tier cold starts (5-8s)
   // Instead of a 3s timeout that forces a wrong routing decision,
@@ -3488,9 +3492,24 @@ const { ideas, loading: ideasLoading, updateIdeaStatus, claimIdea, submitIdea, u
   };
   
 const handleBetComplete = async (betData, ideaId = null) => {
-  // Store bet data and show clarifying questions
-  setPendingBet({ betData, ideaId });
+  // Store bet data and show story review FIRST
+  setPendingBetForReview({ betData, ideaId });
+  setShowStoryReview(true);
+};
+  
+  const handleStoryReviewContinue = async () => {
+  setShowStoryReview(false);
+  
+  // Now show clarifying questions
+  setPendingBet(pendingBetForReview);
+  setPendingBetForReview(null);
   setScreen('clarifying_questions');
+};
+
+const handleStoryReviewEdit = () => {
+  setShowStoryReview(false);
+  // Keep pendingBetForReview so they can continue editing
+  // Stay on 'bet' screen
 };
 
   const handleQuestionsComplete = async (answers) => {
@@ -3892,18 +3911,19 @@ const handleRejectBet = async (betId, reason) => {
     onCancel={() => setScreen('ideas_queue')}
   />
 )}
-{screen === 'bet' && (
-  <BetSubmission 
-    profile={profile} 
-    currentOrg={currentOrg} 
+
+      {screen === 'bet' && !showStoryReview && (
+  <BetSubmissionGuided 
     onComplete={handleBetComplete}
-    onCancel={() => {
-      setScreen('landing');  // or 'dashboard' if you prefer
-      setBetToReplace(null);  // Clear the AI suggestion
-      setCurrentBet(null);    // Clear current bet
-    }}
-    ideaFromQueue={currentBet?.fromIdea || null}
-    initialBet={betToReplace || currentBet} 
+    orgMode={currentOrg?.mode}
+  />
+)}
+
+{showStoryReview && (
+  <StoryReview 
+    betData={pendingBetForReview?.betData}
+    onEdit={handleStoryReviewEdit}
+    onContinue={handleStoryReviewContinue}
   />
 )}
 
