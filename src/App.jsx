@@ -3573,7 +3573,7 @@ const handleAddToMarketplace = async () => {
     title: currentBet.hypothesis || 'Untitled Bet',
     description: `Hypothesis: ${currentBet.hypothesis}\n\nMetrics: ${currentBet.prediction}\n\nEffort: ${currentBet.estimatedEffort}`,
     entry_type: 'bet',
-    bet_data: JSON.stringify(currentBet),
+    bet_data: currentBet,
     viability_score: currentBet.approachScore,
     relevance_score: currentBet.fitScore,
     overall_score: Math.round((currentBet.approachScore + currentBet.potentialScore + currentBet.fitScore) / 3),
@@ -3607,7 +3607,7 @@ const handleSubmitToMarketplace = async () => {
     title: betData.hypothesis || 'Untitled Bet',
     description: `Hypothesis: ${betData.hypothesis}\n\nMetrics: ${betData.metrics || betData.prediction}\n\nEffort: ${betData.effort || betData.estimatedEffort}`,
     entry_type: 'bet',
-    bet_data: JSON.stringify(betData),
+    bet_data: betData,
     viability_score: betData.approachScore,
     relevance_score: betData.fitScore,
     overall_score: Math.round((betData.approachScore + betData.potentialScore + betData.fitScore) / 3),
@@ -3639,7 +3639,7 @@ const handleSubmitToMarketplace = async () => {
     description: `Hypothesis: ${betData.hypothesis}\n\nMetrics: ${betData.metrics}\n\nEffort: ${betData.effort}`,
     entry_type: 'bet',
     // Include the full bet data for later
-    bet_data: JSON.stringify({
+    bet_data: {
       hypothesis: betData.hypothesis,
       metrics: betData.metrics,
       effort: betData.effort,
@@ -3647,7 +3647,7 @@ const handleSubmitToMarketplace = async () => {
       potentialScore: betData.potentialScore,
       fitScore: betData.fitScore,
       scoringRationale: betData.scoringRationale
-    }),
+    },
     viability_score: betData.approachScore,
     relevance_score: betData.fitScore,
     overall_score: Math.round((betData.approachScore + betData.potentialScore + betData.fitScore) / 3),
