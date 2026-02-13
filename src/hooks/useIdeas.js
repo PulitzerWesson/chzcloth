@@ -66,50 +66,56 @@ export function useIdeas(orgId) {
     fetchIdeas()
   }, [fetchIdeas])
 
-  const submitIdea = async (ideaData) => {
-    if (!user || !orgId) return { error: { message: 'Not authenticated or no org selected' } }
+const submitIdea = async (ideaData) => {
+  if (!user || !orgId) return { error: { message: 'Not authenticated or no org selected' } }
 
-    try {
-      const { data, error } = await supabase
-        .from('ideas')
-        .insert({
-          org_id: orgId,
-          submitted_by: user.id,
-          title: ideaData.title,
-          description: ideaData.description,
-          problem: ideaData.problem || null,
-          expected_impact: ideaData.expectedImpact || null,
-          status: 'pending'
-        })
-        .select()
-        .single()
+  try {
+    const { data, error } = await supabase
+      .from('ideas')
+      .insert({
+        org_id: orgId,
+        submitted_by: user.id,
+        title: ideaData.title,
+        description: ideaData.description,
+        problem: ideaData.problem || null,
+        expected_impact: ideaData.expectedImpact || null,
+        entry_type: ideaData.entry_type || 'idea',
+        bet_data: ideaData.bet_data || null,
+        viability_score: ideaData.viability_score || null,
+        relevance_score: ideaData.relevance_score || null,
+        overall_score: ideaData.overall_score || null,
+        scoring_rationale: ideaData.scoring_rationale || null,
+        status: ideaData.status || 'pending'
+      })
+      .select()
+      .single()
 
-      if (error) throw error
+    if (error) throw error
 
-      const newIdea = {
-        id: data.id,
-        orgId: data.org_id,
-        submittedBy: data.submitted_by,
-        submittedByEmail: user.email,
-        title: data.title,
-        description: data.description,
-        problem: data.problem,
-        expectedImpact: data.expected_impact,
-        status: data.status,
-        claimedBy: null,
-        claimedByEmail: null,
-        claimedAt: null,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at
-      }
-
-      setIdeas(prev => [newIdea, ...prev])
-      return { data: newIdea, error: null }
-    } catch (err) {
-      console.error('Error submitting idea:', err)
-      return { data: null, error: err }
+    const newIdea = {
+      id: data.id,
+      orgId: data.org_id,
+      submittedBy: data.submitted_by,
+      submittedByEmail: user.email,
+      title: data.title,
+      description: data.description,
+      problem: data.problem,
+      expectedImpact: data.expected_impact,
+      status: data.status,
+      claimedBy: null,
+      claimedByEmail: null,
+      claimedAt: null,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at
     }
+
+    setIdeas(prev => [newIdea, ...prev])
+    return { data: newIdea, error: null }
+  } catch (err) {
+    console.error('Error submitting idea:', err)
+    return { data: null, error: err }
   }
+}
 
   const claimIdea = async (ideaId) => {
     if (!user) return { error: { message: 'Not authenticated' } }
