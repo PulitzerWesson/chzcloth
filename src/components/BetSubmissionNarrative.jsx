@@ -133,22 +133,37 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
     }
   };
 
+  const getNextButtonTooltip = () => {
+    switch (currentScreen) {
+      case 0:
+        const missing = [];
+        if (story.change.length <= 20) missing.push('what will change');
+        if (story.baseline.length <= 10) missing.push('current baseline');
+        if (!story.magnitude) missing.push('expected magnitude');
+        return `Complete: ${missing.join(', ')}`;
+      case 1:
+        return 'Explain the causal mechanism (how this changes behavior)';
+      case 2:
+        if (!story.evidenceType) return 'Select evidence type and provide details';
+        if (story.evidenceDetails.length <= 20) return 'Provide more detail about your evidence';
+        return '';
+      case 3:
+        return 'Describe a cheaper way to test this first';
+      default:
+        return '';
+    }
+  };
+
   const handleNext = () => {
     if (currentScreen < screens.length - 1) {
       setCurrentScreen(currentScreen + 1);
     } else {
-      handleComplete();
+      // Last screen - build bet and show review
+      handleShowReview();
     }
   };
 
-  const handleBack = () => {
-    if (currentScreen > 0) {
-      setCurrentScreen(currentScreen - 1);
-    }
-  };
-
-  const handleComplete = () => {
-    // Convert story to bet format
+  const handleShowReview = () => {
     const betData = {
       hypothesis: buildHypothesis(story),
       metricDomain: inferMetricDomain(story.change),
@@ -164,10 +179,25 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
       estimatedEffort: story.estimatedEffort,
       inactionImpact: story.inactionImpact,
       isOwnIdea: true,
-      betType: story.change.toLowerCase().includes('new') ? 'new' : 'improve'
+      betType: story.change.toLowerCase().includes('new') ? 'new' : 'improve',
+      // Add the story parts for review
+      storyParts: {
+        change: story.change,
+        mechanism: story.mechanism,
+        evidenceType: story.evidenceType,
+        evidenceDetails: story.evidenceDetails,
+        cheaperTest: story.cheaperTest
+      }
     };
     
+    console.log('Narrative bet completed:', betData);
     onComplete(betData);
+  };
+
+  const handleBack = () => {
+    if (currentScreen > 0) {
+      setCurrentScreen(currentScreen - 1);
+    }
   };
 
   const buildHypothesis = (story) => {
@@ -237,11 +267,13 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
                 rows={3}
               />
               
-              {story.change.length < 20 && story.change.length > 0 && (
-                <div className="inline-hint warning">
-                  ⚠️ Be more specific - what exactly will change?
-                </div>
-              )}
+              <FieldValidation
+                value={story.change}
+                minLength={20}
+                label="What will change"
+                goodExample="Add 5 video testimonials from enterprise customers to pricing page"
+                badExample="Improve page"
+              />
 
               <div className="story-sentence">
                 <span className="sentence-part">
@@ -255,6 +287,14 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
                   />
                 </span>
               </div>
+              
+              <FieldValidation
+                value={story.baseline}
+                minLength={10}
+                label="Baseline"
+                goodExample="8% conversion rate (45 signups/week from Stripe)"
+                badExample="Low" badExample2="Not many"
+              />
 
               <div className="story-sentence">
                 <span className="sentence-part">
@@ -277,12 +317,28 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
                   />
                 </span>
               </div>
+              
+              <FieldValidation
+                value={story.magnitude}
+                minLength={1}
+                label="Expected change"
+                goodExample="50% (from 8% to 12%)"
+                badExample="More" badExample2="A lot"
+              />
 
               {aiSuggestions.growOrDecline && story.growOrDecline !== aiSuggestions.growOrDecline && (
                 <div className="inline-hint suggestion">
                   💡 Based on your change, we'd expect this to {aiSuggestions.growOrDecline}
                 </div>
               )}
+              
+              <ReadinessIndicator
+                checks={[
+                  { label: 'What will change', met: story.change.length > 20 },
+                  { label: 'Current baseline', met: story.baseline.length > 10 },
+                  { label: 'Expected magnitude', met: story.magnitude && story.magnitude.length > 0 }
+                ]}
+              />
             </div>
           )}
 
@@ -318,11 +374,13 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
                 rows={5}
               />
 
-              {story.mechanism.length > 0 && story.mechanism.length < 30 && (
-                <div className="inline-hint warning">
-                  ⚠️ Be more specific about the causal mechanism
-                </div>
-              )}
+              <FieldValidation
+                value={story.mechanism}
+                minLength={30}
+                label="Mechanism explanation"
+                goodExample="Testimonials will increase trust. Prospects bounce because they don't believe our claims. Seeing real customers will reduce skepticism."
+                badExample="It will work" badExample2="People will like it"
+              />
             </div>
           )}
 
@@ -415,6 +473,14 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
                     className="story-input large"
                     rows={4}
                   />
+                  
+                  <FieldValidation
+                    value={story.evidenceDetails}
+                    minLength={20}
+                    label="Evidence details"
+                    goodExample="15 interviews with churned customers. 12 mentioned 'didn't trust the product' as primary concern"
+                    badExample="Some customers said so"
+                  />
                 </>
               )}
             </div>
@@ -448,6 +514,14 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
                 className="story-input large"
                 rows={4}
               />
+              
+              <FieldValidation
+                value={story.cheaperTest}
+                minLength={20}
+                label="Cheaper test"
+                goodExample="Create 3 manual testimonials, test with 200 visitors for 2 weeks ($3k, 2 weeks)"
+                badExample="Just try it"
+              />
 
               <div className="form-group">
                 <label>Estimated effort to build (full version)</label>
@@ -472,13 +546,21 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
                 ← Back
               </button>
             )}
-            <button
-              className="btn-next"
-              onClick={handleNext}
-              disabled={!canProceed()}
-            >
-              {currentScreen === screens.length - 1 ? 'Review Bet →' : 'Next →'}
-            </button>
+            <div className="next-button-container">
+              <button
+                className="btn-next"
+                onClick={handleNext}
+                disabled={!canProceed()}
+                title={!canProceed() ? getNextButtonTooltip() : ''}
+              >
+                {currentScreen === screens.length - 1 ? 'Review Bet →' : 'Next →'}
+              </button>
+              {!canProceed() && (
+                <div className="next-button-hint">
+                  {getNextButtonTooltip()}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -488,6 +570,96 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
           <StoryPreview story={story} currentScreen={currentScreen} hasLeadershipGoal={hasLeadershipGoal} leadershipGoal={leadershipGoal} />
         </div>
       </div>
+    </div>
+  );
+}
+
+}
+
+// ============================================
+// FIELD VALIDATION COMPONENT
+// ============================================
+
+function FieldValidation({ value, minLength, label, goodExample, badExample, badExample2 }) {
+  const length = value ? value.length : 0;
+  const isMet = length >= minLength;
+  const isStarted = length > 0;
+  
+  if (!isStarted) return null;
+  
+  return (
+    <div className={`field-validation ${isMet ? 'met' : 'unmet'}`}>
+      <div className="validation-status">
+        {isMet ? (
+          <span className="status-icon">✓</span>
+        ) : (
+          <span className="status-icon">○</span>
+        )}
+        <span className="status-text">
+          {isMet 
+            ? `${label} looks good` 
+            : `${label} needs more detail (${length}/${minLength} characters)`
+          }
+        </span>
+      </div>
+      
+      {!isMet && (
+        <div className="validation-examples">
+          <div className="validation-good">
+            <span className="example-icon">✓</span> {goodExample}
+          </div>
+          {badExample && (
+            <div className="validation-bad">
+              <span className="example-icon">✗</span> {badExample}
+            </div>
+          )}
+          {badExample2 && (
+            <div className="validation-bad">
+              <span className="example-icon">✗</span> {badExample2}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================
+// READINESS INDICATOR
+// ============================================
+
+function ReadinessIndicator({ checks }) {
+  const allMet = checks.every(check => check.met);
+  const metCount = checks.filter(check => check.met).length;
+  
+  return (
+    <div className={`readiness-indicator ${allMet ? 'ready' : 'not-ready'}`}>
+      <div className="readiness-header">
+        {allMet ? (
+          <>
+            <span className="ready-icon">✓</span>
+            <span className="ready-text">Ready to continue</span>
+          </>
+        ) : (
+          <>
+            <span className="progress-icon">●</span>
+            <span className="progress-text">
+              {metCount} of {checks.length} complete
+            </span>
+          </>
+        )}
+      </div>
+      
+      {!allMet && (
+        <div className="readiness-checklist">
+          {checks.map((check, idx) => (
+            <div key={idx} className={`check-item ${check.met ? 'met' : 'unmet'}`}>
+              <span className="check-icon">{check.met ? '✓' : '○'}</span>
+              <span className="check-label">{check.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
