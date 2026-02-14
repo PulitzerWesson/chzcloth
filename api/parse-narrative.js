@@ -16,8 +16,8 @@ export default async function handler(req, res) {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 3000,
         messages: [{
           role: 'user',
           content: `Analyze this product bet narrative and extract key fields. Also identify any missing or weak elements.
@@ -27,7 +27,7 @@ Goal Context: ${goalContext}
 Narrative:
 ${narrative}
 
-Return ONLY a JSON object with this structure:
+CRITICAL: Return ONLY valid JSON. Escape all quotes in text values. Use this exact structure:
 {
   "extracted": {
     "change": "what's being built/changed",
@@ -39,22 +39,21 @@ Return ONLY a JSON object with this structure:
     "effort": "estimated effort if mentioned"
   },
   "goalAlignment": {
-    "aligned": true/false,
-    "reasoning": "how this bet connects to the goal, or misalignment issues"
+    "aligned": true,
+    "reasoning": "how this bet connects to the goal"
   },
   "issues": [
-    {"field": "baseline", "severity": "missing|weak", "message": "specific guidance"}
+    {"field": "baseline", "severity": "missing", "message": "specific guidance"}
   ],
-  "strengths": ["what's done well"],
-  "readyToScore": true/false
+  "strengths": ["what is done well"],
+  "readyToScore": true
 }
 
-Notes:
-- "missing" = field not present at all
-- "weak" = field present but lacks specifics (no numbers, vague)
-- goalAlignment checks if bet actually achieves the stated goal (e.g., growing customers vs growing revenue)
-- Be specific in guidance messages
-- Check if goal type matches bet outcome (revenue goals need revenue impact, not just user growth)`
+Rules:
+- Escape all quotes in values with backslash
+- Keep values concise (under 200 chars each)
+- "severity" must be exactly "missing" or "weak"
+- Return ONLY the JSON object, no markdown fences`
         }]
       })
     });
@@ -66,8 +65,19 @@ Notes:
     }
 
     const text = data.content[0].text;
-    const cleanText = text.replace(/```json\n?|\n?```/g, '').trim();
-    const parsed = JSON.parse(cleanText);
+    
+    // Try to extract JSON - handle both raw JSON and markdown-wrapped
+    let jsonText = text.trim();
+    
+    // If wrapped in markdown code fence, extract it
+    if (jsonText.startsWith('```')) {
+      const match = jsonText.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/);
+      if (match) {
+        jsonText = match[1];
+      }
+    }
+    
+    const parsed = JSON.parse(jsonText);
 
     return res.status(200).json(parsed);
   } catch (error) {
