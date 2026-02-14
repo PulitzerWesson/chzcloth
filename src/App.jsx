@@ -10,6 +10,7 @@ import { OrganizationSetup, ContextCheck, shouldShowContextCheck, OrgSwitcher } 
 import IdeaSubmission from './components/IdeaSubmission';
 import IdeasQueue from './components/IdeasQueue';
 import BetSubmissionNarrative from './components/BetSubmissionNarrative';import StoryReview from './components/StoryReview';
+import StoryReview from './components/StoryReview';
 import SponsorReview from './components/SponsorReview';
 import EntryTypeChooser from './components/EntryTypeChooser';
 import SignalSubmission from './components/SignalSubmission';
@@ -3491,7 +3492,7 @@ const { ideas, loading: ideasLoading, updateIdeaStatus, claimIdea, submitIdea, u
   };
   
 const handleBetComplete = async (betData, ideaId = null) => {
-  // Store bet data and show story review FIRST
+  console.log('BET DATA RECEIVED:', betData);  // Debug log
   setPendingBetForReview({ betData, ideaId });
   setShowStoryReview(true);
 };
