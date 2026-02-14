@@ -148,19 +148,14 @@ export default function StoryReview({ betData, onEdit, onContinue }) {
 function analyzeGaps(betData) {
   const issues = [];
 
-  // Check evidence type
-  if (betData.evidenceType === 'hypothesis' || !betData.evidenceType) {
+  // Only check for validation if they have NO evidence at all
+  const hasNoEvidence = !betData.evidenceType || betData.evidenceType === 'hypothesis';
+  const hasNoDetails = !betData.evidenceDetails || betData.evidenceDetails.length < 20;
+  
+  if (hasNoEvidence || hasNoDetails) {
     issues.push({
       severity: 'high',
       description: 'No validation - building on assumption only'
-    });
-  }
-
-  // Check cheaper test
-  if (!betData.cheaperTest || betData.cheaperTest.length < 20) {
-    issues.push({
-      severity: 'high',
-      description: `Planning to spend ${getEffortCost(betData.estimatedEffort)} without testing cheaper first`
     });
   }
 
@@ -197,17 +192,16 @@ function analyzeGaps(betData) {
 function generateStrongComparison(betData) {
   const strengths = [];
 
-  // What a strong bet would have
-  if (betData.evidenceType === 'hypothesis' || !betData.evidenceType) {
+  // Only suggest validation if they truly have none
+  const hasNoEvidence = !betData.evidenceType || betData.evidenceType === 'hypothesis';
+  const hasNoDetails = !betData.evidenceDetails || betData.evidenceDetails.length < 20;
+  
+  if (hasNoEvidence || hasNoDetails) {
     strengths.push('Validation from customer interviews, tests, or data');
     strengths.push('Specific numbers: "15 out of 20 customers said they\'d pay for this"');
   }
 
-  if (!betData.cheaperTest || betData.cheaperTest.length < 20) {
-    strengths.push(`Cheaper test identified (e.g., manual MVP for 10% of ${getEffortCost(betData.estimatedEffort)})`);
-    strengths.push('Clear success metric for the test');
-  }
-
+  // Always good to have these
   strengths.push('Specific baseline with measurement tool (e.g., "measured in Stripe")');
   strengths.push('Realistic timeline that accounts for user behavior change');
   strengths.push('ROI calculation: cost vs. expected return');
@@ -217,30 +211,6 @@ function generateStrongComparison(betData) {
 
 function generateRecommendation(betData, issues) {
   const hasNoValidation = issues.some(i => i.description.includes('No validation'));
-  const hasNoCheaperTest = issues.some(i => i.description.includes('without testing cheaper'));
-
-  if (hasNoValidation && hasNoCheaperTest) {
-    return (
-      <div>
-        <p><strong>Before spending {getEffortCost(betData.estimatedEffort)}, consider:</strong></p>
-        <ol>
-          <li>
-            <strong>Validate the problem first:</strong> Interview 10-15 customers to confirm they experience this issue
-            and would value the solution. Cost: $0-2k, Time: 1 week.
-          </li>
-          <li>
-            <strong>Test a cheaper version:</strong> {generateSpecificTestSuggestion(betData.change || '')}
-          </li>
-          <li>
-            <strong>Measure impact:</strong> If the test shows positive results, THEN commit to the full build.
-          </li>
-        </ol>
-        <p className="recommendation-highlight">
-          This approach turns a ${getEffortCost(betData.estimatedEffort)} risk into a $2-5k test.
-        </p>
-      </div>
-    );
-  }
 
   if (hasNoValidation) {
     return (
@@ -248,52 +218,13 @@ function generateRecommendation(betData, issues) {
         <p><strong>Validate before building:</strong></p>
         <p>
           Interview 10-15 customers to confirm they experience this problem and would use your solution.
-          This 1-week effort could save you from building something nobody wants.
-        </p>
-      </div>
-    );
-  }
-
-  if (hasNoCheaperTest) {
-    return (
-      <div>
-        <p><strong>Test cheaper first:</strong></p>
-        <p>{generateSpecificTestSuggestion(betData.change || '')}</p>
-        <p>
-          If the test validates your hypothesis, you can confidently commit to the full build.
-          If it doesn't, you've saved {getEffortCost(betData.estimatedEffort)}.
+          Run a small test to validate your assumptions before committing to the full build.
         </p>
       </div>
     );
   }
 
   return null;
-}
-
-function generateSpecificTestSuggestion(change) {
-  const lower = (change || '').toLowerCase();
-
-  if (lower.includes('testimonial') || lower.includes('case stud')) {
-    return 'Create 3-5 video testimonials manually with a freelance videographer ($3-5k, 2 weeks). Add them to your page and measure conversion impact for 30 days.';
-  }
-
-  if (lower.includes('feature') || lower.includes('functionality')) {
-    return 'Build a clickable prototype or fake door test (1 week). Show users the feature, measure who clicks, gather feedback before full build.';
-  }
-
-  if (lower.includes('onboarding') || lower.includes('signup')) {
-    return 'Run 15 moderated user tests ($3-4k, 1 week) to see exactly where people get stuck. Fix those specific issues first.';
-  }
-
-  if (lower.includes('email') || lower.includes('notification')) {
-    return 'Manually send to 50-100 users first. Measure open rate, click rate, and conversions before automating.';
-  }
-
-  if (lower.includes('integration')) {
-    return 'Use Zapier or Make.com to create a low-code version (2 hours). See if users actually use it before building native integration.';
-  }
-
-  return 'Create a manual or low-code version to test the core hypothesis before committing to the full build.';
 }
 
 // ============================================
