@@ -1,719 +1,332 @@
-// BetSubmissionGuided.jsx - Story-based bet creation with real-time education
+// BetSubmissionNarrative.jsx - Single smart field with AI validation
 
 import React, { useState } from 'react';
-import { betExamples } from '../data/betExamples';
-import './BetSubmissionGuided.css';
+import './BetSubmissionNarrative.css';
 
-export default function BetSubmissionGuided({ onComplete, orgMode }) {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [betData, setBetData] = useState({
-    goalType: '',
-    goalTarget: '',
-    goalTimeframe: '',
-    whatWillChange: '',
-    baseline: '',
-    baselineMetric: '',
-    prediction: '',
-    predictionTimeframe: '',
-    validationType: '',
-    validationDetails: '',
-    cheaperTest: '',
-    estimatedEffort: '2-3-sprints',
-    confidence: 70
-  });
+export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg }) {
+  const [goalContext, setGoalContext] = useState('');
+  const [narrative, setNarrative] = useState('');
+  const [showExample, setShowExample] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [aiReview, setAiReview] = useState(null);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
-  const [showExamples, setShowExamples] = useState({});
+  // Check if org has leadership goal
+  const hasLeadershipGoal = currentOrg?.leadershipGoal;
+  const leadershipGoal = hasLeadershipGoal ? currentOrg.leadershipGoal : null;
 
-  const steps = [
-    {
-      id: 'goal',
-      title: "What are you trying to achieve?",
-      subtitle: "Be specific about the metric and target"
-    },
-    {
-      id: 'change',
-      title: "To achieve this, what will you change?",
-      subtitle: "Be specific about WHAT changes"
-    },
-    {
-      id: 'baseline',
-      title: "What's happening now?",
-      subtitle: "Current numbers you can measure"
-    },
-    {
-      id: 'prediction',
-      title: "What do you predict will happen?",
-      subtitle: "Specific numbers and realistic timeline"
-    },
-    {
-      id: 'validation',
-      title: "How do you know this will work?",
-      subtitle: "Evidence, not opinions"
-    },
-    {
-      id: 'cheaperTest',
-      title: "What's the cheapest way to test this first?",
-      subtitle: "Test before you build"
+  const exampleNarrative = `Add 5 video testimonials from enterprise customers to our pricing page.
+
+Currently, our pricing page converts at 8% (45 signups/week measured in Stripe). We expect this to grow to 12% conversion (68 signups/week) - a 50% increase.
+
+This will work because prospects bounce due to lack of trust. Exit surveys show "need social proof" as the #2 reason for not signing up (127 responses in Q4 2024). Real customer stories with specific outcomes will reduce skepticism and increase trial signups.
+
+Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks and saw conversion increase from 8% to 11.5%. Customer interviews (15 churned users) confirmed that 12 mentioned "didn't trust the product would work" as primary concern.
+
+Cheaper test: Create 3-5 more testimonials manually with freelance videographer ($3k, 2 weeks). Add to page and measure conversion for 30 days before building full testimonial system.
+
+Effort: 4-6 sprints (~$125k) for full testimonial system with CMS, video hosting, and moderation workflow.`;
+
+  const handleSubmit = async () => {
+    setHasSubmitted(true);
+    setIsAnalyzing(true);
+    setAiReview(null);
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-20250514',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: `Analyze this product bet narrative and extract key fields. Also identify any missing or weak elements.
+
+Goal Context: ${hasLeadershipGoal ? leadershipGoal : goalContext}
+
+Narrative:
+${narrative}
+
+Return ONLY a JSON object with this structure:
+{
+  "extracted": {
+    "change": "what's being built/changed",
+    "baseline": "current state with specific numbers",
+    "magnitude": "expected change with numbers",
+    "mechanism": "why this will work",
+    "evidence": "validation evidence mentioned",
+    "cheaperTest": "cheaper test if mentioned",
+    "effort": "estimated effort if mentioned"
+  },
+  "goalAlignment": {
+    "aligned": true/false,
+    "reasoning": "how this bet connects to the goal, or misalignment issues"
+  },
+  "issues": [
+    {"field": "baseline", "severity": "missing|weak", "message": "specific guidance"}
+  ],
+  "strengths": ["what's done well"],
+  "readyToScore": true/false
+}
+
+Notes:
+- "missing" = field not present at all
+- "weak" = field present but lacks specifics (no numbers, vague)
+- goalAlignment checks if bet actually achieves the stated goal (e.g., growing customers vs growing revenue)
+- Be specific in guidance messages`
+          }]
+        })
+      });
+
+      const data = await response.json();
+      const text = data.content[0].text;
+      const cleanText = text.replace(/```json\n?|\n?```/g, '').trim();
+      const review = JSON.parse(cleanText);
+
+      setAiReview(review);
+    } catch (error) {
+      console.error('AI review error:', error);
+      setAiReview({
+        extracted: {},
+        goalAlignment: { aligned: false, reasoning: "Could not analyze alignment" },
+        issues: [{ field: "analysis", severity: "missing", message: "AI analysis failed. Please check your narrative and try again." }],
+        strengths: [],
+        readyToScore: false
+      });
+    } finally {
+      setIsAnalyzing(false);
     }
-  ];
-
-  const currentStepData = steps[currentStep];
-  const progress = ((currentStep + 1) / steps.length) * 100;
-
-  const toggleExamples = (stepId) => {
-    setShowExamples(prev => ({
-      ...prev,
-      [stepId]: !prev[stepId]
-    }));
   };
 
-  const handleNext = () => {
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      // Convert to bet format and complete
-      const formattedBet = formatBetData(betData);
-      onComplete(formattedBet);
+  const handleContinue = () => {
+    if (!aiReview || !aiReview.readyToScore) {
+      return;
     }
+
+    const extracted = aiReview.extracted;
+    const betData = {
+      hypothesis: `If we ${extracted.change || narrative.substring(0, 100)}, then ${extracted.baseline || 'the metric'} will improve to ${extracted.magnitude || 'target'}, because ${extracted.mechanism || 'of expected impact'}`,
+      metricDomain: inferMetricDomain(narrative),
+      metric: inferMetric(narrative),
+      baseline: extracted.baseline || '',
+      prediction: extracted.magnitude || '',
+      confidence: 70,
+      timeframe: 90,
+      assumptions: extracted.mechanism || '',
+      cheapTest: extracted.cheaperTest || '',
+      measurementTool: 'analytics',
+      strategicAlignment: 'inner',
+      estimatedEffort: parseEffort(extracted.effort),
+      inactionImpact: 'lose-opportunity',
+      isOwnIdea: true,
+      betType: 'improve',
+      goalContext: hasLeadershipGoal ? leadershipGoal : goalContext,
+      goalAlignment: aiReview.goalAlignment,
+      // Pass data for review screen
+      change: extracted.change || '',
+      baseline: extracted.baseline || '',
+      magnitude: extracted.magnitude || '',
+      mechanism: extracted.mechanism || '',
+      evidenceType: 'tested',
+      evidenceDetails: extracted.evidence || '',
+      cheaperTest: extracted.cheaperTest || ''
+    };
+
+    console.log('Bet data:', betData);
+    onComplete(betData);
   };
 
-  const handleBack = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
+  const inferMetricDomain = (text) => {
+    if (!text) return 'growth';
+    const lower = text.toLowerCase();
+    if (lower.includes('revenue') || lower.includes('monetiz')) return 'monetization';
+    if (lower.includes('retention') || lower.includes('churn')) return 'retention';
+    if (lower.includes('conversion') || lower.includes('signup')) return 'growth';
+    if (lower.includes('engagement') || lower.includes('active')) return 'retention';
+    return 'growth';
   };
 
-  const canProceed = () => {
-    switch (steps[currentStep].id) {
-      case 'goal':
-        return betData.goalType && betData.goalTarget && betData.goalTimeframe;
-      case 'change':
-        return betData.whatWillChange && betData.whatWillChange.length > 20;
-      case 'baseline':
-        return betData.baseline && betData.baselineMetric;
-      case 'prediction':
-        return betData.prediction && betData.predictionTimeframe;
-      case 'validation':
-        return betData.validationType && betData.validationDetails.length > 20;
-      case 'cheaperTest':
-        return betData.cheaperTest && betData.cheaperTest.length > 20;
-      default:
-        return true;
-    }
+  const inferMetric = (text) => {
+    if (!text) return 'Custom metric';
+    const lower = text.toLowerCase();
+    if (lower.includes('conversion')) return 'Conversion rate';
+    if (lower.includes('retention')) return 'Retention rate';
+    if (lower.includes('revenue') || lower.includes('mrr')) return 'Revenue/MRR';
+    if (lower.includes('signup')) return 'Signups';
+    if (lower.includes('churn')) return 'Churn rate';
+    return 'Custom metric';
+  };
+
+  const parseEffort = (effortText) => {
+    if (!effortText) return '2-3-sprints';
+    const lower = effortText.toLowerCase();
+    if (lower.includes('1 sprint') || lower.includes('2 week')) return '1-sprint';
+    if (lower.includes('2-3 sprint') || lower.includes('4-6 week')) return '2-3-sprints';
+    if (lower.includes('4-6 sprint') || lower.includes('8-12 week')) return '4-6-sprints';
+    if (lower.includes('6+ sprint') || lower.includes('12+ week')) return '6-plus-sprints';
+    return '2-3-sprints';
+  };
+
+  const canSubmit = () => {
+    if (!hasLeadershipGoal && goalContext.length < 10) return false;
+    if (narrative.length < 100) return false;
+    return true;
   };
 
   return (
-    <div className="bet-guided-container">
-      <div className="bet-guided-header">
+    <div className="narrative-container">
+      {/* Header */}
+      <div className="narrative-header">
         <h1>Make a Bet</h1>
-        <div className="progress-bar">
-          <div className="progress-fill" style={{ width: `${progress}%` }} />
-        </div>
-        <div className="progress-text">
-          Question {currentStep + 1} of {steps.length}
-        </div>
+        <p className="header-subtitle">
+          Describe what you'll build, why it matters, and how you'll validate it
+        </p>
       </div>
 
-      <div className="bet-guided-content">
-        <div className="question-section">
-          <h2>{currentStepData.title}</h2>
-          <p className="subtitle">{currentStepData.subtitle}</p>
-
-          {renderStepContent(
-            steps[currentStep].id,
-            betData,
-            setBetData,
-            showExamples,
-            toggleExamples
-          )}
-        </div>
-
-        <div className="story-preview">
-          <h3>Your Bet So Far:</h3>
-          <BetStoryPreview betData={betData} currentStep={currentStep} />
-        </div>
-      </div>
-
-      <div className="bet-guided-nav">
-        {currentStep > 0 && (
-          <button className="btn-back" onClick={handleBack}>
-            ← Back
-          </button>
+      <div className="single-field-container">
+        {/* Goal Context */}
+        {hasLeadershipGoal ? (
+          <div className="goal-context-display">
+            <div className="context-label">Supporting Leadership Goal:</div>
+            <div className="context-goal">{leadershipGoal}</div>
+          </div>
+        ) : (
+          <div className="goal-context-input">
+            <label>Company/Department Goal</label>
+            <input
+              type="text"
+              value={goalContext}
+              onChange={e => setGoalContext(e.target.value)}
+              placeholder="e.g., Grow revenue by 30% this year, Reduce churn to below 5%, Increase trial signups by 50%"
+              className="goal-input"
+            />
+            <div className="goal-hint">
+              AI will check if your bet actually achieves this goal (e.g., more customers ≠ more revenue)
+            </div>
+          </div>
         )}
-        <button
-          className="btn-next"
-          onClick={handleNext}
-          disabled={!canProceed()}
-        >
-          {currentStep === steps.length - 1 ? 'Review Bet →' : 'Next →'}
-        </button>
-      </div>
-    </div>
-  );
-}
 
-// ============================================
-// STEP CONTENT RENDERERS
-// ============================================
-
-function renderStepContent(stepId, betData, setBetData, showExamples, toggleExamples) {
-  switch (stepId) {
-    case 'goal':
-      return <GoalStep betData={betData} setBetData={setBetData} showExamples={showExamples} toggleExamples={toggleExamples} />;
-    case 'change':
-      return <ChangeStep betData={betData} setBetData={setBetData} showExamples={showExamples} toggleExamples={toggleExamples} />;
-    case 'baseline':
-      return <BaselineStep betData={betData} setBetData={setBetData} showExamples={showExamples} toggleExamples={toggleExamples} />;
-    case 'prediction':
-      return <PredictionStep betData={betData} setBetData={setBetData} showExamples={showExamples} toggleExamples={toggleExamples} />;
-    case 'validation':
-      return <ValidationStep betData={betData} setBetData={setBetData} showExamples={showExamples} toggleExamples={toggleExamples} />;
-    case 'cheaperTest':
-      return <CheaperTestStep betData={betData} setBetData={setBetData} showExamples={showExamples} toggleExamples={toggleExamples} />;
-    default:
-      return null;
-  }
-}
-
-// ============================================
-// GOAL STEP
-// ============================================
-
-function GoalStep({ betData, setBetData, showExamples, toggleExamples }) {
-  return (
-    <div className="step-content">
-      <ExamplesToggle
-        stepId="goal"
-        showExamples={showExamples}
-        toggleExamples={toggleExamples}
-      />
-
-      {showExamples.goal && <Examples category="goal" />}
-
-      <div className="form-group">
-        <label>What metric are you trying to improve?</label>
-        <select
-          value={betData.goalType}
-          onChange={(e) => setBetData({ ...betData, goalType: e.target.value })}
-          className="input-select"
-        >
-          <option value="">Select a metric...</option>
-          <option value="revenue">Revenue</option>
-          <option value="customers">New Customers</option>
-          <option value="retention">Customer Retention</option>
-          <option value="conversion">Conversion Rate</option>
-          <option value="activation">User Activation</option>
-          <option value="engagement">Engagement</option>
-          <option value="efficiency">Operational Efficiency</option>
-          <option value="cost">Cost Reduction</option>
-        </select>
-      </div>
-
-      <div className="form-row">
-        <div className="form-group">
-          <label>By how much?</label>
-          <input
-            type="text"
-            value={betData.goalTarget}
-            onChange={(e) => setBetData({ ...betData, goalTarget: e.target.value })}
-            placeholder="e.g., 30% or $50k or 100 customers"
-            className="input-text"
-          />
-        </div>
-
-        <div className="form-group">
-          <label>By when?</label>
-          <select
-            value={betData.goalTimeframe}
-            onChange={(e) => setBetData({ ...betData, goalTimeframe: e.target.value })}
-            className="input-select"
+        {/* Show Example Toggle */}
+        <div className="example-toggle-container">
+          <button
+            onClick={() => setShowExample(!showExample)}
+            className="btn-show-example"
           >
-            <option value="">Select timeframe...</option>
-            <option value="this-month">This Month</option>
-            <option value="this-quarter">This Quarter</option>
-            <option value="this-year">This Year</option>
-            <option value="6-months">6 Months</option>
-            <option value="18-months">18 Months</option>
-          </select>
+            {showExample ? 'Hide Example' : 'Show Example of Strong Bet'}
+          </button>
         </div>
-      </div>
-    </div>
-  );
-}
 
-// ============================================
-// CHANGE STEP
-// ============================================
+        {/* Example (collapsible) */}
+        {showExample && (
+          <div className="example-display">
+            <div className="example-header">Example of a Strong Bet:</div>
+            <div className="example-content">{exampleNarrative}</div>
+          </div>
+        )}
 
-function ChangeStep({ betData, setBetData, showExamples, toggleExamples }) {
-  const wordCount = betData.whatWillChange.split(' ').filter(Boolean).length;
-  const isSpecificEnough = wordCount >= 10;
-
-  return (
-    <div className="step-content">
-      <ExamplesToggle
-        stepId="change"
-        showExamples={showExamples}
-        toggleExamples={toggleExamples}
-      />
-
-      {showExamples.change && <Examples category="change" />}
-
-      <div className="form-group">
-        <label>What specifically will you change?</label>
-        <textarea
-          value={betData.whatWillChange}
-          onChange={(e) => setBetData({ ...betData, whatWillChange: e.target.value })}
-          placeholder="Be specific: What? Where? How many? For whom?
-
-Example: 'Add 5 video testimonials from enterprise customers to our pricing page, above the fold'"
-          className="input-textarea"
-          rows={4}
-        />
-        <div className="input-feedback">
-          {!isSpecificEnough && betData.whatWillChange && (
-            <span className="feedback-warning">
-              ⚠️ Be more specific - what exactly will change?
-            </span>
-          )}
-          {isSpecificEnough && (
-            <span className="feedback-good">
-              ✓ Specific enough
-            </span>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ============================================
-// BASELINE STEP
-// ============================================
-
-function BaselineStep({ betData, setBetData, showExamples, toggleExamples }) {
-  return (
-    <div className="step-content">
-      <ExamplesToggle
-        stepId="baseline"
-        showExamples={showExamples}
-        toggleExamples={toggleExamples}
-      />
-
-      {showExamples.baseline && <Examples category="baseline" />}
-
-      <div className="form-group">
-        <label>What's your current baseline?</label>
-        <div className="input-hint">
-          💡 Include the number AND how you measure it
-        </div>
-        <textarea
-          value={betData.baseline}
-          onChange={(e) => setBetData({ ...betData, baseline: e.target.value })}
-          placeholder="Example: 'Current: 45 trial signups/week converting at 8% = 3.6 paid customers/week (measured in Stripe)'"
-          className="input-textarea"
-          rows={3}
-        />
-      </div>
-
-      <div className="form-group">
-        <label>What metric are you measuring?</label>
-        <input
-          type="text"
-          value={betData.baselineMetric}
-          onChange={(e) => setBetData({ ...betData, baselineMetric: e.target.value })}
-          placeholder="e.g., 'paid customers/week' or 'conversion rate' or 'MRR'"
-          className="input-text"
-        />
-      </div>
-    </div>
-  );
-}
-
-// ============================================
-// PREDICTION STEP
-// ============================================
-
-function PredictionStep({ betData, setBetData, showExamples, toggleExamples }) {
-  return (
-    <div className="step-content">
-      <ExamplesToggle
-        stepId="prediction"
-        showExamples={showExamples}
-        toggleExamples={toggleExamples}
-      />
-
-      {showExamples.prediction && <Examples category="prediction" />}
-
-      <div className="form-group">
-        <label>What do you predict will happen?</label>
-        <div className="input-hint">
-          💡 Be specific about numbers AND explain why that timeline
-        </div>
-        <textarea
-          value={betData.prediction}
-          onChange={(e) => setBetData({ ...betData, prediction: e.target.value })}
-          placeholder="Example: 'From 8% to 12% in 90 days (need full cohort to mature). That's 5.4 paid customers/week vs 3.6.'"
-          className="input-textarea"
-          rows={3}
-        />
-      </div>
-
-      <div className="form-group">
-        <label>Timeframe for impact</label>
-        <select
-          value={betData.predictionTimeframe}
-          onChange={(e) => setBetData({ ...betData, predictionTimeframe: e.target.value })}
-          className="input-select"
-        >
-          <option value="">Select timeframe...</option>
-          <option value="30">30 days</option>
-          <option value="60">60 days</option>
-          <option value="90">90 days</option>
-          <option value="180">6 months</option>
-          <option value="365">1 year</option>
-        </select>
-      </div>
-    </div>
-  );
-}
-
-// ============================================
-// VALIDATION STEP
-// ============================================
-
-function ValidationStep({ betData, setBetData, showExamples, toggleExamples }) {
-  const validationTypes = [
-    { value: 'tested', label: 'We tested it', prompt: 'Describe your test and results:' },
-    { value: 'interviews', label: 'Customer interviews', prompt: 'How many? What did they say?' },
-    { value: 'data', label: 'We have data/analytics', prompt: 'What does the data show?' },
-    { value: 'competitor', label: 'Competitor or case study', prompt: 'Who? What did they achieve?' },
-    { value: 'hypothesis', label: 'Team hypothesis (not validated)', prompt: 'Why do you believe this?' }
-  ];
-
-  return (
-    <div className="step-content">
-      <ExamplesToggle
-        stepId="validation"
-        showExamples={showExamples}
-        toggleExamples={toggleExamples}
-      />
-
-      {showExamples.validation && <Examples category="validation" />}
-
-      <div className="form-group">
-        <label>How do you know this will work?</label>
-        <div className="validation-options">
-          {validationTypes.map(type => (
-            <button
-              key={type.value}
-              className={`validation-option ${betData.validationType === type.value ? 'selected' : ''}`}
-              onClick={() => setBetData({ ...betData, validationType: type.value })}
-            >
-              {type.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {betData.validationType && (
-        <div className="form-group">
-          <label>
-            {validationTypes.find(t => t.value === betData.validationType)?.prompt}
-          </label>
-          {betData.validationType === 'hypothesis' && (
-            <div className="warning-box">
-              ⚠️ Unvalidated bets are riskier. Consider validating before building.
-            </div>
-          )}
+        {/* Main Narrative Field */}
+        <div className="narrative-field">
+          <label>Describe Your Bet</label>
           <textarea
-            value={betData.validationDetails}
-            onChange={(e) => setBetData({ ...betData, validationDetails: e.target.value })}
-            placeholder="Be specific with numbers and details..."
-            className="input-textarea"
-            rows={4}
+            value={narrative}
+            onChange={e => setNarrative(e.target.value)}
+            placeholder="Include: What you'll change, current state (with numbers), expected outcome (with numbers), why it will work, evidence you have, how you'll test it cheaper first, and estimated effort..."
+            className="narrative-textarea"
+            rows={16}
           />
+          <div className="character-count">
+            {narrative.length} characters {narrative.length < 100 && `(minimum 100)`}
+          </div>
         </div>
-      )}
-    </div>
-  );
-}
 
-// ============================================
-// CHEAPER TEST STEP
-// ============================================
+        {/* AI Review Results */}
+        {hasSubmitted && aiReview && (
+          <div className="ai-review-section">
+            <h3>AI Review</h3>
 
-function CheaperTestStep({ betData, setBetData, showExamples, toggleExamples }) {
-  // Generate smart suggestions based on what they're changing
-  const suggestions = generateTestSuggestions(betData.whatWillChange, betData.estimatedEffort);
-
-  return (
-    <div className="step-content">
-      <ExamplesToggle
-        stepId="cheaperTest"
-        showExamples={showExamples}
-        toggleExamples={toggleExamples}
-      />
-
-      {showExamples.cheaperTest && <Examples category="cheaperTest" />}
-
-      {suggestions.length > 0 && (
-        <div className="suggestions-box">
-          <div className="suggestions-header">💡 Suggested cheaper tests:</div>
-          <ul>
-            {suggestions.map((suggestion, idx) => (
-              <li key={idx}>{suggestion}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      <div className="form-group">
-        <label>What's the cheapest way to test this first?</label>
-        <div className="input-hint">
-          💡 Before spending {getEffortCost(betData.estimatedEffort)}, how could you validate for less?
-        </div>
-        <textarea
-          value={betData.cheaperTest}
-          onChange={(e) => setBetData({ ...betData, cheaperTest: e.target.value })}
-          placeholder="Describe a manual, low-code, or small-scale test..."
-          className="input-textarea"
-          rows={4}
-        />
-      </div>
-
-      <div className="form-group">
-        <label>Estimated effort to build (full version)</label>
-        <select
-          value={betData.estimatedEffort}
-          onChange={(e) => setBetData({ ...betData, estimatedEffort: e.target.value })}
-          className="input-select"
-        >
-          <option value="1-sprint">1 sprint (2 weeks)</option>
-          <option value="2-3-sprints">2-3 sprints (4-6 weeks)</option>
-          <option value="4-6-sprints">4-6 sprints (8-12 weeks)</option>
-          <option value="6-plus-sprints">6+ sprints (12+ weeks)</option>
-        </select>
-      </div>
-    </div>
-  );
-}
-
-// ============================================
-// HELPER COMPONENTS
-// ============================================
-
-function ExamplesToggle({ stepId, showExamples, toggleExamples }) {
-  return (
-    <button
-      className="btn-examples-toggle"
-      onClick={() => toggleExamples(stepId)}
-    >
-      {showExamples[stepId] ? '✓ Hide Examples' : '💡 Show Examples of Good vs Bad'}
-    </button>
-  );
-}
-
-function Examples({ category }) {
-  const examples = betExamples[category];
-  if (!examples) return null;
-
-  return (
-    <div className="examples-box">
-      <div className="examples-intro">{examples.intro}</div>
-
-      <div className="examples-section">
-        <div className="examples-good">
-          <h4>✅ Strong Examples:</h4>
-          {examples.good.map((ex, idx) => (
-            <div key={idx} className="example-item">
-              <div className="example-text">"{ex.text}"</div>
-              <div className="example-why">{ex.why}</div>
+            {/* Goal Alignment */}
+            <div className={`alignment-check ${aiReview.goalAlignment.aligned ? 'aligned' : 'misaligned'}`}>
+              <div className="alignment-header">
+                {aiReview.goalAlignment.aligned ? 'Goal Aligned' : 'Goal Misalignment Detected'}
+              </div>
+              <div className="alignment-text">{aiReview.goalAlignment.reasoning}</div>
             </div>
-          ))}
-        </div>
 
-        <div className="examples-bad">
-          <h4>❌ Weak Examples:</h4>
-          {examples.bad.map((ex, idx) => (
-            <div key={idx} className="example-item">
-              <div className="example-text">"{ex.text}"</div>
-              <div className="example-why">{ex.why}</div>
-            </div>
-          ))}
+            {/* Strengths */}
+            {aiReview.strengths.length > 0 && (
+              <div className="review-section strengths">
+                <div className="section-header">Strengths</div>
+                <ul>
+                  {aiReview.strengths.map((strength, idx) => (
+                    <li key={idx}>{strength}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Issues */}
+            {aiReview.issues.length > 0 && (
+              <div className="review-section issues">
+                <div className="section-header">Issues to Address</div>
+                {aiReview.issues.map((issue, idx) => (
+                  <div key={idx} className={`issue-item ${issue.severity}`}>
+                    <div className="issue-field">{issue.field}</div>
+                    <div className="issue-message">{issue.message}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Extracted Fields Preview */}
+            {aiReview.extracted && Object.keys(aiReview.extracted).length > 0 && (
+              <div className="review-section extracted">
+                <div className="section-header">Extracted Fields</div>
+                <div className="extracted-grid">
+                  {Object.entries(aiReview.extracted).map(([field, value]) => (
+                    value && (
+                      <div key={field} className="extracted-item">
+                        <div className="extracted-label">{field}</div>
+                        <div className="extracted-value">{value}</div>
+                      </div>
+                    )
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="action-buttons">
+          {!hasSubmitted || (hasSubmitted && !aiReview?.readyToScore) ? (
+            <button
+              onClick={handleSubmit}
+              disabled={!canSubmit() || isAnalyzing}
+              className="btn-submit"
+            >
+              {isAnalyzing ? 'Analyzing...' : hasSubmitted ? 'Re-submit for Review' : 'Submit for Review'}
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={handleSubmit}
+                className="btn-revise"
+              >
+                Revise & Re-submit
+              </button>
+              <button
+                onClick={handleContinue}
+                className="btn-continue"
+              >
+                Continue to Scoring
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
   );
-}
-
-function BetStoryPreview({ betData, currentStep }) {
-  const parts = [];
-
-  if (betData.goalType && betData.goalTarget && betData.goalTimeframe) {
-    parts.push(`Goal: ${formatGoalType(betData.goalType)} by ${betData.goalTarget} in ${formatTimeframe(betData.goalTimeframe)}`);
-  }
-
-  if (betData.whatWillChange && currentStep >= 1) {
-    parts.push(`Change: ${betData.whatWillChange}`);
-  }
-
-  if (betData.baseline && currentStep >= 2) {
-    parts.push(`Current: ${betData.baseline}`);
-  }
-
-  if (betData.prediction && currentStep >= 3) {
-    parts.push(`Predicted: ${betData.prediction}`);
-  }
-
-  if (betData.validationType && currentStep >= 4) {
-    const typeLabel = formatValidationType(betData.validationType);
-    parts.push(`Validation: ${typeLabel}`);
-  }
-
-  if (betData.cheaperTest && currentStep >= 5) {
-    parts.push(`Cheaper test: ${betData.cheaperTest.substring(0, 80)}...`);
-  }
-
-  if (parts.length === 0) {
-    return <div className="story-empty">Your bet story will appear here as you answer questions...</div>;
-  }
-
-  return (
-    <div className="story-content">
-      {parts.map((part, idx) => (
-        <div key={idx} className="story-part">{part}</div>
-      ))}
-    </div>
-  );
-}
-
-// ============================================
-// HELPER FUNCTIONS
-// ============================================
-
-function formatGoalType(type) {
-  const map = {
-    'revenue': 'Increase revenue',
-    'customers': 'Grow customers',
-    'retention': 'Improve retention',
-    'conversion': 'Increase conversion',
-    'activation': 'Improve activation',
-    'engagement': 'Boost engagement',
-    'efficiency': 'Improve efficiency',
-    'cost': 'Reduce costs'
-  };
-  return map[type] || type;
-}
-
-function formatTimeframe(timeframe) {
-  const map = {
-    'this-month': 'this month',
-    'this-quarter': 'this quarter',
-    'this-year': 'this year',
-    '6-months': '6 months',
-    '18-months': '18 months'
-  };
-  return map[timeframe] || timeframe;
-}
-
-function formatValidationType(type) {
-  const map = {
-    'tested': 'We tested it',
-    'interviews': 'Customer interviews',
-    'data': 'Analytics/data',
-    'competitor': 'Competitor/case study',
-    'hypothesis': 'Team hypothesis (not validated)'
-  };
-  return map[type] || type;
-}
-
-function getEffortCost(effort) {
-  const map = {
-    '1-sprint': '$25k',
-    '2-3-sprints': '$62k',
-    '4-6-sprints': '$125k',
-    '6-plus-sprints': '$150k+'
-  };
-  return map[effort] || effort;
-}
-
-function generateTestSuggestions(whatWillChange, effort) {
-  const lower = whatWillChange.toLowerCase();
-  const suggestions = [];
-
-  if (lower.includes('testimonial') || lower.includes('case stud')) {
-    suggestions.push('Create 3-5 testimonials manually with existing customers');
-    suggestions.push('Add text testimonials first before investing in video');
-  }
-
-  if (lower.includes('feature') || lower.includes('functionality')) {
-    suggestions.push('Build a clickable prototype to test interest');
-    suggestions.push('Fake door test: show it, measure clicks, then build');
-  }
-
-  if (lower.includes('onboarding') || lower.includes('signup')) {
-    suggestions.push('Run 10-15 user tests to see where people actually get stuck');
-    suggestions.push('Manually walk through flow with real users first');
-  }
-
-  if (lower.includes('email') || lower.includes('notification')) {
-    suggestions.push('Send manually to 50 users first, measure response');
-    suggestions.push('A/B test subject lines before building automation');
-  }
-
-  if (lower.includes('integration') || lower.includes('connect')) {
-    suggestions.push('Use Zapier or Make.com to test demand first');
-    suggestions.push('Manual webhook for 10 customers before native build');
-  }
-
-  return suggestions;
-}
-
-function formatBetData(betData) {
-  // Convert guided flow data to standard bet format
-  const hypothesis = `If we ${betData.whatWillChange}, then ${betData.prediction}`;
-  
-  return {
-    hypothesis,
-    metricDomain: mapGoalToMetricDomain(betData.goalType),
-    metric: betData.baselineMetric || betData.goalType,
-    customMetric: '',
-    betType: 'improve',
-    baseline: betData.baseline,
-    prediction: betData.prediction,
-    confidence: betData.confidence,
-    timeframe: parseInt(betData.predictionTimeframe) || 90,
-    assumptions: `${formatValidationType(betData.validationType)}: ${betData.validationDetails}`,
-    cheapTest: betData.cheaperTest,
-    isOwnIdea: true,
-    ideaSource: '',
-    measurementTool: 'analytics',
-    strategicAlignment: mapGoalToAlignment(betData.goalType),
-    estimatedEffort: betData.estimatedEffort,
-    inactionImpact: mapGoalToImpact(betData.goalType)
-  };
-}
-
-function mapGoalToMetricDomain(goalType) {
-  const map = {
-    'revenue': 'growth',
-    'customers': 'growth',
-    'retention': 'retention',
-    'conversion': 'growth',
-    'activation': 'activation',
-    'engagement': 'engagement',
-    'efficiency': 'efficiency',
-    'cost': 'efficiency'
-  };
-  return map[goalType] || 'growth';
-}
-
-function mapGoalToAlignment(goalType) {
-  // Revenue/customers = inner bullseye, others = middle ring
-  return ['revenue', 'customers'].includes(goalType) ? 'inner' : 'middle';
-}
-
-function mapGoalToImpact(goalType) {
-  return ['revenue', 'customers'].includes(goalType) ? 'lose-revenue' : 'lose-opportunity';
 }
