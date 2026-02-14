@@ -206,6 +206,63 @@
 }
 
 /* ============================================
+   VALIDATION PLAN
+   ============================================ */
+
+.validation-plan {
+  margin-top: 32px;
+  padding-top: 32px;
+  border-top: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.validation-field {
+  margin-bottom: 20px;
+}
+
+.validation-field label {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  color: #cbd5e1;
+  margin-bottom: 8px;
+}
+
+.validation-input {
+  width: 100%;
+  padding: 14px 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #cbd5e1;
+  font-size: 15px;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.validation-input:focus {
+  outline: none;
+  border-color: #2dd4bf;
+}
+
+.validation-select {
+  width: 100%;
+  padding: 14px 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #cbd5e1;
+  font-size: 15px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.validation-select:focus {
+  outline: none;
+  border-color: #2dd4bf;
+}
+
+/* ============================================
    AI REVIEW SECTION
    ============================================ */
 
