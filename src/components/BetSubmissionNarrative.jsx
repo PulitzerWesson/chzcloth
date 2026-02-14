@@ -33,58 +33,22 @@ Effort: 4-6 sprints (~$125k) for full testimonial system with CMS, video hosting
     setAiReview(null);
 
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch('/api/parse-narrative', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'claude-haiku-4-20250514',
-          max_tokens: 1000,
-          messages: [{
-            role: 'user',
-            content: `Analyze this product bet narrative and extract key fields. Also identify any missing or weak elements.
-
-Goal Context: ${hasLeadershipGoal ? leadershipGoal : goalContext}
-
-Narrative:
-${narrative}
-
-Return ONLY a JSON object with this structure:
-{
-  "extracted": {
-    "change": "what's being built/changed",
-    "baseline": "current state with specific numbers",
-    "magnitude": "expected change with numbers",
-    "mechanism": "why this will work",
-    "evidence": "validation evidence mentioned",
-    "cheaperTest": "cheaper test if mentioned",
-    "effort": "estimated effort if mentioned"
-  },
-  "goalAlignment": {
-    "aligned": true/false,
-    "reasoning": "how this bet connects to the goal, or misalignment issues"
-  },
-  "issues": [
-    {"field": "baseline", "severity": "missing|weak", "message": "specific guidance"}
-  ],
-  "strengths": ["what's done well"],
-  "readyToScore": true/false
-}
-
-Notes:
-- "missing" = field not present at all
-- "weak" = field present but lacks specifics (no numbers, vague)
-- goalAlignment checks if bet actually achieves the stated goal (e.g., growing customers vs growing revenue)
-- Be specific in guidance messages`
-          }]
+          narrative,
+          goalContext: hasLeadershipGoal ? leadershipGoal : goalContext
         })
       });
 
-      const data = await response.json();
-      const text = data.content[0].text;
-      const cleanText = text.replace(/```json\n?|\n?```/g, '').trim();
-      const review = JSON.parse(cleanText);
+      const review = await response.json();
+
+      if (!response.ok) {
+        throw new Error(review.error || 'Analysis failed');
+      }
 
       setAiReview(review);
     } catch (error) {
