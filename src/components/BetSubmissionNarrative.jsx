@@ -6,20 +6,20 @@ import './BetSubmissionNarrative.css';
 export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg }) {
   const [currentScreen, setCurrentScreen] = useState(0);
   const [story, setStory] = useState({
-    // Screen 1
-    change: '',
-    baseline: '',
-    growOrDecline: 'grow',
-    magnitude: '',
+    // Screen 1 - Single narrative
+    narrative: '',
+    parsedData: {
+      change: '',
+      baseline: '',
+      magnitude: '',
+      mechanism: ''
+    },
     
-    // Screen 2
-    mechanism: '',
+    // Screen 2 - Multi-select evidence
+    evidenceTypes: [],  // Array: ['tested', 'interviews', 'data']
+    evidenceDetails: {}, // Object: { tested: "details...", interviews: "details..." }
     
-    // Screen 3 - CHANGED TO ARRAY
-    evidenceTypes: [],  // Multiple selections
-    evidenceDetails: {},  // Details for each type
-    
-    // Screen 4
+    // Screen 3 - Test
     cheaperTest: '',
     estimatedEffort: '2-3-sprints',
     
@@ -28,13 +28,12 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
     inactionImpact: 'lose-opportunity'
   });
 
-  const [aiSuggestions, setAiSuggestions] = useState({});
-  const [showSuggestion, setShowSuggestion] = useState({});
+  const [isParsingNarrative, setIsParsingNarrative] = useState(false);
+  const [parseError, setParseError] = useState(null);
 
   const screens = [
-    { id: 'change', title: 'What will you change?' },
-    { id: 'mechanism', title: 'How will this change behavior?' },
-    { id: 'evidence', title: 'Why will this work?' },
+    { id: 'narrative', title: 'Tell us the bet story' },
+    { id: 'evidence', title: 'What evidence supports this?' },
     { id: 'test', title: 'How will you test it?' }
   ];
 
@@ -44,62 +43,78 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
   const hasLeadershipGoal = currentOrg?.leadershipGoal;
   const leadershipGoal = hasLeadershipGoal ? currentOrg.leadershipGoal : null;
 
-  // AI suggestions based on input
+  // Debounced AI parsing of narrative
   useEffect(() => {
-    generateAISuggestions();
-  }, [story.change, story.evidenceType]);
+    if (!story.narrative || story.narrative.length < 50) {
+      return; // Don't parse very short text
+    }
 
-  const generateAISuggestions = () => {
-    const suggestions = {};
-    
-    // Baseline suggestion
-    if (story.change.length > 10) {
-      suggestions.baseline = suggestBaseline(story.change);
+    const timeoutId = setTimeout(() => {
+      parseNarrative(story.narrative);
+    }, 2000); // Parse 2 seconds after user stops typing
+
+    return () => clearTimeout(timeoutId);
+  }, [story.narrative]);
+
+  const parseNarrative = async (narrative) => {
+    setIsParsingNarrative(true);
+    setParseError(null);
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-20250514',
+          max_tokens: 500,
+          messages: [{
+            role: 'user',
+            content: `Extract the following from this product bet narrative. Return ONLY a JSON object with these exact fields:
+
+{
+  "change": "what's being built/changed",
+  "baseline": "current state with specific numbers",
+  "magnitude": "expected change with numbers",
+  "mechanism": "why this will work (the causal reasoning)"
+}
+
+Narrative:
+${narrative}
+
+Remember: ONLY return the JSON object, no other text.`
+          }]
+        })
+      });
+
+      const data = await response.json();
+      const text = data.content[0].text;
+      
+      // Remove markdown code fences if present
+      const cleanText = text.replace(/```json\n?|\n?```/g, '').trim();
+      const parsed = JSON.parse(cleanText);
+
+      setStory(prev => ({
+        ...prev,
+        parsedData: {
+          change: parsed.change || '',
+          baseline: parsed.baseline || '',
+          magnitude: parsed.magnitude || '',
+          mechanism: parsed.mechanism || ''
+        }
+      }));
+    } catch (error) {
+      console.error('Parse error:', error);
+      setParseError('Could not parse narrative');
+    } finally {
+      setIsParsingNarrative(false);
     }
-    
-    // Grow/decline suggestion
-    if (story.change.length > 10) {
-      suggestions.growOrDecline = suggestDirection(story.change);
-    }
-    
-    // Mechanism prompts
-    if (story.change.includes('add') || story.change.includes('new')) {
-      suggestions.mechanism = "What new behavior will this enable? Be specific about the customer action.";
-    } else if (story.change.includes('remove') || story.change.includes('reduce')) {
-      suggestions.mechanism = "What friction are you removing? What will customers do instead?";
-    }
-    
-    // Cheaper test suggestions
-    if (story.change.length > 20) {
-      suggestions.cheaperTest = generateCheaperTestSuggestion(story.change);
-    }
-    
-    setAiSuggestions(suggestions);
   };
 
-  const suggestBaseline = (change) => {
-    const lower = change.toLowerCase();
-    if (lower.includes('conversion')) return "Current conversion rate (e.g., 8% or 45 signups/week)";
-    if (lower.includes('retention')) return "Current retention rate (e.g., 30-day retention at 45%)";
-    if (lower.includes('revenue')) return "Current revenue (e.g., $100k MRR)";
-    if (lower.includes('testimonial') || lower.includes('social proof')) return "Current conversion rate on pricing page";
-    return "Current measurable state (number + metric + source)";
-  };
-
-  const suggestDirection = (change) => {
-    if (!change) return 'grow';  // Safety check
-    const lower = change.toLowerCase();
-    const growWords = ['add', 'new', 'increase', 'improve', 'testimonial', 'feature'];
-    const declineWords = ['remove', 'reduce', 'simplify', 'cut'];
-    
-    if (growWords.some(word => lower.includes(word))) return 'grow';
-    if (declineWords.some(word => lower.includes(word))) return 'decline';
-    return 'grow';
-  };
-
-  const generateCheaperTestSuggestion = (change) => {
-    if (!change) return "What's a manual, low-code, or small-scale version you could test first?";  // Safety check
-    const lower = change.toLowerCase();
+  const generateCheaperTestSuggestion = (narrative) => {
+    if (!narrative) return "What's a manual, low-code, or small-scale version you could test first?";
+    const lower = narrative.toLowerCase();
     
     if (lower.includes('testimonial') || lower.includes('case stud')) {
       return "Create 3-5 testimonials manually with existing customers ($3k, 2 weeks). Add to page and measure conversion for 30 days before building testimonial system.";
@@ -123,12 +138,16 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
   const canProceed = () => {
     switch (currentScreen) {
       case 0:
-        return story.change.length > 20 && story.baseline.length > 10 && story.magnitude;
+        // Screen 1: Narrative must be substantial
+        return story.narrative.length > 100;
       case 1:
-        return story.mechanism.length > 30;
+        // Screen 2: At least one evidence type selected with details
+        return story.evidenceTypes.length > 0 && 
+               story.evidenceTypes.some(type => 
+                 story.evidenceDetails[type] && story.evidenceDetails[type].length > 20
+               );
       case 2:
-        return story.evidenceType && story.evidenceDetails.length > 20;
-      case 3:
+        // Screen 3: Cheaper test described
         return story.cheaperTest.length > 20;
       default:
         return true;
@@ -145,30 +164,48 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
   };
 
   const handleShowReview = () => {
+    const parsed = story.parsedData;
+    
+    // Build combined evidence string
+    const evidenceString = story.evidenceTypes
+      .map(type => {
+        const labels = {
+          tested: 'Tested',
+          interviews: 'Interviews',
+          data: 'Data',
+          competitor: 'Competitor',
+          hypothesis: 'Hypothesis'
+        };
+        return `${labels[type]}: ${story.evidenceDetails[type]}`;
+      })
+      .join('\n\n');
+    
     const betData = {
-      hypothesis: buildHypothesis(story),
-      metricDomain: inferMetricDomain(story.change),
-      metric: inferMetric(story.change, story.baseline),
-      baseline: story.baseline || '',
-      prediction: `${story.growOrDecline} by ${story.magnitude || ''}`,
+      // Core bet data using parsed narrative
+      hypothesis: `If we ${parsed.change || story.narrative.substring(0, 100)}, then ${parsed.baseline || 'the metric'} will improve by ${parsed.magnitude || 'X'}, because ${parsed.mechanism || 'of the expected impact'}`,
+      metricDomain: inferMetricDomain(story.narrative),
+      metric: inferMetric(story.narrative),
+      baseline: parsed.baseline || '',
+      prediction: parsed.magnitude || '',
       confidence: 70,
       timeframe: 90,
-      assumptions: `${story.mechanism || ''}\n\nEvidence: ${story.evidenceDetails || ''}`,
+      assumptions: `${parsed.mechanism || ''}\n\nEvidence:\n${evidenceString}`,
       cheapTest: story.cheaperTest || '',
       measurementTool: 'analytics',
       strategicAlignment: story.strategicAlignment,
       estimatedEffort: story.estimatedEffort,
       inactionImpact: story.inactionImpact,
       isOwnIdea: true,
-      betType: (story.change || '').toLowerCase().includes('new') ? 'new' : 'improve',
-      // Add the story parts for review
-      storyParts: {
-        change: story.change || '',
-        mechanism: story.mechanism || '',
-        evidenceType: story.evidenceType || '',
-        evidenceDetails: story.evidenceDetails || '',
-        cheaperTest: story.cheaperTest || ''
-      }
+      betType: story.narrative.toLowerCase().includes('new') ? 'new' : 'improve',
+      
+      // Pass through for review screen
+      change: parsed.change || story.narrative.substring(0, 200),
+      baseline: parsed.baseline || '',
+      magnitude: parsed.magnitude || '',
+      mechanism: parsed.mechanism || '',
+      evidenceType: story.evidenceTypes[0] || 'hypothesis', // Primary evidence type
+      evidenceDetails: evidenceString,
+      cheaperTest: story.cheaperTest || ''
     };
     
     console.log('Narrative bet completed:', betData);
@@ -181,13 +218,9 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
     }
   };
 
-  const buildHypothesis = (story) => {
-    return `If we ${story.change || 'make this change'}, then ${story.baseline || 'the metric'} will ${story.growOrDecline} by ${story.magnitude || 'X'}, because ${story.mechanism || 'of the expected impact'}`;
-  };
-
-  const inferMetricDomain = (change) => {
-    if (!change) return 'growth';  // Safety check
-    const lower = change.toLowerCase();
+  const inferMetricDomain = (narrative) => {
+    if (!narrative) return 'growth';
+    const lower = narrative.toLowerCase();
     if (lower.includes('revenue') || lower.includes('monetiz')) return 'monetization';
     if (lower.includes('retention') || lower.includes('churn')) return 'retention';
     if (lower.includes('conversion') || lower.includes('signup')) return 'growth';
@@ -195,10 +228,9 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
     return 'growth';
   };
 
-  const inferMetric = (change, baseline) => {
-    const changeText = change || '';
-    const baselineText = baseline || '';
-    const lower = (changeText + ' ' + baselineText).toLowerCase();
+  const inferMetric = (narrative) => {
+    if (!narrative) return 'Custom metric';
+    const lower = narrative.toLowerCase();
     if (lower.includes('conversion')) return 'Conversion rate';
     if (lower.includes('retention')) return 'Retention rate';
     if (lower.includes('revenue') || lower.includes('mrr')) return 'Revenue/MRR';
@@ -223,7 +255,7 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
       <div className="narrative-content">
         {/* Left: Story Building */}
         <div className="story-builder">
-          {/* Screen 1: Change & Baseline */}
+          {/* Screen 1: The Narrative */}
           {currentScreen === 0 && (
             <div className="screen">
               {hasLeadershipGoal && (
@@ -233,110 +265,53 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
                 </div>
               )}
               
-              <h2>
-                {hasLeadershipGoal 
-                  ? `To support this goal, we will:`
-                  : `Your Goal (be specific):`
-                }
-              </h2>
-              
-              <textarea
-                value={story.change}
-                onChange={e => setStory({ ...story, change: e.target.value })}
-                placeholder={hasLeadershipGoal 
-                  ? "Add video testimonials to pricing page"
-                  : "Increase customers clicking on CTA by adding video testimonials to pricing page"
-                }
-                className="story-input large"
-                rows={3}
-              />
-
-              <div className="story-sentence">
-                <span className="sentence-part">
-                  <span className="label-inline">This currently has a baseline of:</span>
-                  <input
-                    type="text"
-                    value={story.baseline}
-                    onChange={e => setStory({ ...story, baseline: e.target.value })}
-                    placeholder={aiSuggestions.baseline || "e.g., 8% conversion rate (45 signups/week)"}
-                    className="story-input inline"
-                  />
-                </span>
-              </div>
-
-              <div className="story-sentence">
-                <span className="sentence-part">
-                  <span className="label-inline">Which we expect to</span>
-                  <select
-                    value={story.growOrDecline}
-                    onChange={e => setStory({ ...story, growOrDecline: e.target.value })}
-                    className="story-select inline"
-                  >
-                    <option value="grow">grow</option>
-                    <option value="decline">decline</option>
-                  </select>
-                  <span className="label-inline">by</span>
-                  <input
-                    type="text"
-                    value={story.magnitude}
-                    onChange={e => setStory({ ...story, magnitude: e.target.value })}
-                    placeholder="e.g., 50% (from 8% to 12%)"
-                    className="story-input inline"
-                  />
-                </span>
-              </div>
-
-              {aiSuggestions.growOrDecline && story.growOrDecline !== aiSuggestions.growOrDecline && (
-                <div className="inline-hint suggestion">
-                  💡 Based on your change, we'd expect this to {aiSuggestions.growOrDecline}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Screen 2: Mechanism */}
-          {currentScreen === 1 && (
-            <div className="screen">
-              <h2>How will this change customer behavior?</h2>
+              <h2>Tell us the bet story</h2>
               <p className="subtitle">
-                Be specific about the mechanism - HOW does this change influence what customers do?
+                Describe what you'll build, the current state, expected outcome, and why it'll work — all in one narrative.
               </p>
-              
-              {aiSuggestions.mechanism && (
-                <div className="inline-hint suggestion">
-                  💡 {aiSuggestions.mechanism}
-                </div>
-              )}
 
               <div className="example-box">
                 <div className="example-label">Strong Example:</div>
                 <div className="example-text">
-                  "Testimonials will increase trust. Currently prospects bounce because they don't 
-                  believe our claims about results. Seeing real customers with specific outcomes will 
-                  reduce skepticism and increase trial signups. We know trust is the blocker because 
-                  exit surveys show 'need social proof' as #2 reason for not signing up."
+                  We'll add 5 video testimonials from enterprise customers to our pricing page.
+                  <br/><br/>
+                  Currently, our pricing page converts at 8% (45 signups/week measured in Stripe). We expect this to grow by 50% to 12% conversion (68 signups/week).
+                  <br/><br/>
+                  This will work because prospects are bouncing due to lack of trust. Exit surveys show "need social proof" as the #2 reason for not signing up (127 responses). Real customer stories with specific outcomes will reduce skepticism and increase trial signups.
                 </div>
               </div>
 
               <textarea
-                value={story.mechanism}
-                onChange={e => setStory({ ...story, mechanism: e.target.value })}
-                placeholder="Describe the causal chain: Current problem → Your change → New behavior → Expected outcome"
-                className="story-input large"
-                rows={5}
+                value={story.narrative}
+                onChange={e => setStory({ ...story, narrative: e.target.value })}
+                placeholder="Describe your bet: what you'll change, current state, expected outcome, and why it'll work..."
+                className="story-input narrative-large"
+                rows={12}
               />
+
+              {isParsingNarrative && (
+                <div className="inline-hint suggestion">
+                  🤖 Understanding your bet...
+                </div>
+              )}
+
+              {parseError && (
+                <div className="inline-hint warning">
+                  ⚠️ {parseError}
+                </div>
+              )}
             </div>
           )}
 
-          {/* Screen 3: Evidence */}
-          {currentScreen === 2 && (
+          {/* Screen 2: Multi-Select Evidence */}
+          {currentScreen === 1 && (
             <div className="screen">
-              <h2>Why are you confident this will work?</h2>
+              <h2>What evidence supports this bet?</h2>
               <p className="subtitle">
-                Strong bets have evidence, not just opinions
+                Select all that apply - strong bets often have multiple evidence sources
               </p>
 
-              <div className="evidence-types">
+              <div className="evidence-types-multi">
                 {[
                   { 
                     value: 'tested', 
@@ -369,79 +344,73 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
                     example: 'Our team believes testimonials will help based on general marketing best practices, but we haven\'t validated with our specific audience'
                   }
                 ].map(type => (
-                  <button
-                    key={type.value}
-                    onClick={() => setStory({ ...story, evidenceType: type.value, evidenceDetails: '' })}
-                    className={`evidence-type ${story.evidenceType === type.value ? 'selected' : ''}`}
-                  >
-                    {type.label}
-                  </button>
+                  <div key={type.value}>
+                    <label className={`evidence-checkbox ${story.evidenceTypes.includes(type.value) ? 'selected' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={story.evidenceTypes.includes(type.value)}
+                        onChange={(e) => {
+                          const newTypes = e.target.checked
+                            ? [...story.evidenceTypes, type.value]
+                            : story.evidenceTypes.filter(t => t !== type.value);
+                          setStory({ ...story, evidenceTypes: newTypes });
+                        }}
+                      />
+                      <span className="checkbox-label">{type.label}</span>
+                    </label>
+
+                    {story.evidenceTypes.includes(type.value) && (
+                      <div className="evidence-detail-section">
+                        <div className="evidence-prompt">{type.prompt}</div>
+                        <div className="example-box small">
+                          <div className="example-label">Strong answer:</div>
+                          <div className="example-text">{type.example}</div>
+                        </div>
+                        <textarea
+                          value={story.evidenceDetails[type.value] || ''}
+                          onChange={e => setStory({ 
+                            ...story, 
+                            evidenceDetails: { 
+                              ...story.evidenceDetails, 
+                              [type.value]: e.target.value 
+                            }
+                          })}
+                          placeholder="Be specific with numbers and sources..."
+                          className="story-input large"
+                          rows={3}
+                        />
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
 
-              {story.evidenceType && (
-                <>
-                  {story.evidenceType === 'hypothesis' && (
-                    <div className="inline-hint warning">
-                      ⚠️ Unvalidated bets are riskier. Consider validating before building.
-                    </div>
-                  )}
-                  
-                  <div className="evidence-prompt">
-                    {[
-                      { value: 'tested', prompt: 'How many users? What did you see?' },
-                      { value: 'interviews', prompt: 'How many customers? What did they say?' },
-                      { value: 'data', prompt: 'What does the data show?' },
-                      { value: 'competitor', prompt: 'Who did this? What did they achieve?' },
-                      { value: 'hypothesis', prompt: 'Why do you believe this?' }
-                    ].find(t => t.value === story.evidenceType)?.prompt}
-                  </div>
-
-                  <div className="example-box small">
-                    <div className="example-label">Strong answer:</div>
-                    <div className="example-text">
-                      {[
-                        { value: 'tested', text: 'Created 3 manual testimonials, tested with 200 visitors for 2 weeks, saw conversion increase from 8% to 11.5%' },
-                        { value: 'interviews', text: '15 interviews with churned customers. 12 mentioned "didn\'t trust the product" as primary concern' },
-                        { value: 'data', text: '847 users clicked "customer stories" but found nothing. Exit survey shows "need social proof" as #2 blocker' },
-                        { value: 'competitor', text: 'Competitor X added testimonials in Q2 2024, case study showed 34% increase. Similar audience to ours' },
-                        { value: 'hypothesis', text: 'Based on marketing best practices, but not validated with our specific audience yet' }
-                      ].find(t => t.value === story.evidenceType)?.text}
-                    </div>
-                  </div>
-
-                  <textarea
-                    value={story.evidenceDetails}
-                    onChange={e => setStory({ ...story, evidenceDetails: e.target.value })}
-                    placeholder="Be specific with numbers and sources..."
-                    className="story-input large"
-                    rows={4}
-                  />
-                </>
+              {story.evidenceTypes.includes('hypothesis') && (
+                <div className="inline-hint warning">
+                  ⚠️ Unvalidated bets are riskier. Consider validating before building.
+                </div>
               )}
             </div>
           )}
 
-          {/* Screen 4: Cheaper Test */}
-          {currentScreen === 3 && (
+          {/* Screen 3: Cheaper Test */}
+          {currentScreen === 2 && (
             <div className="screen">
               <h2>Before building, how will you test this?</h2>
               <p className="subtitle">
                 What's a cheaper, faster way to validate before committing full effort?
               </p>
 
-              {aiSuggestions.cheaperTest && (
-                <div className="suggestion-box">
-                  <div className="suggestion-label">💡 Suggested cheaper test:</div>
-                  <div className="suggestion-text">{aiSuggestions.cheaperTest}</div>
-                  <button
-                    onClick={() => setStory({ ...story, cheaperTest: aiSuggestions.cheaperTest })}
-                    className="btn-use-suggestion"
-                  >
-                    Use This Suggestion
-                  </button>
-                </div>
-              )}
+              <div className="suggestion-box">
+                <div className="suggestion-label">💡 Suggested cheaper test:</div>
+                <div className="suggestion-text">{generateCheaperTestSuggestion(story.narrative)}</div>
+                <button
+                  onClick={() => setStory({ ...story, cheaperTest: generateCheaperTestSuggestion(story.narrative) })}
+                  className="btn-use-suggestion"
+                >
+                  Use This Suggestion
+                </button>
+              </div>
 
               <textarea
                 value={story.cheaperTest}
@@ -502,44 +471,53 @@ function StoryPreview({ story, currentScreen, hasLeadershipGoal, leadershipGoal 
   const parts = [];
 
   if (hasLeadershipGoal) {
-    parts.push(`To support ${leadershipGoal}...`);
+    parts.push({ label: 'Supporting', text: leadershipGoal, icon: '🎯' });
   }
 
-  if (story.change && currentScreen >= 0) {
-    parts.push(`We will ${story.change}`);
+  // Screen 1 - Show parsed narrative
+  if (currentScreen >= 0 && story.parsedData) {
+    if (story.parsedData.change) {
+      parts.push({ label: 'What\'s changing', text: story.parsedData.change, icon: '📝' });
+    }
+    if (story.parsedData.baseline) {
+      parts.push({ label: 'Current state', text: story.parsedData.baseline, icon: '📊' });
+    }
+    if (story.parsedData.magnitude) {
+      parts.push({ label: 'Expected outcome', text: story.parsedData.magnitude, icon: '🎯' });
+    }
+    if (story.parsedData.mechanism) {
+      const truncated = story.parsedData.mechanism.length > 100 
+        ? story.parsedData.mechanism.substring(0, 100) + '...' 
+        : story.parsedData.mechanism;
+      parts.push({ label: 'Why it\'ll work', text: truncated, icon: '💡' });
+    }
   }
 
-  if (story.baseline && currentScreen >= 0) {
-    parts.push(`Current: ${story.baseline}`);
-  }
-
-  if (story.magnitude && currentScreen >= 0) {
-    parts.push(`Expected: ${story.growOrDecline} by ${story.magnitude}`);
-  }
-
-  if (story.mechanism && currentScreen >= 1) {
-    parts.push(`Because: ${story.mechanism.substring(0, 100)}${story.mechanism.length > 100 ? '...' : ''}`);
-  }
-
-  if (story.evidenceType && currentScreen >= 2) {
+  // Screen 2 - Show evidence types
+  if (currentScreen >= 1 && story.evidenceTypes.length > 0) {
     const evidenceLabels = {
-      tested: 'Evidence: We tested it',
-      interviews: 'Evidence: Customer interviews',
-      data: 'Evidence: We have data',
-      competitor: 'Evidence: Competitor/case study',
-      hypothesis: 'Evidence: Team hypothesis (not validated)'
+      tested: '✓ Tested it',
+      interviews: '💬 Customer interviews',
+      data: '📊 Have data',
+      competitor: '🏆 Competitor/case study',
+      hypothesis: '💭 Team hypothesis'
     };
-    parts.push(evidenceLabels[story.evidenceType]);
+    const evidenceList = story.evidenceTypes.map(type => evidenceLabels[type]).join(', ');
+    parts.push({ label: 'Evidence', text: evidenceList, icon: '🔍' });
   }
 
-  if (story.cheaperTest && currentScreen >= 3) {
-    parts.push(`Cheaper test: ${story.cheaperTest.substring(0, 80)}...`);
+  // Screen 3 - Show test plan
+  if (currentScreen >= 2 && story.cheaperTest) {
+    const truncated = story.cheaperTest.length > 80 
+      ? story.cheaperTest.substring(0, 80) + '...' 
+      : story.cheaperTest;
+    parts.push({ label: 'Cheaper test', text: truncated, icon: '🧪' });
   }
 
   if (parts.length === 0) {
     return (
       <div className="story-empty">
-        Your bet story will build here as you answer questions...
+        Your bet story will build here as you write...
       </div>
     );
   }
@@ -547,7 +525,13 @@ function StoryPreview({ story, currentScreen, hasLeadershipGoal, leadershipGoal 
   return (
     <div className="story-content">
       {parts.map((part, idx) => (
-        <div key={idx} className="story-part">{part}</div>
+        <div key={idx} className="story-part">
+          <div className="story-part-label">
+            <span className="story-icon">{part.icon}</span>
+            {part.label}
+          </div>
+          <div className="story-part-text">{part.text}</div>
+        </div>
       ))}
     </div>
   );
