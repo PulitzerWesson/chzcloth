@@ -6,26 +6,22 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { narrative, goalContext } = req.body;
+    const { narrative, goalContext, uploadedFile } = req.body;
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 3000,
-        messages: [{
-          role: 'user',
-          content: `Analyze this product bet and return ONLY valid JSON.
+    // Build message content - can include both text and document
+    const messageContent = [];
+
+    // Always include the text prompt
+    messageContent.push({
+      type: 'text',
+      content: `Analyze this product bet and return ONLY valid JSON.
 
 Goal: ${goalContext}
 
 Bet Narrative:
 ${narrative}
+
+${uploadedFile ? '\n(Additional context provided in uploaded document)\n' : ''}
 
 Return this exact structure:
 {
@@ -54,8 +50,36 @@ Instructions:
 - If field is missing, use empty string
 - Keep all text values concise
 - Return ONLY the JSON`
+    });
+
+    // Add document if provided
+    if (uploadedFile) {
+      messageContent.push({
+        type: 'document',
+        source: {
+          type: 'base64',
+          media_type: uploadedFile.type,
+          data: uploadedFile.data
+        }
+      });
+    }
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-3-5-20241022',
+        max_tokens: 3000,
+        messages: [{
+          role: 'user',
+          content: messageContent
         }]
       })
+    });
     });
 
     const data = await response.json();
