@@ -178,6 +178,14 @@
   margin-bottom: 12px;
 }
 
+.optional-tag {
+  font-size: 13px;
+  font-weight: 400;
+  color: #64748b;
+  font-style: italic;
+  margin-left: 8px;
+}
+
 .narrative-textarea {
   width: 100%;
   padding: 16px;
