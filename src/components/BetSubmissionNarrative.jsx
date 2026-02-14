@@ -21,11 +21,7 @@ Currently, our pricing page converts at 8% (45 signups/week measured in Stripe).
 
 This will work because prospects bounce due to lack of trust. Exit surveys show "need social proof" as the #2 reason for not signing up (127 responses in Q4 2024). Real customer stories with specific outcomes will reduce skepticism and increase trial signups.
 
-Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks and saw conversion increase from 8% to 11.5%. Customer interviews (15 churned users) confirmed that 12 mentioned "didn't trust the product would work" as primary concern.
-
-Cheaper test: Create 3-5 more testimonials manually with freelance videographer ($3k, 2 weeks). Add to page and measure conversion for 30 days before building full testimonial system.
-
-Effort: 4-6 sprints (~$125k) for full testimonial system with CMS, video hosting, and moderation workflow.`;
+Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks and saw conversion increase from 8% to 11.5%. Customer interviews (15 churned users) confirmed that 12 mentioned "didn't trust the product would work" as primary concern.`;
 
   const handleSubmit = async () => {
     setHasSubmitted(true);
@@ -80,7 +76,7 @@ Effort: 4-6 sprints (~$125k) for full testimonial system with CMS, video hosting
       confidence: 70,
       timeframe: 90,
       assumptions: extracted.mechanism || '',
-      cheapTest: extracted.cheaperTest || '',
+      cheapTest: '',
       measurementTool: 'analytics',
       strategicAlignment: 'inner',
       estimatedEffort: parseEffort(extracted.effort),
@@ -96,7 +92,7 @@ Effort: 4-6 sprints (~$125k) for full testimonial system with CMS, video hosting
       mechanism: extracted.mechanism || '',
       evidenceType: 'tested',
       evidenceDetails: extracted.evidence || '',
-      cheaperTest: extracted.cheaperTest || ''
+      cheaperTest: ''
     };
 
     console.log('Bet data:', betData);
@@ -197,7 +193,7 @@ Effort: 4-6 sprints (~$125k) for full testimonial system with CMS, video hosting
           <textarea
             value={narrative}
             onChange={e => setNarrative(e.target.value)}
-            placeholder="Include: What you'll change, current state (with numbers), expected outcome (with numbers), why it will work, evidence you have, how you'll test it cheaper first, and estimated effort..."
+            placeholder="Include: What you'll change, current state (with numbers), expected outcome (with numbers), why it will work, and evidence you have..."
             className="narrative-textarea"
             rows={16}
           />
@@ -209,7 +205,7 @@ Effort: 4-6 sprints (~$125k) for full testimonial system with CMS, video hosting
         {/* AI Review Results */}
         {hasSubmitted && aiReview && (
           <div className="ai-review-section">
-            <h3>AI Review</h3>
+            <h3>CHZCLOTH Review</h3>
 
             {/* Goal Alignment */}
             <div className={`alignment-check ${aiReview.goalAlignment.aligned ? 'aligned' : 'misaligned'}`}>
@@ -241,23 +237,6 @@ Effort: 4-6 sprints (~$125k) for full testimonial system with CMS, video hosting
                     <div className="issue-message">{issue.message}</div>
                   </div>
                 ))}
-              </div>
-            )}
-
-            {/* Extracted Fields Preview */}
-            {aiReview.extracted && Object.keys(aiReview.extracted).length > 0 && (
-              <div className="review-section extracted">
-                <div className="section-header">Extracted Fields</div>
-                <div className="extracted-grid">
-                  {Object.entries(aiReview.extracted).map(([field, value]) => (
-                    value && (
-                      <div key={field} className="extracted-item">
-                        <div className="extracted-label">{field}</div>
-                        <div className="extracted-value">{value}</div>
-                      </div>
-                    )
-                  ))}
-                </div>
               </div>
             )}
           </div>
