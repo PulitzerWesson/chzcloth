@@ -10,7 +10,22 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
     validationMethod: '',
     validationTimeframe: '90'
   });
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [uploadError, setUploadError] = useState(null);
   const [showExample, setShowExample] = useState(false);
+
+  // Convert file to base64
+  const fileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result.split(',')[1]; // Remove data:...;base64, prefix
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiReview, setAiReview] = useState(null);
   const [hasSubmitted, setHasSubmitted] = useState(false);
@@ -40,7 +55,8 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
         },
         body: JSON.stringify({
           narrative,
-          goalContext: hasLeadershipGoal ? leadershipGoal : goalContext
+          goalContext: hasLeadershipGoal ? leadershipGoal : goalContext,
+          uploadedFile  // Include uploaded file if present
         })
       });
 
@@ -90,6 +106,10 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
       betType: 'improve',
       goalContext: hasLeadershipGoal ? leadershipGoal : goalContext,
       goalAlignment: aiReview.goalAlignment,
+      // Document metadata
+      documentProvided: !!uploadedFile,
+      documentName: uploadedFile?.name || null,
+      documentType: uploadedFile?.type || null,
       // Pass data for review screen
       change: extracted.change || '',
       baseline: extracted.baseline || '',
@@ -140,6 +160,48 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
     if (narrative.length < 100) return false;
     if (!story.validationMethod || story.validationMethod.length < 5) return false;
     return true;
+  };
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = [
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+      'text/plain',
+      'text/markdown'
+    ];
+    
+    if (!allowedTypes.includes(file.type)) {
+      setUploadError('Please upload a PDF, Word document, or text file');
+      return;
+    }
+
+    // Validate file size (32MB limit)
+    if (file.size > 32 * 1024 * 1024) {
+      setUploadError('File size must be under 32MB');
+      return;
+    }
+
+    try {
+      const base64Data = await fileToBase64(file);
+      setUploadedFile({
+        name: file.name,
+        type: file.type,
+        data: base64Data
+      });
+      setUploadError(null);
+    } catch (error) {
+      setUploadError('Failed to upload file. Please try again.');
+      console.error('File upload error:', error);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setUploadedFile(null);
+    setUploadError(null);
   };
 
   return (
@@ -206,6 +268,49 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
           <div className="character-count">
             {narrative.length} characters {narrative.length < 100 && `(minimum 100)`}
           </div>
+        </div>
+
+        {/* File Upload (Optional) */}
+        <div className="file-upload-section">
+          <label>Supporting Document (optional)</label>
+          <div className="file-upload-hint">
+            Upload a PRD, meeting notes, or research doc for additional context
+          </div>
+          
+          {!uploadedFile ? (
+            <div className="file-upload-zone">
+              <input
+                type="file"
+                id="file-upload"
+                accept=".pdf,.docx,.txt,.md"
+                onChange={handleFileUpload}
+                className="file-input"
+              />
+              <label htmlFor="file-upload" className="file-upload-label">
+                <div className="upload-icon">📄</div>
+                <div className="upload-text">Click to upload or drag and drop</div>
+                <div className="upload-formats">PDF, Word, Text, or Markdown (max 32MB)</div>
+              </label>
+            </div>
+          ) : (
+            <div className="file-uploaded">
+              <div className="file-info">
+                <span className="file-icon">📄</span>
+                <span className="file-name">{uploadedFile.name}</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleRemoveFile}
+                className="btn-remove-file"
+              >
+                Remove
+              </button>
+            </div>
+          )}
+          
+          {uploadError && (
+            <div className="upload-error">{uploadError}</div>
+          )}
         </div>
 
         {/* Validation Plan */}
