@@ -6,6 +6,10 @@ import './BetSubmissionNarrative.css';
 export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg }) {
   const [goalContext, setGoalContext] = useState('');
   const [narrative, setNarrative] = useState('');
+  const [story, setStory] = useState({
+    validationMethod: '',
+    validationTimeframe: '90'
+  });
   const [showExample, setShowExample] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiReview, setAiReview] = useState(null);
@@ -74,7 +78,8 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
       baseline: extracted.baseline || '',
       prediction: extracted.magnitude || '',
       confidence: 70,
-      timeframe: 90,
+      timeframe: parseInt(story.validationTimeframe),
+      validationMethod: story.validationMethod,
       assumptions: extracted.mechanism || '',
       cheapTest: '',
       measurementTool: 'analytics',
@@ -133,6 +138,7 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
   const canSubmit = () => {
     if (!hasLeadershipGoal && goalContext.length < 10) return false;
     if (narrative.length < 100) return false;
+    if (!story.validationMethod || story.validationMethod.length < 5) return false;
     return true;
   };
 
@@ -199,6 +205,35 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
           />
           <div className="character-count">
             {narrative.length} characters {narrative.length < 100 && `(minimum 100)`}
+          </div>
+        </div>
+
+        {/* Validation Plan */}
+        <div className="validation-plan">
+          <div className="validation-field">
+            <label>How will you validate this worked?</label>
+            <input
+              type="text"
+              value={story.validationMethod}
+              onChange={e => setStory({ ...story, validationMethod: e.target.value })}
+              placeholder="e.g., Check Stripe conversion rate, Measure in PostHog, Review Salesforce pipeline"
+              className="validation-input"
+            />
+          </div>
+
+          <div className="validation-field">
+            <label>When will you check?</label>
+            <select
+              value={story.validationTimeframe}
+              onChange={e => setStory({ ...story, validationTimeframe: e.target.value })}
+              className="validation-select"
+            >
+              <option value="30">30 days after launch</option>
+              <option value="60">60 days after launch</option>
+              <option value="90">90 days after launch</option>
+              <option value="120">120 days after launch</option>
+              <option value="180">6 months after launch</option>
+            </select>
           </div>
         </div>
 
