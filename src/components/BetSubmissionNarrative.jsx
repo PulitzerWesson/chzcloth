@@ -1,64 +1,36 @@
-// BetSubmissionNarrative.jsx - Story-building approach to bet creation
+// BetSubmissionNarrative.jsx - Single smart field with AI validation
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './BetSubmissionNarrative.css';
 
 export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg }) {
-  const [currentScreen, setCurrentScreen] = useState(0);
-  const [story, setStory] = useState({
-    // Screen 1 - Single narrative
-    narrative: '',
-    parsedData: {
-      change: '',
-      baseline: '',
-      magnitude: '',
-      mechanism: ''
-    },
-    
-    // Screen 2 - Multi-select evidence
-    evidenceTypes: [],  // Array: ['tested', 'interviews', 'data']
-    evidenceDetails: {}, // Object: { tested: "details...", interviews: "details..." }
-    
-    // Screen 3 - Test
-    cheaperTest: '',
-    estimatedEffort: '2-3-sprints',
-    
-    // Metadata
-    strategicAlignment: 'inner',
-    inactionImpact: 'lose-opportunity'
-  });
+  const [goalContext, setGoalContext] = useState('');
+  const [narrative, setNarrative] = useState('');
+  const [showExample, setShowExample] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [aiReview, setAiReview] = useState(null);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
-  const [isParsingNarrative, setIsParsingNarrative] = useState(false);
-  const [parseError, setParseError] = useState(null);
-
-  const screens = [
-    { id: 'narrative', title: 'Tell us the bet story' },
-    { id: 'evidence', title: 'What evidence supports this?' },
-    { id: 'test', title: 'How will you test it?' }
-  ];
-
-  const progress = ((currentScreen + 1) / screens.length) * 100;
-  
   // Check if org has leadership goal
   const hasLeadershipGoal = currentOrg?.leadershipGoal;
   const leadershipGoal = hasLeadershipGoal ? currentOrg.leadershipGoal : null;
 
-  // Debounced AI parsing of narrative
-  useEffect(() => {
-    if (!story.narrative || story.narrative.length < 50) {
-      return; // Don't parse very short text
-    }
+  const exampleNarrative = `Add 5 video testimonials from enterprise customers to our pricing page.
 
-    const timeoutId = setTimeout(() => {
-      parseNarrative(story.narrative);
-    }, 2000); // Parse 2 seconds after user stops typing
+Currently, our pricing page converts at 8% (45 signups/week measured in Stripe). We expect this to grow to 12% conversion (68 signups/week) - a 50% increase.
 
-    return () => clearTimeout(timeoutId);
-  }, [story.narrative]);
+This will work because prospects bounce due to lack of trust. Exit surveys show "need social proof" as the #2 reason for not signing up (127 responses in Q4 2024). Real customer stories with specific outcomes will reduce skepticism and increase trial signups.
 
-  const parseNarrative = async (narrative) => {
-    setIsParsingNarrative(true);
-    setParseError(null);
+Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks and saw conversion increase from 8% to 11.5%. Customer interviews (15 churned users) confirmed that 12 mentioned "didn't trust the product would work" as primary concern.
+
+Cheaper test: Create 3-5 more testimonials manually with freelance videographer ($3k, 2 weeks). Add to page and measure conversion for 30 days before building full testimonial system.
+
+Effort: 4-6 sprints (~$125k) for full testimonial system with CMS, video hosting, and moderation workflow.`;
+
+  const handleSubmit = async () => {
+    setHasSubmitted(true);
+    setIsAnalyzing(true);
+    setAiReview(null);
 
     try {
       const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -68,159 +40,108 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
         },
         body: JSON.stringify({
           model: 'claude-haiku-4-20250514',
-          max_tokens: 500,
+          max_tokens: 1000,
           messages: [{
             role: 'user',
-            content: `Extract the following from this product bet narrative. Return ONLY a JSON object with these exact fields:
+            content: `Analyze this product bet narrative and extract key fields. Also identify any missing or weak elements.
 
-{
-  "change": "what's being built/changed",
-  "baseline": "current state with specific numbers",
-  "magnitude": "expected change with numbers",
-  "mechanism": "why this will work (the causal reasoning)"
-}
+Goal Context: ${hasLeadershipGoal ? leadershipGoal : goalContext}
 
 Narrative:
 ${narrative}
 
-Remember: ONLY return the JSON object, no other text.`
+Return ONLY a JSON object with this structure:
+{
+  "extracted": {
+    "change": "what's being built/changed",
+    "baseline": "current state with specific numbers",
+    "magnitude": "expected change with numbers",
+    "mechanism": "why this will work",
+    "evidence": "validation evidence mentioned",
+    "cheaperTest": "cheaper test if mentioned",
+    "effort": "estimated effort if mentioned"
+  },
+  "goalAlignment": {
+    "aligned": true/false,
+    "reasoning": "how this bet connects to the goal, or misalignment issues"
+  },
+  "issues": [
+    {"field": "baseline", "severity": "missing|weak", "message": "specific guidance"}
+  ],
+  "strengths": ["what's done well"],
+  "readyToScore": true/false
+}
+
+Notes:
+- "missing" = field not present at all
+- "weak" = field present but lacks specifics (no numbers, vague)
+- goalAlignment checks if bet actually achieves the stated goal (e.g., growing customers vs growing revenue)
+- Be specific in guidance messages`
           }]
         })
       });
 
       const data = await response.json();
       const text = data.content[0].text;
-      
-      // Remove markdown code fences if present
       const cleanText = text.replace(/```json\n?|\n?```/g, '').trim();
-      const parsed = JSON.parse(cleanText);
+      const review = JSON.parse(cleanText);
 
-      setStory(prev => ({
-        ...prev,
-        parsedData: {
-          change: parsed.change || '',
-          baseline: parsed.baseline || '',
-          magnitude: parsed.magnitude || '',
-          mechanism: parsed.mechanism || ''
-        }
-      }));
+      setAiReview(review);
     } catch (error) {
-      console.error('Parse error:', error);
-      setParseError('Could not parse narrative');
+      console.error('AI review error:', error);
+      setAiReview({
+        extracted: {},
+        goalAlignment: { aligned: false, reasoning: "Could not analyze alignment" },
+        issues: [{ field: "analysis", severity: "missing", message: "AI analysis failed. Please check your narrative and try again." }],
+        strengths: [],
+        readyToScore: false
+      });
     } finally {
-      setIsParsingNarrative(false);
+      setIsAnalyzing(false);
     }
   };
 
-  const generateCheaperTestSuggestion = (narrative) => {
-    if (!narrative) return "What's a manual, low-code, or small-scale version you could test first?";
-    const lower = narrative.toLowerCase();
-    
-    if (lower.includes('testimonial') || lower.includes('case stud')) {
-      return "Create 3-5 testimonials manually with existing customers ($3k, 2 weeks). Add to page and measure conversion for 30 days before building testimonial system.";
+  const handleContinue = () => {
+    if (!aiReview || !aiReview.readyToScore) {
+      return;
     }
-    if (lower.includes('feature') || lower.includes('functionality')) {
-      return "Build a clickable prototype or fake door test. Show users the feature, measure who clicks, gather feedback before full build.";
-    }
-    if (lower.includes('onboarding')) {
-      return "Run 10-15 user tests ($3k, 1 week) to see exactly where people get stuck. Fix those specific issues first.";
-    }
-    if (lower.includes('email') || lower.includes('notification')) {
-      return "Manually send to 50-100 users first. Measure open rate, click rate, conversions before automating.";
-    }
-    if (lower.includes('integration')) {
-      return "Use Zapier or Make.com to create low-code version (2 hours). See if users actually use it before building native integration.";
-    }
-    
-    return "What's a manual, low-code, or small-scale version you could test first?";
-  };
 
-  const canProceed = () => {
-    switch (currentScreen) {
-      case 0:
-        // Screen 1: Narrative must be substantial
-        return story.narrative.length > 100;
-      case 1:
-        // Screen 2: At least one evidence type selected with details
-        return story.evidenceTypes.length > 0 && 
-               story.evidenceTypes.some(type => 
-                 story.evidenceDetails[type] && story.evidenceDetails[type].length > 20
-               );
-      case 2:
-        // Screen 3: Cheaper test described
-        return story.cheaperTest.length > 20;
-      default:
-        return true;
-    }
-  };
-
-  const handleNext = () => {
-    if (currentScreen < screens.length - 1) {
-      setCurrentScreen(currentScreen + 1);
-    } else {
-      // Last screen - build bet and show review
-      handleShowReview();
-    }
-  };
-
-  const handleShowReview = () => {
-    const parsed = story.parsedData;
-    
-    // Build combined evidence string
-    const evidenceString = story.evidenceTypes
-      .map(type => {
-        const labels = {
-          tested: 'Tested',
-          interviews: 'Interviews',
-          data: 'Data',
-          competitor: 'Competitor',
-          hypothesis: 'Hypothesis'
-        };
-        return `${labels[type]}: ${story.evidenceDetails[type]}`;
-      })
-      .join('\n\n');
-    
+    const extracted = aiReview.extracted;
     const betData = {
-      // Core bet data using parsed narrative
-      hypothesis: `If we ${parsed.change || story.narrative.substring(0, 100)}, then ${parsed.baseline || 'the metric'} will improve by ${parsed.magnitude || 'X'}, because ${parsed.mechanism || 'of the expected impact'}`,
-      metricDomain: inferMetricDomain(story.narrative),
-      metric: inferMetric(story.narrative),
-      baseline: parsed.baseline || '',
-      prediction: parsed.magnitude || '',
+      hypothesis: `If we ${extracted.change || narrative.substring(0, 100)}, then ${extracted.baseline || 'the metric'} will improve to ${extracted.magnitude || 'target'}, because ${extracted.mechanism || 'of expected impact'}`,
+      metricDomain: inferMetricDomain(narrative),
+      metric: inferMetric(narrative),
+      baseline: extracted.baseline || '',
+      prediction: extracted.magnitude || '',
       confidence: 70,
       timeframe: 90,
-      assumptions: `${parsed.mechanism || ''}\n\nEvidence:\n${evidenceString}`,
-      cheapTest: story.cheaperTest || '',
+      assumptions: extracted.mechanism || '',
+      cheapTest: extracted.cheaperTest || '',
       measurementTool: 'analytics',
-      strategicAlignment: story.strategicAlignment,
-      estimatedEffort: story.estimatedEffort,
-      inactionImpact: story.inactionImpact,
+      strategicAlignment: 'inner',
+      estimatedEffort: parseEffort(extracted.effort),
+      inactionImpact: 'lose-opportunity',
       isOwnIdea: true,
-      betType: story.narrative.toLowerCase().includes('new') ? 'new' : 'improve',
-      
-      // Pass through for review screen
-      change: parsed.change || story.narrative.substring(0, 200),
-      baseline: parsed.baseline || '',
-      magnitude: parsed.magnitude || '',
-      mechanism: parsed.mechanism || '',
-      evidenceType: story.evidenceTypes[0] || 'hypothesis', // Primary evidence type
-      evidenceDetails: evidenceString,
-      cheaperTest: story.cheaperTest || ''
+      betType: 'improve',
+      goalContext: hasLeadershipGoal ? leadershipGoal : goalContext,
+      goalAlignment: aiReview.goalAlignment,
+      // Pass data for review screen
+      change: extracted.change || '',
+      baseline: extracted.baseline || '',
+      magnitude: extracted.magnitude || '',
+      mechanism: extracted.mechanism || '',
+      evidenceType: 'tested',
+      evidenceDetails: extracted.evidence || '',
+      cheaperTest: extracted.cheaperTest || ''
     };
-    
-    console.log('Narrative bet completed:', betData);
+
+    console.log('Bet data:', betData);
     onComplete(betData);
   };
 
-  const handleBack = () => {
-    if (currentScreen > 0) {
-      setCurrentScreen(currentScreen - 1);
-    }
-  };
-
-  const inferMetricDomain = (narrative) => {
-    if (!narrative) return 'growth';
-    const lower = narrative.toLowerCase();
+  const inferMetricDomain = (text) => {
+    if (!text) return 'growth';
+    const lower = text.toLowerCase();
     if (lower.includes('revenue') || lower.includes('monetiz')) return 'monetization';
     if (lower.includes('retention') || lower.includes('churn')) return 'retention';
     if (lower.includes('conversion') || lower.includes('signup')) return 'growth';
@@ -228,9 +149,9 @@ Remember: ONLY return the JSON object, no other text.`
     return 'growth';
   };
 
-  const inferMetric = (narrative) => {
-    if (!narrative) return 'Custom metric';
-    const lower = narrative.toLowerCase();
+  const inferMetric = (text) => {
+    if (!text) return 'Custom metric';
+    const lower = text.toLowerCase();
     if (lower.includes('conversion')) return 'Conversion rate';
     if (lower.includes('retention')) return 'Retention rate';
     if (lower.includes('revenue') || lower.includes('mrr')) return 'Revenue/MRR';
@@ -239,300 +160,173 @@ Remember: ONLY return the JSON object, no other text.`
     return 'Custom metric';
   };
 
+  const parseEffort = (effortText) => {
+    if (!effortText) return '2-3-sprints';
+    const lower = effortText.toLowerCase();
+    if (lower.includes('1 sprint') || lower.includes('2 week')) return '1-sprint';
+    if (lower.includes('2-3 sprint') || lower.includes('4-6 week')) return '2-3-sprints';
+    if (lower.includes('4-6 sprint') || lower.includes('8-12 week')) return '4-6-sprints';
+    if (lower.includes('6+ sprint') || lower.includes('12+ week')) return '6-plus-sprints';
+    return '2-3-sprints';
+  };
+
+  const canSubmit = () => {
+    if (!hasLeadershipGoal && goalContext.length < 10) return false;
+    if (narrative.length < 100) return false;
+    return true;
+  };
+
   return (
     <div className="narrative-container">
       {/* Header */}
       <div className="narrative-header">
         <h1>Make a Bet</h1>
-        <div className="progress-bar">
-          <div className="progress-fill" style={{ width: `${progress}%` }} />
-        </div>
-        <div className="progress-text">
-          Step {currentScreen + 1} of {screens.length}: {screens[currentScreen].title}
-        </div>
+        <p className="header-subtitle">
+          Describe what you'll build, why it matters, and how you'll validate it
+        </p>
       </div>
 
-      <div className="narrative-content">
-        {/* Left: Story Building */}
-        <div className="story-builder">
-          {/* Screen 1: The Narrative */}
-          {currentScreen === 0 && (
-            <div className="screen">
-              {hasLeadershipGoal && (
-                <div className="leadership-context">
-                  <div className="context-label">Supporting Leadership Goal:</div>
-                  <div className="context-goal">{leadershipGoal}</div>
-                </div>
-              )}
-              
-              <h2>Tell us the bet story</h2>
-              <p className="subtitle">
-                Describe what you'll build, the current state, expected outcome, and why it'll work — all in one narrative.
-              </p>
-
-              <div className="example-box">
-                <div className="example-label">Strong Example:</div>
-                <div className="example-text">
-                  We'll add 5 video testimonials from enterprise customers to our pricing page.
-                  <br/><br/>
-                  Currently, our pricing page converts at 8% (45 signups/week measured in Stripe). We expect this to grow by 50% to 12% conversion (68 signups/week).
-                  <br/><br/>
-                  This will work because prospects are bouncing due to lack of trust. Exit surveys show "need social proof" as the #2 reason for not signing up (127 responses). Real customer stories with specific outcomes will reduce skepticism and increase trial signups.
-                </div>
-              </div>
-
-              <textarea
-                value={story.narrative}
-                onChange={e => setStory({ ...story, narrative: e.target.value })}
-                placeholder="Describe your bet: what you'll change, current state, expected outcome, and why it'll work..."
-                className="story-input narrative-large"
-                rows={12}
-              />
-
-              {isParsingNarrative && (
-                <div className="inline-hint suggestion">
-                  🤖 Understanding your bet...
-                </div>
-              )}
-
-              {parseError && (
-                <div className="inline-hint warning">
-                  ⚠️ {parseError}
-                </div>
-              )}
+      <div className="single-field-container">
+        {/* Goal Context */}
+        {hasLeadershipGoal ? (
+          <div className="goal-context-display">
+            <div className="context-label">Supporting Leadership Goal:</div>
+            <div className="context-goal">{leadershipGoal}</div>
+          </div>
+        ) : (
+          <div className="goal-context-input">
+            <label>Company/Department Goal</label>
+            <input
+              type="text"
+              value={goalContext}
+              onChange={e => setGoalContext(e.target.value)}
+              placeholder="e.g., Grow revenue by 30% this year, Reduce churn to below 5%, Increase trial signups by 50%"
+              className="goal-input"
+            />
+            <div className="goal-hint">
+              AI will check if your bet actually achieves this goal (e.g., more customers ≠ more revenue)
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Screen 2: Multi-Select Evidence */}
-          {currentScreen === 1 && (
-            <div className="screen">
-              <h2>What evidence supports this bet?</h2>
-              <p className="subtitle">
-                Select all that apply - strong bets often have multiple evidence sources
-              </p>
+        {/* Show Example Toggle */}
+        <div className="example-toggle-container">
+          <button
+            onClick={() => setShowExample(!showExample)}
+            className="btn-show-example"
+          >
+            {showExample ? 'Hide Example' : 'Show Example of Strong Bet'}
+          </button>
+        </div>
 
-              <div className="evidence-types-multi">
-                {[
-                  { 
-                    value: 'tested', 
-                    label: '✓ We tested it', 
-                    prompt: 'How many users? What did you see?',
-                    example: 'Created 3 manual video testimonials, tested on 200 visitors for 2 weeks, saw conversion increase from 8% to 11.5%'
-                  },
-                  { 
-                    value: 'interviews', 
-                    label: '💬 Customer interviews', 
-                    prompt: 'How many customers? What did they say?',
-                    example: '15 interviews with churned customers. 12 mentioned "didn\'t trust the product would work" as primary concern'
-                  },
-                  { 
-                    value: 'data', 
-                    label: '📊 We have data', 
-                    prompt: 'What does the data show?',
-                    example: 'Analytics show 847 users clicked "customer stories" link but found nothing. Exit survey ranks "need social proof" as #2 blocker'
-                  },
-                  { 
-                    value: 'competitor', 
-                    label: '🏆 Competitor/case study', 
-                    prompt: 'Who did this? What did they achieve?',
-                    example: 'Competitor X added video testimonials Q2 2024, published case study showing 34% conversion increase. Our audience is similar'
-                  },
-                  { 
-                    value: 'hypothesis', 
-                    label: '💭 Team hypothesis', 
-                    prompt: 'Why do you believe this? (Not validated)',
-                    example: 'Our team believes testimonials will help based on general marketing best practices, but we haven\'t validated with our specific audience'
-                  }
-                ].map(type => (
-                  <div key={type.value}>
-                    <label className={`evidence-checkbox ${story.evidenceTypes.includes(type.value) ? 'selected' : ''}`}>
-                      <input
-                        type="checkbox"
-                        checked={story.evidenceTypes.includes(type.value)}
-                        onChange={(e) => {
-                          const newTypes = e.target.checked
-                            ? [...story.evidenceTypes, type.value]
-                            : story.evidenceTypes.filter(t => t !== type.value);
-                          setStory({ ...story, evidenceTypes: newTypes });
-                        }}
-                      />
-                      <span className="checkbox-label">{type.label}</span>
-                    </label>
+        {/* Example (collapsible) */}
+        {showExample && (
+          <div className="example-display">
+            <div className="example-header">Example of a Strong Bet:</div>
+            <div className="example-content">{exampleNarrative}</div>
+          </div>
+        )}
 
-                    {story.evidenceTypes.includes(type.value) && (
-                      <div className="evidence-detail-section">
-                        <div className="evidence-prompt">{type.prompt}</div>
-                        <div className="example-box small">
-                          <div className="example-label">Strong answer:</div>
-                          <div className="example-text">{type.example}</div>
-                        </div>
-                        <textarea
-                          value={story.evidenceDetails[type.value] || ''}
-                          onChange={e => setStory({ 
-                            ...story, 
-                            evidenceDetails: { 
-                              ...story.evidenceDetails, 
-                              [type.value]: e.target.value 
-                            }
-                          })}
-                          placeholder="Be specific with numbers and sources..."
-                          className="story-input large"
-                          rows={3}
-                        />
-                      </div>
-                    )}
+        {/* Main Narrative Field */}
+        <div className="narrative-field">
+          <label>Describe Your Bet</label>
+          <textarea
+            value={narrative}
+            onChange={e => setNarrative(e.target.value)}
+            placeholder="Include: What you'll change, current state (with numbers), expected outcome (with numbers), why it will work, evidence you have, how you'll test it cheaper first, and estimated effort..."
+            className="narrative-textarea"
+            rows={16}
+          />
+          <div className="character-count">
+            {narrative.length} characters {narrative.length < 100 && `(minimum 100)`}
+          </div>
+        </div>
+
+        {/* AI Review Results */}
+        {hasSubmitted && aiReview && (
+          <div className="ai-review-section">
+            <h3>AI Review</h3>
+
+            {/* Goal Alignment */}
+            <div className={`alignment-check ${aiReview.goalAlignment.aligned ? 'aligned' : 'misaligned'}`}>
+              <div className="alignment-header">
+                {aiReview.goalAlignment.aligned ? 'Goal Aligned' : 'Goal Misalignment Detected'}
+              </div>
+              <div className="alignment-text">{aiReview.goalAlignment.reasoning}</div>
+            </div>
+
+            {/* Strengths */}
+            {aiReview.strengths.length > 0 && (
+              <div className="review-section strengths">
+                <div className="section-header">Strengths</div>
+                <ul>
+                  {aiReview.strengths.map((strength, idx) => (
+                    <li key={idx}>{strength}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Issues */}
+            {aiReview.issues.length > 0 && (
+              <div className="review-section issues">
+                <div className="section-header">Issues to Address</div>
+                {aiReview.issues.map((issue, idx) => (
+                  <div key={idx} className={`issue-item ${issue.severity}`}>
+                    <div className="issue-field">{issue.field}</div>
+                    <div className="issue-message">{issue.message}</div>
                   </div>
                 ))}
               </div>
-
-              {story.evidenceTypes.includes('hypothesis') && (
-                <div className="inline-hint warning">
-                  ⚠️ Unvalidated bets are riskier. Consider validating before building.
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Screen 3: Cheaper Test */}
-          {currentScreen === 2 && (
-            <div className="screen">
-              <h2>Before building, how will you test this?</h2>
-              <p className="subtitle">
-                What's a cheaper, faster way to validate before committing full effort?
-              </p>
-
-              <div className="suggestion-box">
-                <div className="suggestion-label">💡 Suggested cheaper test:</div>
-                <div className="suggestion-text">{generateCheaperTestSuggestion(story.narrative)}</div>
-                <button
-                  onClick={() => setStory({ ...story, cheaperTest: generateCheaperTestSuggestion(story.narrative) })}
-                  className="btn-use-suggestion"
-                >
-                  Use This Suggestion
-                </button>
-              </div>
-
-              <textarea
-                value={story.cheaperTest}
-                onChange={e => setStory({ ...story, cheaperTest: e.target.value })}
-                placeholder="Describe a manual, low-code, or small-scale test..."
-                className="story-input large"
-                rows={4}
-              />
-
-              <div className="form-group">
-                <label>Estimated effort to build (full version)</label>
-                <select
-                  value={story.estimatedEffort}
-                  onChange={e => setStory({ ...story, estimatedEffort: e.target.value })}
-                  className="story-select"
-                >
-                  <option value="1-sprint">1 sprint (2 weeks) - ~$25k</option>
-                  <option value="2-3-sprints">2-3 sprints (4-6 weeks) - ~$62k</option>
-                  <option value="4-6-sprints">4-6 sprints (8-12 weeks) - ~$125k</option>
-                  <option value="6-plus-sprints">6+ sprints (12+ weeks) - ~$150k+</option>
-                </select>
-              </div>
-            </div>
-          )}
-
-          {/* Navigation */}
-          <div className="narrative-nav">
-            {currentScreen > 0 && (
-              <button className="btn-back" onClick={handleBack}>
-                ← Back
-              </button>
             )}
+
+            {/* Extracted Fields Preview */}
+            {aiReview.extracted && Object.keys(aiReview.extracted).length > 0 && (
+              <div className="review-section extracted">
+                <div className="section-header">Extracted Fields</div>
+                <div className="extracted-grid">
+                  {Object.entries(aiReview.extracted).map(([field, value]) => (
+                    value && (
+                      <div key={field} className="extracted-item">
+                        <div className="extracted-label">{field}</div>
+                        <div className="extracted-value">{value}</div>
+                      </div>
+                    )
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="action-buttons">
+          {!hasSubmitted || (hasSubmitted && !aiReview?.readyToScore) ? (
             <button
-              className="btn-next"
-              onClick={handleNext}
-              disabled={!canProceed()}
+              onClick={handleSubmit}
+              disabled={!canSubmit() || isAnalyzing}
+              className="btn-submit"
             >
-              {currentScreen === screens.length - 1 ? 'Review Bet →' : 'Next →'}
+              {isAnalyzing ? 'Analyzing...' : hasSubmitted ? 'Re-submit for Review' : 'Submit for Review'}
             </button>
-          </div>
-        </div>
-
-        {/* Right: Live Story Preview */}
-        <div className="story-preview">
-          <h3>Your Bet Story:</h3>
-          <StoryPreview story={story} currentScreen={currentScreen} hasLeadershipGoal={hasLeadershipGoal} leadershipGoal={leadershipGoal} />
+          ) : (
+            <>
+              <button
+                onClick={handleSubmit}
+                className="btn-revise"
+              >
+                Revise & Re-submit
+              </button>
+              <button
+                onClick={handleContinue}
+                className="btn-continue"
+              >
+                Continue to Scoring
+              </button>
+            </>
+          )}
         </div>
       </div>
-    </div>
-  );
-}
-
-// ============================================
-// STORY PREVIEW COMPONENT
-// ============================================
-
-function StoryPreview({ story, currentScreen, hasLeadershipGoal, leadershipGoal }) {
-  const parts = [];
-
-  if (hasLeadershipGoal) {
-    parts.push({ label: 'Supporting', text: leadershipGoal, icon: '🎯' });
-  }
-
-  // Screen 1 - Show parsed narrative
-  if (currentScreen >= 0 && story.parsedData) {
-    if (story.parsedData.change) {
-      parts.push({ label: 'What\'s changing', text: story.parsedData.change, icon: '📝' });
-    }
-    if (story.parsedData.baseline) {
-      parts.push({ label: 'Current state', text: story.parsedData.baseline, icon: '📊' });
-    }
-    if (story.parsedData.magnitude) {
-      parts.push({ label: 'Expected outcome', text: story.parsedData.magnitude, icon: '🎯' });
-    }
-    if (story.parsedData.mechanism) {
-      const truncated = story.parsedData.mechanism.length > 100 
-        ? story.parsedData.mechanism.substring(0, 100) + '...' 
-        : story.parsedData.mechanism;
-      parts.push({ label: 'Why it\'ll work', text: truncated, icon: '💡' });
-    }
-  }
-
-  // Screen 2 - Show evidence types
-  if (currentScreen >= 1 && story.evidenceTypes.length > 0) {
-    const evidenceLabels = {
-      tested: '✓ Tested it',
-      interviews: '💬 Customer interviews',
-      data: '📊 Have data',
-      competitor: '🏆 Competitor/case study',
-      hypothesis: '💭 Team hypothesis'
-    };
-    const evidenceList = story.evidenceTypes.map(type => evidenceLabels[type]).join(', ');
-    parts.push({ label: 'Evidence', text: evidenceList, icon: '🔍' });
-  }
-
-  // Screen 3 - Show test plan
-  if (currentScreen >= 2 && story.cheaperTest) {
-    const truncated = story.cheaperTest.length > 80 
-      ? story.cheaperTest.substring(0, 80) + '...' 
-      : story.cheaperTest;
-    parts.push({ label: 'Cheaper test', text: truncated, icon: '🧪' });
-  }
-
-  if (parts.length === 0) {
-    return (
-      <div className="story-empty">
-        Your bet story will build here as you write...
-      </div>
-    );
-  }
-
-  return (
-    <div className="story-content">
-      {parts.map((part, idx) => (
-        <div key={idx} className="story-part">
-          <div className="story-part-label">
-            <span className="story-icon">{part.icon}</span>
-            {part.label}
-          </div>
-          <div className="story-part-text">{part.text}</div>
-        </div>
-      ))}
     </div>
   );
 }
