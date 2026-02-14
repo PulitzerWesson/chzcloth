@@ -454,3 +454,460 @@
   padding-left: 12px;
   border-left: 3px solid rgba(139, 92, 246, 0.5);
 }
+
+/* BetSubmissionNarrative.css - Story-building interface styling */
+
+/* ============================================
+   MAIN CONTAINER
+   ============================================ */
+
+.narrative-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  min-height: 100vh;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+
+.narrative-header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.narrative-header h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #cbd5e1;
+  margin: 0 0 24px 0;
+}
+
+.progress-bar {
+  width: 100%;
+  max-width: 600px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 0 auto 12px auto;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2dd4bf, #5eead4);
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 13px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ============================================
+   CONTENT LAYOUT
+   ============================================ */
+
+.narrative-content {
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  gap: 40px;
+}
+
+@media (max-width: 1024px) {
+  .narrative-content {
+    grid-template-columns: 1fr;
+  }
+  
+  .story-preview {
+    order: -1;
+  }
+}
+
+/* ============================================
+   STORY BUILDER (LEFT)
+   ============================================ */
+
+.story-builder {
+  background: rgba(255, 255, 255, 0.03);
+  border: 2px solid rgba(45, 212, 191, 0.2);
+  border-radius: 16px;
+  padding: 40px;
+}
+
+.screen h2 {
+  font-size: 26px;
+  font-weight: 700;
+  color: #cbd5e1;
+  margin: 0 0 8px 0;
+  line-height: 1.3;
+}
+
+.subtitle {
+  font-size: 16px;
+  color: #94a3b8;
+  margin: 0 0 32px 0;
+}
+
+/* ============================================
+   LEADERSHIP CONTEXT
+   ============================================ */
+
+.leadership-context {
+  background: rgba(251, 191, 36, 0.1);
+  border: 2px solid rgba(251, 191, 36, 0.3);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 32px;
+}
+
+.context-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fbbf24;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.context-goal {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fef3c7;
+  line-height: 1.4;
+}
+
+/* ============================================
+   STORY INPUTS
+   ============================================ */
+
+.story-input {
+  width: 100%;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #cbd5e1;
+  font-size: 16px;
+  font-family: inherit;
+  line-height: 1.6;
+  transition: border-color 0.2s;
+}
+
+.story-input:focus {
+  outline: none;
+  border-color: #2dd4bf;
+}
+
+.story-input.large {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.story-input.inline {
+  display: inline-block;
+  width: auto;
+  min-width: 200px;
+  padding: 8px 12px;
+  font-size: 15px;
+  margin: 0 8px;
+}
+
+.story-select {
+  padding: 10px 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #cbd5e1;
+  font-size: 15px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.story-select:focus {
+  outline: none;
+  border-color: #2dd4bf;
+}
+
+.story-select.inline {
+  display: inline-block;
+  padding: 6px 12px;
+  margin: 0 8px;
+}
+
+/* ============================================
+   STORY SENTENCES
+   ============================================ */
+
+.story-sentence {
+  margin: 24px 0;
+  line-height: 2;
+}
+
+.sentence-part {
+  display: block;
+  margin: 12px 0;
+}
+
+.label-inline {
+  color: #94a3b8;
+  font-size: 15px;
+  margin: 0 4px;
+}
+
+/* ============================================
+   INLINE HINTS
+   ============================================ */
+
+.inline-hint {
+  margin: 12px 0;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.inline-hint.warning {
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  color: #fbbf24;
+}
+
+.inline-hint.suggestion {
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  color: #a78bfa;
+}
+
+/* ============================================
+   EXAMPLES
+   ============================================ */
+
+.example-box {
+  background: rgba(45, 212, 191, 0.05);
+  border: 1px solid rgba(45, 212, 191, 0.2);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.example-box.small {
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.example-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #2dd4bf;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.example-text {
+  color: #cbd5e1;
+  font-size: 14px;
+  line-height: 1.6;
+  font-style: italic;
+}
+
+/* ============================================
+   EVIDENCE TYPES
+   ============================================ */
+
+.evidence-types {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.evidence-type {
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #cbd5e1;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.evidence-type:hover {
+  background: rgba(45, 212, 191, 0.05);
+  border-color: rgba(45, 212, 191, 0.3);
+}
+
+.evidence-type.selected {
+  background: rgba(45, 212, 191, 0.1);
+  border-color: #2dd4bf;
+  color: #2dd4bf;
+}
+
+.evidence-prompt {
+  font-size: 15px;
+  font-weight: 600;
+  color: #cbd5e1;
+  margin-bottom: 16px;
+}
+
+/* ============================================
+   SUGGESTION BOX
+   ============================================ */
+
+.suggestion-box {
+  background: rgba(139, 92, 246, 0.1);
+  border: 2px solid rgba(139, 92, 246, 0.3);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.suggestion-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #a78bfa;
+  margin-bottom: 12px;
+}
+
+.suggestion-text {
+  color: #cbd5e1;
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.btn-use-suggestion {
+  padding: 10px 20px;
+  background: rgba(139, 92, 246, 0.2);
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  border-radius: 8px;
+  color: #a78bfa;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-use-suggestion:hover {
+  background: rgba(139, 92, 246, 0.3);
+  border-color: rgba(139, 92, 246, 0.6);
+}
+
+/* ============================================
+   FORM GROUP
+   ============================================ */
+
+.form-group {
+  margin-top: 32px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  color: #cbd5e1;
+  margin-bottom: 8px;
+}
+
+/* ============================================
+   NAVIGATION
+   ============================================ */
+
+.narrative-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 32px;
+  margin-top: 32px;
+  border-top: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-back,
+.btn-next {
+  padding: 16px 32px;
+  border: 2px solid;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-back {
+  background: none;
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #94a3b8;
+}
+
+.btn-back:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #cbd5e1;
+}
+
+.btn-next {
+  background: #2dd4bf;
+  border-color: #2dd4bf;
+  color: #0a0f1a;
+}
+
+.btn-next:hover:not(:disabled) {
+  background: #5eead4;
+  transform: translateY(-2px);
+}
+
+.btn-next:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   STORY PREVIEW (RIGHT)
+   ============================================ */
+
+.story-preview {
+  position: sticky;
+  top: 24px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 2px solid rgba(139, 92, 246, 0.3);
+  border-radius: 16px;
+  padding: 24px;
+  height: fit-content;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+
+.story-preview h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #a78bfa;
+  margin: 0 0 16px 0;
+}
+
+.story-empty {
+  font-size: 14px;
+  color: #64748b;
+  font-style: italic;
+  line-height: 1.6;
+}
+
+.story-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.story-part {
+  font-size: 14px;
+  color: #cbd5e1;
+  line-height: 1.6;
+  padding-left: 12px;
+  border-left: 3px solid rgba(139, 92, 246, 0.5);
+}
