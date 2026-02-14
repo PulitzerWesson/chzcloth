@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     // Always include the text prompt
     messageContent.push({
       type: 'text',
-      content: `Analyze this product bet and return ONLY valid JSON.
+      text: `Analyze this product bet and return ONLY valid JSON.
 
 Goal: ${goalContext}
 
