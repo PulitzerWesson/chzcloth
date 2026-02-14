@@ -1,27 +1,39 @@
-// api/parse-narrative.js - AI parsing of narrative bet submissions
+// api/parse-narrative.js - AI parsing of narrative bet submissions with logging
 
 export default async function handler(req, res) {
+  // COMPREHENSIVE LOGGING FOR DEBUGGING
+  console.log('=== PARSE NARRATIVE REQUEST START ===');
+  console.log('Method:', req.method);
+  console.log('Timestamp:', new Date().toISOString());
+  
   if (req.method !== 'POST') {
+    console.log('Method not allowed:', req.method);
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
+    console.log('Request body exists:', !!req.body);
+    console.log('Body keys:', Object.keys(req.body || {}));
+    
     const { narrative, goalContext, uploadedFile } = req.body;
+    
+    console.log('Parsed request data:', {
+      hasNarrative: !!narrative,
+      narrativeLength: narrative?.length || 0,
+      hasGoalContext: !!goalContext,
+      goalLength: goalContext?.length || 0,
+      hasUploadedFile: !!uploadedFile,
+      fileType: uploadedFile?.type || 'none',
+      fileDataLength: uploadedFile?.data?.length || 0
+    });
 
-    // Build message content - can include both text and document
-    const messageContent = [];
-
-    // Always include the text prompt
-    messageContent.push({
-      type: 'text',
-      text: `Analyze this product bet and return ONLY valid JSON.
+    // Build the prompt
+    const promptText = `Analyze this product bet and return ONLY valid JSON.
 
 Goal: ${goalContext}
 
-Bet Narrative:
-${narrative}
-
-${uploadedFile ? '\n(Additional context provided in uploaded document)\n' : ''}
+${narrative?.trim() ? `Bet Narrative:\n${narrative}\n` : ''}
+${uploadedFile ? 'A supporting document has been provided with additional context.' : ''}
 
 Return this exact structure:
 {
@@ -49,20 +61,54 @@ Instructions:
 - Only flag "validation" issue if they have NO evidence at all (no tests, no interviews, no data)
 - If field is missing, use empty string
 - Keep all text values concise
-- Return ONLY the JSON`
-    });
+- Return ONLY the JSON`;
 
-    // Add document if provided
+    // Build message content - different structure for file vs no file
+    let messageContent;
+    
     if (uploadedFile) {
-      messageContent.push({
-        type: 'document',
-        source: {
-          type: 'base64',
-          media_type: uploadedFile.type,
-          data: uploadedFile.data
+      console.log('Building MULTI-PART content (text + document)');
+      messageContent = [
+        { 
+          type: 'text', 
+          text: promptText 
+        },
+        {
+          type: 'document',
+          source: {
+            type: 'base64',
+            media_type: uploadedFile.type,
+            data: uploadedFile.data
+          }
         }
-      });
+      ];
+      console.log('Multi-part content built successfully');
+    } else {
+      console.log('Building TEXT-ONLY content');
+      messageContent = promptText;
+      console.log('Text-only content built successfully');
     }
+
+    console.log('Calling Anthropic API...');
+    console.log('API Key present:', !!process.env.ANTHROPIC_API_KEY);
+    console.log('API Key prefix:', process.env.ANTHROPIC_API_KEY?.substring(0, 10) + '...');
+    
+    const apiPayload = {
+      model: 'claude-sonnet-3-5-20241022',
+      max_tokens: 3000,
+      messages: [{
+        role: 'user',
+        content: messageContent
+      }]
+    };
+    
+    console.log('API payload structure:', {
+      model: apiPayload.model,
+      max_tokens: apiPayload.max_tokens,
+      messageCount: apiPayload.messages.length,
+      contentType: Array.isArray(messageContent) ? 'array' : 'string',
+      contentParts: Array.isArray(messageContent) ? messageContent.length : 1
+    });
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -71,47 +117,69 @@ Instructions:
         'x-api-key': process.env.ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01'
       },
-      body: JSON.stringify({
-        model: 'claude-sonnet-3-5-20241022',
-        max_tokens: 3000,
-        messages: [{
-          role: 'user',
-          content: messageContent
-        }]
-      })
-    });
+      body: JSON.stringify(apiPayload)
     });
 
+    console.log('Anthropic API response status:', response.status);
+    console.log('Response OK:', response.ok);
+    
     const data = await response.json();
     
     if (!response.ok) {
-      throw new Error(data.error?.message || 'Anthropic API error');
+      console.error('Anthropic API returned error:', {
+        status: response.status,
+        error: data.error,
+        type: data.type
+      });
+      throw new Error(data.error?.message || `Anthropic API error: ${response.status}`);
     }
 
+    console.log('Anthropic response received, parsing...');
+    console.log('Response content length:', data.content?.length);
+    console.log('First content type:', data.content?.[0]?.type);
+
     const text = data.content[0].text;
+    console.log('Extracted text length:', text?.length);
     
-    // Try to extract JSON - handle both raw JSON and markdown-wrapped
+    // Try to extract JSON
     let jsonText = text.trim();
     
-    // If wrapped in markdown code fence, extract it
     if (jsonText.startsWith('```')) {
+      console.log('Response wrapped in markdown, extracting...');
       const match = jsonText.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/);
       if (match) {
         jsonText = match[1];
+        console.log('Extracted from markdown successfully');
       }
     }
     
+    console.log('Parsing JSON...');
     const parsed = JSON.parse(jsonText);
+    console.log('JSON parsed successfully');
+    console.log('Parsed keys:', Object.keys(parsed));
 
+    console.log('=== REQUEST COMPLETED SUCCESSFULLY ===');
     return res.status(200).json(parsed);
+    
   } catch (error) {
-    console.error('Parse narrative error:', error);
+    console.error('=== ERROR IN PARSE NARRATIVE ===');
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    
+    // Return proper JSON error
     return res.status(500).json({ 
-      error: error.message,
+      error: error.message || 'Unknown error',
+      errorName: error.name,
+      timestamp: new Date().toISOString(),
       fallback: {
         extracted: {},
-        goalAlignment: { aligned: false, reasoning: "Analysis failed" },
-        issues: [{ field: "analysis", severity: "missing", message: "AI analysis failed. Please check your narrative and try again." }],
+        goalAlignment: { aligned: false, reasoning: "Analysis failed - check logs" },
+        issues: [{ 
+          field: "analysis", 
+          severity: "missing", 
+          message: `Error: ${error.message}` 
+        }],
         strengths: [],
         readyToScore: false
       }
