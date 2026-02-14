@@ -57,8 +57,11 @@ Return this exact structure:
 }
 
 Instructions:
+- Extract "change" with specificity - flag as weak if vague (e.g., "improve conversion", "add features", "make it better")
+- Good scope is specific: "Add 5 video testimonials to pricing page" vs bad: "Improve social proof"
 - Estimate effort based on what they're building (simple UI change = 1-sprint, new feature = 2-3-sprints, complex system = 4-6-sprints, major platform = 6-plus-sprints)
 - Only flag "validation" issue if they have NO evidence at all (no tests, no interviews, no data)
+- Flag "change" as weak if the scope is unclear or too broad
 - If field is missing, use empty string
 - Keep all text values concise
 - Return ONLY the JSON`;
@@ -68,6 +71,8 @@ Instructions:
     
     if (uploadedFile) {
       console.log('Building MULTI-PART content (text + document)');
+      console.log('Uploaded file type:', uploadedFile.type);
+      
       messageContent = [
         { 
           type: 'text', 
@@ -82,7 +87,14 @@ Instructions:
           }
         }
       ];
-      console.log('Multi-part content built successfully');
+      console.log('Multi-part content built with structure:', {
+        contentParts: 2,
+        documentSource: {
+          type: 'base64',
+          media_type: uploadedFile.type,
+          dataLength: uploadedFile.data?.length
+        }
+      });
     } else {
       console.log('Building TEXT-ONLY content');
       messageContent = promptText;
@@ -94,7 +106,7 @@ Instructions:
     console.log('API Key prefix:', process.env.ANTHROPIC_API_KEY?.substring(0, 10) + '...');
     
     const apiPayload = {
-      model: 'claude-sonnet-3-5-20241022',
+      model: 'claude-3-5-sonnet-20241022',
       max_tokens: 3000,
       messages: [{
         role: 'user',
