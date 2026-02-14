@@ -15,9 +15,9 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
     // Screen 2
     mechanism: '',
     
-    // Screen 3
-    evidenceType: '',
-    evidenceDetails: '',
+    // Screen 3 - CHANGED TO ARRAY
+    evidenceTypes: [],  // Multiple selections
+    evidenceDetails: {},  // Details for each type
     
     // Screen 4
     cheaperTest: '',
@@ -87,6 +87,7 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
   };
 
   const suggestDirection = (change) => {
+    if (!change) return 'grow';  // Safety check
     const lower = change.toLowerCase();
     const growWords = ['add', 'new', 'increase', 'improve', 'testimonial', 'feature'];
     const declineWords = ['remove', 'reduce', 'simplify', 'cut'];
@@ -97,6 +98,7 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
   };
 
   const generateCheaperTestSuggestion = (change) => {
+    if (!change) return "What's a manual, low-code, or small-scale version you could test first?";  // Safety check
     const lower = change.toLowerCase();
     
     if (lower.includes('testimonial') || lower.includes('case stud')) {
@@ -168,25 +170,25 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
       hypothesis: buildHypothesis(story),
       metricDomain: inferMetricDomain(story.change),
       metric: inferMetric(story.change, story.baseline),
-      baseline: story.baseline,
-      prediction: `${story.growOrDecline} by ${story.magnitude}`,
+      baseline: story.baseline || '',
+      prediction: `${story.growOrDecline} by ${story.magnitude || ''}`,
       confidence: 70,
       timeframe: 90,
-      assumptions: `${story.mechanism}\n\nEvidence: ${story.evidenceDetails}`,
-      cheapTest: story.cheaperTest,
+      assumptions: `${story.mechanism || ''}\n\nEvidence: ${story.evidenceDetails || ''}`,
+      cheapTest: story.cheaperTest || '',
       measurementTool: 'analytics',
       strategicAlignment: story.strategicAlignment,
       estimatedEffort: story.estimatedEffort,
       inactionImpact: story.inactionImpact,
       isOwnIdea: true,
-      betType: story.change.toLowerCase().includes('new') ? 'new' : 'improve',
+      betType: (story.change || '').toLowerCase().includes('new') ? 'new' : 'improve',
       // Add the story parts for review
       storyParts: {
-        change: story.change,
-        mechanism: story.mechanism,
-        evidenceType: story.evidenceType,
-        evidenceDetails: story.evidenceDetails,
-        cheaperTest: story.cheaperTest
+        change: story.change || '',
+        mechanism: story.mechanism || '',
+        evidenceType: story.evidenceType || '',
+        evidenceDetails: story.evidenceDetails || '',
+        cheaperTest: story.cheaperTest || ''
       }
     };
     
@@ -201,10 +203,11 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
   };
 
   const buildHypothesis = (story) => {
-    return `If we ${story.change}, then ${story.baseline} will ${story.growOrDecline} by ${story.magnitude}, because ${story.mechanism}`;
+    return `If we ${story.change || 'make this change'}, then ${story.baseline || 'the metric'} will ${story.growOrDecline} by ${story.magnitude || 'X'}, because ${story.mechanism || 'of the expected impact'}`;
   };
 
   const inferMetricDomain = (change) => {
+    if (!change) return 'growth';  // Safety check
     const lower = change.toLowerCase();
     if (lower.includes('revenue') || lower.includes('monetiz')) return 'monetization';
     if (lower.includes('retention') || lower.includes('churn')) return 'retention';
@@ -214,7 +217,9 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
   };
 
   const inferMetric = (change, baseline) => {
-    const lower = (change + ' ' + baseline).toLowerCase();
+    const changeText = change || '';
+    const baselineText = baseline || '';
+    const lower = (changeText + ' ' + baselineText).toLowerCase();
     if (lower.includes('conversion')) return 'Conversion rate';
     if (lower.includes('retention')) return 'Retention rate';
     if (lower.includes('revenue') || lower.includes('mrr')) return 'Revenue/MRR';
