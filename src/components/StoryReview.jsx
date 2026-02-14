@@ -4,6 +4,11 @@ import React from 'react';
 import './BetSubmissionGuided.css';
 
 export default function StoryReview({ betData, onEdit, onContinue }) {
+  // SAFETY: Bail if no data
+  if (!betData) {
+    return <div>Loading bet data...</div>;
+  }
+
   const issues = analyzeGaps(betData);
   const strongComparison = generateStrongComparison(betData);
 
@@ -19,34 +24,30 @@ export default function StoryReview({ betData, onEdit, onContinue }) {
         <h2>What You're Betting:</h2>
         <div className="summary-content">
           <div className="summary-item">
-            <span className="summary-label">Goal:</span>
-            <span className="summary-value">
-              {formatGoalType(betData.goalType)} by {betData.goalTarget} in {formatTimeframe(betData.goalTimeframe)}
-            </span>
-          </div>
-
-          <div className="summary-item">
             <span className="summary-label">Change:</span>
-            <span className="summary-value">{betData.whatWillChange}</span>
+            <span className="summary-value">{betData.change || 'Not specified'}</span>
           </div>
 
           <div className="summary-item">
-            <span className="summary-label">Current:</span>
-            <span className="summary-value">{betData.baseline}</span>
+            <span className="summary-label">Current baseline:</span>
+            <span className="summary-value">{betData.baseline || 'Not specified'}</span>
           </div>
 
           <div className="summary-item">
-            <span className="summary-label">Predicted:</span>
-            <span className="summary-value">{betData.prediction}</span>
+            <span className="summary-label">Expected magnitude:</span>
+            <span className="summary-value">{betData.magnitude || betData.prediction || 'Not specified'}</span>
           </div>
 
           <div className="summary-item">
-            <span className="summary-label">Validation:</span>
+            <span className="summary-label">Mechanism (how):</span>
+            <span className="summary-value">{betData.mechanism || 'Not specified'}</span>
+          </div>
+
+          <div className="summary-item">
+            <span className="summary-label">Evidence:</span>
             <span className="summary-value">
-              {formatValidationType(betData.validationType)}
-              {betData.validationType === 'hypothesis' && (
-                <span className="validation-warning"> (not validated)</span>
-              )}
+              {formatEvidenceType(betData.evidenceType)}
+              {betData.evidenceDetails && ` - ${betData.evidenceDetails}`}
             </span>
           </div>
 
@@ -147,8 +148,8 @@ export default function StoryReview({ betData, onEdit, onContinue }) {
 function analyzeGaps(betData) {
   const issues = [];
 
-  // Check validation
-  if (betData.validationType === 'hypothesis') {
+  // Check evidence type
+  if (betData.evidenceType === 'hypothesis' || !betData.evidenceType) {
     issues.push({
       severity: 'high',
       description: 'No validation - building on assumption only'
@@ -164,7 +165,8 @@ function analyzeGaps(betData) {
   }
 
   // Check specificity of change
-  if (betData.whatWillChange && betData.whatWillChange.split(' ').length < 10) {
+  const change = betData.change || '';
+  if (change.split(' ').length < 10) {
     issues.push({
       severity: 'medium',
       description: 'Change description could be more specific'
@@ -172,28 +174,20 @@ function analyzeGaps(betData) {
   }
 
   // Check baseline clarity
-  if (betData.baseline && !betData.baseline.match(/\d/)) {
+  const baseline = betData.baseline || '';
+  if (baseline && !baseline.match(/\d/)) {
     issues.push({
       severity: 'medium',
       description: 'Baseline lacks specific numbers'
     });
   }
 
-  // Check prediction clarity
-  if (betData.prediction && !betData.prediction.match(/\d/)) {
+  // Check magnitude clarity
+  const magnitude = betData.magnitude || betData.prediction || '';
+  if (magnitude && !magnitude.match(/\d/)) {
     issues.push({
       severity: 'medium',
       description: 'Prediction lacks specific numbers'
-    });
-  }
-
-  // Check timeframe realism
-  const timeframe = parseInt(betData.predictionTimeframe);
-  const effort = betData.estimatedEffort;
-  if (timeframe <= 60 && effort.includes('4-6')) {
-    issues.push({
-      severity: 'medium',
-      description: 'Timeline may be aggressive for stated effort'
     });
   }
 
@@ -204,7 +198,7 @@ function generateStrongComparison(betData) {
   const strengths = [];
 
   // What a strong bet would have
-  if (betData.validationType === 'hypothesis') {
+  if (betData.evidenceType === 'hypothesis' || !betData.evidenceType) {
     strengths.push('Validation from customer interviews, tests, or data');
     strengths.push('Specific numbers: "15 out of 20 customers said they\'d pay for this"');
   }
@@ -235,7 +229,7 @@ function generateRecommendation(betData, issues) {
             and would value the solution. Cost: $0-2k, Time: 1 week.
           </li>
           <li>
-            <strong>Test a cheaper version:</strong> {generateSpecificTestSuggestion(betData.whatWillChange)}
+            <strong>Test a cheaper version:</strong> {generateSpecificTestSuggestion(betData.change || '')}
           </li>
           <li>
             <strong>Measure impact:</strong> If the test shows positive results, THEN commit to the full build.
@@ -264,7 +258,7 @@ function generateRecommendation(betData, issues) {
     return (
       <div>
         <p><strong>Test cheaper first:</strong></p>
-        <p>{generateSpecificTestSuggestion(betData.whatWillChange)}</p>
+        <p>{generateSpecificTestSuggestion(betData.change || '')}</p>
         <p>
           If the test validates your hypothesis, you can confidently commit to the full build.
           If it doesn't, you've saved {getEffortCost(betData.estimatedEffort)}.
@@ -276,8 +270,8 @@ function generateRecommendation(betData, issues) {
   return null;
 }
 
-function generateSpecificTestSuggestion(whatWillChange) {
-  const lower = whatWillChange.toLowerCase();
+function generateSpecificTestSuggestion(change) {
+  const lower = (change || '').toLowerCase();
 
   if (lower.includes('testimonial') || lower.includes('case stud')) {
     return 'Create 3-5 video testimonials manually with a freelance videographer ($3-5k, 2 weeks). Add them to your page and measure conversion impact for 30 days.';
@@ -306,32 +300,7 @@ function generateSpecificTestSuggestion(whatWillChange) {
 // HELPER FUNCTIONS
 // ============================================
 
-function formatGoalType(type) {
-  const map = {
-    'revenue': 'Increase revenue',
-    'customers': 'Grow customers',
-    'retention': 'Improve retention',
-    'conversion': 'Increase conversion',
-    'activation': 'Improve activation',
-    'engagement': 'Boost engagement',
-    'efficiency': 'Improve efficiency',
-    'cost': 'Reduce costs'
-  };
-  return map[type] || type;
-}
-
-function formatTimeframe(timeframe) {
-  const map = {
-    'this-month': 'this month',
-    'this-quarter': 'this quarter',
-    'this-year': 'this year',
-    '6-months': '6 months',
-    '18-months': '18 months'
-  };
-  return map[timeframe] || timeframe;
-}
-
-function formatValidationType(type) {
+function formatEvidenceType(type) {
   const map = {
     'tested': 'We tested it',
     'interviews': 'Customer interviews',
@@ -339,7 +308,7 @@ function formatValidationType(type) {
     'competitor': 'Competitor/case study',
     'hypothesis': 'Team hypothesis'
   };
-  return map[type] || type;
+  return map[type] || type || 'Not specified';
 }
 
 function getEffortCost(effort) {
@@ -349,5 +318,5 @@ function getEffortCost(effort) {
     '4-6-sprints': '$125k',
     '6-plus-sprints': '$150k+'
   };
-  return map[effort] || effort;
+  return map[effort] || effort || 'Unknown';
 }
