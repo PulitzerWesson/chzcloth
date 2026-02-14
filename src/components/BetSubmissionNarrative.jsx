@@ -88,9 +88,11 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
 
     const extracted = aiReview.extracted;
     const betData = {
-      hypothesis: `If we ${extracted.change || narrative.substring(0, 100)}, then ${extracted.baseline || 'the metric'} will improve to ${extracted.magnitude || 'target'}, because ${extracted.mechanism || 'of expected impact'}`,
-      metricDomain: inferMetricDomain(narrative),
-      metric: inferMetric(narrative),
+      hypothesis: extracted.change 
+        ? `If we ${extracted.change}, then ${extracted.baseline || 'the metric'} will improve to ${extracted.magnitude || 'target'}, because ${extracted.mechanism || 'of expected impact'}`
+        : narrative.substring(0, 200) || 'Bet based on uploaded document',
+      metricDomain: inferMetricDomain(narrative || extracted.change),
+      metric: inferMetric(narrative || extracted.change),
       baseline: extracted.baseline || '',
       prediction: extracted.magnitude || '',
       confidence: 70,
@@ -156,9 +158,17 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
   };
 
   const canSubmit = () => {
+    // Must have goal context
     if (!hasLeadershipGoal && goalContext.length < 10) return false;
-    if (narrative.length < 100) return false;
+    
+    // Must have EITHER narrative OR uploaded file
+    const hasNarrative = narrative.length >= 100;
+    const hasDocument = !!uploadedFile;
+    if (!hasNarrative && !hasDocument) return false;
+    
+    // Must have validation method
     if (!story.validationMethod || story.validationMethod.length < 5) return false;
+    
     return true;
   };
 
@@ -257,24 +267,30 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
 
         {/* Main Narrative Field */}
         <div className="narrative-field">
-          <label>Describe Your Bet</label>
+          <label>
+            Describe Your Bet {uploadedFile && <span className="optional-tag">(optional - you uploaded a doc)</span>}
+          </label>
           <textarea
             value={narrative}
             onChange={e => setNarrative(e.target.value)}
-            placeholder="Include: What you'll change, current state (with numbers), expected outcome (with numbers), why it will work, and evidence you have..."
+            placeholder={uploadedFile 
+              ? "Add any additional context not in the document..." 
+              : "Include: What you'll change, current state (with numbers), expected outcome (with numbers), why it will work, and evidence you have..."}
             className="narrative-textarea"
             rows={16}
           />
           <div className="character-count">
-            {narrative.length} characters {narrative.length < 100 && `(minimum 100)`}
+            {narrative.length} characters 
+            {!uploadedFile && narrative.length < 100 && ` (minimum 100 required)`}
+            {uploadedFile && ` (optional with document)`}
           </div>
         </div>
 
         {/* File Upload (Optional) */}
         <div className="file-upload-section">
-          <label>Supporting Document (optional)</label>
+          <label>Upload Document (alternative to writing narrative)</label>
           <div className="file-upload-hint">
-            Upload a PRD, meeting notes, or research doc for additional context
+            Upload a PRD, meeting notes, or research doc instead of typing everything out
           </div>
           
           {!uploadedFile ? (
