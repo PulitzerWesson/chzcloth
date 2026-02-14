@@ -579,8 +579,6 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
   );
 }
 
-}
-
 // ============================================
 // FIELD VALIDATION COMPONENT
 // ============================================
