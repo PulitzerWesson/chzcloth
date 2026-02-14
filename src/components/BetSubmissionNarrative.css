@@ -911,3 +911,192 @@
   padding-left: 12px;
   border-left: 3px solid rgba(139, 92, 246, 0.5);
 }
+
+/* ============================================
+   FIELD VALIDATION
+   ============================================ */
+
+.field-validation {
+  margin: 12px 0 24px 0;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: rgba(100, 116, 139, 0.1);
+  border: 1px solid rgba(100, 116, 139, 0.2);
+}
+
+.field-validation.met {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.validation-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.status-icon {
+  flex-shrink: 0;
+  font-size: 16px;
+}
+
+.field-validation.met .status-icon {
+  color: #22c55e;
+  font-weight: 700;
+}
+
+.field-validation.unmet .status-icon {
+  color: #64748b;
+}
+
+.status-text {
+  font-size: 14px;
+  color: #cbd5e1;
+}
+
+.validation-examples {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.validation-good,
+.validation-bad {
+  font-size: 13px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.validation-good {
+  background: rgba(34, 197, 94, 0.1);
+  color: #86efac;
+}
+
+.validation-bad {
+  background: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
+}
+
+.example-icon {
+  flex-shrink: 0;
+}
+
+/* ============================================
+   READINESS INDICATOR
+   ============================================ */
+
+.readiness-indicator {
+  margin: 24px 0;
+  padding: 20px 24px;
+  border-radius: 12px;
+  background: rgba(100, 116, 139, 0.15);
+  border: 2px solid rgba(100, 116, 139, 0.4);
+}
+
+.readiness-indicator.ready {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.5);
+}
+
+.readiness-indicator.not-ready {
+  background: rgba(100, 116, 139, 0.15);
+  border-color: rgba(100, 116, 139, 0.4);
+}
+
+.readiness-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.readiness-indicator.ready .ready-icon {
+  color: #22c55e;
+  font-size: 20px;
+}
+
+.readiness-indicator.ready .ready-text {
+  color: #22c55e;
+  font-size: 15px;
+}
+
+.readiness-indicator.not-ready .progress-icon {
+  color: #94a3b8;
+  font-size: 18px;
+}
+
+.readiness-indicator.not-ready .progress-text {
+  color: #cbd5e1;
+  font-size: 15px;
+  text-transform: lowercase;
+  letter-spacing: 0;
+}
+
+.readiness-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  padding: 4px 0;
+}
+
+.check-item .check-icon {
+  flex-shrink: 0;
+  width: 24px;
+  text-align: center;
+  font-size: 16px;
+}
+
+.check-item.met .check-icon {
+  color: #22c55e;
+}
+
+.check-item.unmet .check-icon {
+  color: #64748b;
+}
+
+.check-item.met .check-label {
+  color: #cbd5e1;
+}
+
+.check-item.unmet .check-label {
+  color: #94a3b8;
+}
+
+/* ============================================
+   NEXT BUTTON HINT
+   ============================================ */
+
+.next-button-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.next-button-hint {
+  font-size: 13px;
+  color: #fbbf24;
+  font-style: italic;
+  text-align: right;
+  max-width: 300px;
+  padding: 8px 12px;
+  background: rgba(251, 191, 36, 0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(251, 191, 36, 0.2);
+}
