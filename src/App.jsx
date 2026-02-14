@@ -9,7 +9,7 @@ import { useOrganizations } from './hooks/useOrganizations';
 import { OrganizationSetup, ContextCheck, shouldShowContextCheck, OrgSwitcher } from './components';
 import IdeaSubmission from './components/IdeaSubmission';
 import IdeasQueue from './components/IdeasQueue';
-import BetSubmissionNarrative from './components/BetSubmissionNarrative';import StoryReview from './components/StoryReview';
+import BetSubmissionNarrative from './components/BetSubmissionNarrative';
 import StoryReview from './components/StoryReview';
 import SponsorReview from './components/SponsorReview';
 import EntryTypeChooser from './components/EntryTypeChooser';
