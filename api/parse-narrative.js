@@ -20,40 +20,40 @@ export default async function handler(req, res) {
         max_tokens: 3000,
         messages: [{
           role: 'user',
-          content: `Analyze this product bet narrative and extract key fields. Also identify any missing or weak elements.
+          content: `Analyze this product bet and return ONLY valid JSON.
 
-Goal Context: ${goalContext}
+Goal: ${goalContext}
 
-Narrative:
+Bet Narrative:
 ${narrative}
 
-CRITICAL: Return ONLY valid JSON. Escape all quotes in text values. Use this exact structure:
+Return this exact structure:
 {
   "extracted": {
-    "change": "what's being built/changed",
-    "baseline": "current state with specific numbers",
-    "magnitude": "expected change with numbers",
-    "mechanism": "why this will work",
-    "evidence": "validation evidence mentioned",
-    "cheaperTest": "cheaper test if mentioned",
-    "effort": "estimated effort if mentioned"
+    "change": "what they will build",
+    "baseline": "current numbers",
+    "magnitude": "expected numbers",
+    "mechanism": "why it will work",
+    "evidence": "proof they have",
+    "effort": "estimated effort based on scope (1-sprint, 2-3-sprints, 4-6-sprints, or 6-plus-sprints)"
   },
   "goalAlignment": {
     "aligned": true,
-    "reasoning": "how this bet connects to the goal"
+    "reasoning": "does bet achieve the goal"
   },
   "issues": [
-    {"field": "baseline", "severity": "missing", "message": "specific guidance"}
+    {"field": "example", "severity": "missing", "message": "what is missing"}
   ],
-  "strengths": ["what is done well"],
+  "strengths": ["what they did well"],
   "readyToScore": true
 }
 
-Rules:
-- Escape all quotes in values with backslash
-- Keep values concise (under 200 chars each)
-- "severity" must be exactly "missing" or "weak"
-- Return ONLY the JSON object, no markdown fences`
+Instructions:
+- Estimate effort based on what they're building (simple UI change = 1-sprint, new feature = 2-3-sprints, complex system = 4-6-sprints, major platform = 6-plus-sprints)
+- Only flag "validation" issue if they have NO evidence at all (no tests, no interviews, no data)
+- If field is missing, use empty string
+- Keep all text values concise
+- Return ONLY the JSON`
         }]
       })
     });
