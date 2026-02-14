@@ -56,141 +56,6 @@ const CHZCLOTHBadge = () => (
   </svg>
 );
 
-function ClarifyingQuestions({ bet, orgContext, onComplete, onSkip }) {
-  const [questions, setQuestions] = useState([]);
-  const [answers, setAnswers] = useState({});
-  const [loading, setLoading] = useState(true);
-  
-  useEffect(() => {
-    async function loadQuestions() {
-      try {
-        const response = await fetch('/api/generate-questions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ bet, orgContext })
-        });
-        const data = await response.json();
-        setQuestions(data.questions || []);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error loading questions:', error);
-        setLoading(false);
-      }
-    }
-    loadQuestions();
-  }, []);
-  
-  if (loading) {
-    return (
-      <div style={{ 
-        minHeight: 'calc(100vh - 120px)', 
-        padding: '60px 24px', 
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexDirection: 'column'
-      }}>
-        <div style={{ color: '#2dd4bf', fontSize: '1.1rem', marginBottom: 16 }}>
-          Analyzing your bet...
-        </div>
-        <div style={{ color: '#64748b', fontSize: '0.9rem' }}>
-          Generating clarifying questions
-        </div>
-      </div>
-    );
-  }
-  
-  if (questions.length === 0) {
-    // No questions needed - proceed to scoring
-    onComplete({});
-    return null;
-  }
-  
-  return (
-    <div style={{ padding: '60px 24px' }}>
-      <div style={{ maxWidth: 600, margin: '0 auto' }}>
-        <h2 style={{ color: '#f1f5f9', fontSize: '1.5rem', fontWeight: 700, marginBottom: 12 }}>
-          A few questions to help score accurately
-        </h2>
-        <p style={{ color: '#64748b', marginBottom: 32, lineHeight: 1.6 }}>
-          Optional - skip if you prefer
-        </p>
-        
-        {questions.map((q, idx) => (
-          <div key={idx} style={{ marginBottom: 32 }}>
-            <label style={{ 
-              display: 'block', 
-              color: '#f1f5f9', 
-              fontWeight: 500, 
-              marginBottom: 8,
-              lineHeight: 1.5
-            }}>
-              {idx + 1}. {q.question}
-            </label>
-            <textarea
-              value={answers[idx] || ''}
-              onChange={e => setAnswers({ ...answers, [idx]: e.target.value })}
-              placeholder="Your answer..."
-              style={{
-                width: '100%',
-                minHeight: 80,
-                padding: 12,
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: 8,
-                color: '#f1f5f9',
-                fontSize: '0.95rem',
-                lineHeight: 1.5,
-                resize: 'vertical'
-              }}
-            />
-            <div style={{ 
-              color: '#64748b', 
-              fontSize: '0.8rem', 
-              marginTop: 6,
-              fontStyle: 'italic'
-            }}>
-              Why we're asking: {q.why}
-            </div>
-          </div>
-        ))}
-        
-        <div style={{ display: 'flex', gap: 12, marginTop: 32 }}>
-          <button
-            onClick={() => onSkip()}
-            style={{
-              padding: '14px 24px',
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 10,
-              color: '#94a3b8',
-              fontSize: '0.95rem',
-              cursor: 'pointer'
-            }}
-          >
-            Skip Questions
-          </button>
-          <button
-            onClick={() => onComplete(answers)}
-            style={{
-              flex: 1,
-              padding: '14px 24px',
-              background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
-              border: 'none',
-              borderRadius: 10,
-              color: '#0a0f1a',
-              fontSize: '0.95rem',
-              fontWeight: 600,
-              cursor: 'pointer'
-            }}
-          >
-            Continue with Answers
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function AppHeader({ isLoggedIn, onDashboardClick, onLogoClick, showTeamsBanner = true }) {
   const [bannerDismissed, setBannerDismissed] = useState(false);
@@ -3497,43 +3362,13 @@ const handleBetComplete = async (betData, ideaId = null) => {
   setShowStoryReview(true);
 };
   
-  const handleStoryReviewContinue = async () => {
+const handleStoryReviewContinue = async () => {
   setShowStoryReview(false);
   
-  // Now show clarifying questions
-  setPendingBet(pendingBetForReview);
-  setPendingBetForReview(null);
-  setScreen('clarifying_questions');
-};
-
-const handleStoryReviewEdit = () => {
-  setShowStoryReview(false);
-  // Keep pendingBetForReview so they can continue editing
-  // Stay on 'bet' screen
-};
-
-  const handleQuestionsComplete = async (answers) => {
-  // Create bet with clarifying answers
-  const { data, error } = await createBet({
-    ...pendingBet.betData,
-    clarifyingAnswers: answers
-  }, pendingBet.ideaId);
-  
-  if (error) {
-    console.error('Error creating bet:', error);
-    alert('Error saving bet. Please try again.');
-  } else {
-    setCurrentBet(data);
-    setPendingBet(null);
-    setScreen('score');
-  }
-};
-
-const handleSkipQuestions = async () => {
-  // Create bet without answers
+  // Create bet immediately (no questions)
   const { data, error } = await createBet(
-    pendingBet.betData, 
-    pendingBet.ideaId
+    pendingBetForReview.betData,
+    pendingBetForReview.ideaId
   );
   
   if (error) {
@@ -3541,11 +3376,16 @@ const handleSkipQuestions = async () => {
     alert('Error saving bet. Please try again.');
   } else {
     setCurrentBet(data);
-    setPendingBet(null);
+    setPendingBetForReview(null);
     setScreen('score');
   }
 };
 
+const handleStoryReviewEdit = () => {
+  setShowStoryReview(false);
+  // Keep pendingBetForReview so they can continue editing
+  // Stay on 'bet' screen
+};
 const handleUseAIEnhancement = async () => {
   if (!currentBet.scoringRationale?.suggestion) return;
   
@@ -3969,14 +3809,7 @@ const handleRejectBet = async (betId, reason) => {
   />
 )}
 
-      {screen === 'clarifying_questions' && (
-  <ClarifyingQuestions
-    bet={pendingBet?.betData}
-    orgContext={currentOrg}
-    onComplete={handleQuestionsComplete}
-    onSkip={handleSkipQuestions}
-  />
-)}
+
 {screen === 'score' && (
   <ScoreResult 
     bet={currentBet}
