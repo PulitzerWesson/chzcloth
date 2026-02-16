@@ -182,6 +182,9 @@ const createBet = async (betData, ideaId = null) => {
               idea_id: ideaId,
     approval_status: ideaId ? 'pending_approval' : 'draft',
     structured_by: ideaId ? user.id : null,
+            document_provided: betData.documentProvided || false,
+    document_name: betData.documentName || null,
+    document_type: betData.documentType || null
         })
         .select()
         .single()
