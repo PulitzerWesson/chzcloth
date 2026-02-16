@@ -151,7 +151,7 @@ if (!scores) {
     learnings: orgLearnings
   });
 }
-
+try {
     const { data, error } = await supabase
       .from('bets')
       .insert({
