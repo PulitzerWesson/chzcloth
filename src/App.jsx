@@ -3813,22 +3813,6 @@ const handleRejectBet = async (betId, reason) => {
     onCancel={() => setScreen('ideas_queue')}
   />
 )}
-      {screen === 'choose_entry_type' && (
-  <EntryTypeChooser
-    onSelect={(type) => {
-      if (type === 'bet') {
-        setScreen('bet');
-      } else if (type === 'idea') {
-        alert('Idea submission coming soon!');
-        setScreen('ideas_queue');
-      } else if (type === 'signal') {
-        alert('Signal submission coming soon!');
-        setScreen('ideas_queue');
-      }
-    }}
-    onCancel={() => setScreen('ideas_queue')}
-  />
-)}
 
 
 {screen === 'score' && (
