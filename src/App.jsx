@@ -55,7 +55,7 @@ const CHZCLOTHBadge = () => (
 );
 
 
-function AppHeader({ isLoggedIn, onDashboardClick, onLogoClick, showTeamsBanner = true }) {
+function AppHeader({ isLoggedIn, onDashboardClick, onLogoClick, onNewBet, showTeamsBanner = true }) {
   const [bannerDismissed, setBannerDismissed] = useState(false);
   
   return (
@@ -74,16 +74,6 @@ function AppHeader({ isLoggedIn, onDashboardClick, onLogoClick, showTeamsBanner 
           <span style={{ color: '#cbd5e1', fontSize: '0.85rem' }}>
             🚀 <strong style={{ color: '#2dd4bf' }}>Welcome Project Visitors</strong> — Glad you're here, it's a work in progress.
           </span>
-          <a 
-            style={{ 
-              color: '#fbbf24', 
-              fontSize: '0.85rem', 
-              fontWeight: 600,
-              textDecoration: 'none'
-            }}
-          >
-            
-          </a>
           <button
             onClick={() => setBannerDismissed(true)}
             style={{
@@ -134,33 +124,60 @@ function AppHeader({ isLoggedIn, onDashboardClick, onLogoClick, showTeamsBanner 
           }}>CHZCLOTH</span>
         </button>
         
-        <button
-          onClick={onDashboardClick}
-          style={{
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: 8,
-            padding: '8px 12px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            color: '#94a3b8',
-            fontSize: '0.9rem',
-            transition: 'all 0.2s'
-          }}
-          onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#f1f5f9'; }}
-          onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#94a3b8'; }}
-        >
-          {/* Dashboard icon */}
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="3" width="7" height="7" rx="1" />
-            <rect x="14" y="3" width="7" height="7" rx="1" />
-            <rect x="3" y="14" width="7" height="7" rx="1" />
-            <rect x="14" y="14" width="7" height="7" rx="1" />
-          </svg>
-          {isLoggedIn ? 'Dashboard' : 'Sign in'}
-        </button>
+        <div style={{ display: 'flex', gap: 12 }}>
+          {/* New Bet button - always visible when logged in */}
+          {isLoggedIn && (
+            <button
+              onClick={onNewBet}
+              style={{
+                background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
+                border: 'none',
+                borderRadius: 8,
+                padding: '8px 16px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                color: '#0a0f1a',
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-1px)'; }}
+              onMouseOut={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
+            >
+              <span style={{ fontSize: '1.1rem' }}>+</span>
+              New Bet
+            </button>
+          )}
+          
+          <button
+            onClick={onDashboardClick}
+            style={{
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: 8,
+              padding: '8px 12px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              color: '#94a3b8',
+              fontSize: '0.9rem',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#f1f5f9'; }}
+            onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#94a3b8'; }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+              <rect x="14" y="14" width="7" height="7" rx="1" />
+            </svg>
+            {isLoggedIn ? 'Dashboard' : 'Sign in'}
+          </button>
+        </div>
       </div>
     </>
   );
@@ -3739,30 +3756,20 @@ const handleRejectBet = async (betId, reason) => {
   // ============================================
   return (
     <div style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif", minHeight: '100vh', background: 'linear-gradient(135deg, #0a0f1a 0%, #0d1929 50%, #0a0f1a 100%)' }}>
-      <AppHeader 
-        isLoggedIn={isAuthenticated} 
-        onDashboardClick={handleDashboardClick}
-        onLogoClick={handleLogoClick}
-      />
+<AppHeader 
+  isLoggedIn={isAuthenticated} 
+  onDashboardClick={handleDashboardClick}
+  onLogoClick={handleLogoClick}
+  onNewBet={() => {
+    setCurrentBet(null);
+    setScreen('bet');
+  }}
+/>
       {screen === 'landing' && <Landing onStart={() => setScreen('email')} />}
       {screen === 'email' && <EmailAuth onComplete={handleEmailSubmit} emailSent={emailSent} />}
       {screen === 'profile' && <ProfileSetup onComplete={handleProfileComplete} />}
       {screen === 'orgsetup' && <OrganizationSetup onComplete={handleOrgSetupComplete} />}
-      {screen === 'choose_entry_type' && (
-  <EntryTypeChooser
-    onSelect={(type) => {
-      if (type === 'bet') {
-        setCurrentBet(null);
-        setScreen('bet');
-      } else if (type === 'idea') {
-        setScreen('submit_idea');
-      } else if (type === 'signal') {
-        setScreen('submit_signal');
-      }
-    }}
-    onCancel={() => setScreen('ideas_queue')}
-  />
-)}
+
 
 {screen === 'bet' && (
   <BetSubmissionNarrative 
@@ -3785,32 +3792,6 @@ const handleRejectBet = async (betId, reason) => {
       setPendingConfirmation(null);
       setShowStoryReview(true);
     }}
-  />
-)}
-
-
-      {screen === 'submit_signal' && (
-  <SignalSubmission
-    currentOrg={currentOrg}
-    currentUser={user}
-    onSubmit={async (signalData) => {
-      await submitIdea(signalData);
-      setScreen('ideas_queue');
-    }}
-    onCancel={() => setScreen('ideas_queue')}
-  />
-)}
-
-{screen === 'submit_idea' && (
-  <IdeaSubmission
-    currentOrg={currentOrg}
-    currentUser={user}
-    ideas={ideas}
-    onSubmit={async (ideaData) => {
-      await submitIdea(ideaData);
-      setScreen('ideas_queue');
-    }}
-    onCancel={() => setScreen('ideas_queue')}
   />
 )}
 
