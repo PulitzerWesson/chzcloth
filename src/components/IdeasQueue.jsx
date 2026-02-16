@@ -11,18 +11,10 @@ function IdeasQueue({
   onStructureBet, 
   setScreen
 }) {
-  const [filter, setFilter] = useState('all'); // all, signal, idea, bet
   const [expandedRationale, setExpandedRationale] = useState(null);
   
-  // Filter by entry_type
-  const filteredIdeas = filter === 'all' 
-    ? ideas 
-    : ideas.filter(i => i.entry_type === filter);
-
-  // Count by entry type
-  const signalCount = ideas.filter(i => i.entry_type === 'signal').length;
-  const ideaCount = ideas.filter(i => i.entry_type === 'idea').length;
-  const betCount = ideas.filter(i => i.entry_type === 'bet').length;
+  // Only show bets (filter out any non-bet entries)
+  const betIdeas = ideas.filter(i => i.entry_type === 'bet' || !i.entry_type);
 
   if (loading) {
     return (
@@ -31,31 +23,6 @@ function IdeasQueue({
       </div>
     );
   }
-
-  // Entry type badge component
-  const EntryTypeBadge = ({ type }) => {
-    const config = {
-      signal: { label: 'Signal', color: '#7dd3fc', bg: 'rgba(125, 211, 252, 0.15)' },
-      idea: { label: 'Idea', color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.15)' },
-      bet: { label: 'Bet', color: '#2dd4bf', bg: 'rgba(45, 212, 191, 0.15)' }
-    };
-    const style = config[type] || config.idea;
-    
-    return (
-      <span style={{
-        fontSize: '0.7rem',
-        fontWeight: 600,
-        color: style.color,
-        background: style.bg,
-        padding: '3px 10px',
-        borderRadius: 4,
-        textTransform: 'uppercase',
-        letterSpacing: '0.5px'
-      }}>
-        {style.label}
-      </span>
-    );
-  };
 
   // Score badge component for compact display
   const ScoreBadge = ({ score, label }) => {
@@ -89,91 +56,28 @@ function IdeasQueue({
 
   return (
     <>
-      {/* Header with + button */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'flex-start',
-        marginBottom: 32 
-      }}>
-        <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#f1f5f9', marginBottom: 8 }}>
-            Marketplace
-          </h1>
-          <p style={{ color: '#64748b', fontSize: '0.95rem' }}>
-            Internal ideas and external demand signals waiting for a sponsor.
-          </p>
-        </div>
-        <button
-          onClick={() => setScreen('choose_entry_type')}
-          style={{
-            padding: '10px 20px',
-            background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
-            border: 'none',
-            borderRadius: 8,
-            color: '#0a0f1a',
-            fontWeight: 600,
-            cursor: 'pointer',
-            fontSize: '0.95rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6
-          }}
-        >
-          <span style={{ fontSize: '1.2rem' }}>+</span>
-          New Entry
-        </button>
-      </div>
-
-      {/* Entry type filters */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
-        {[
-          { value: 'all', label: 'All', count: ideas.length },
-          { value: 'signal', label: 'Signals', count: signalCount },
-          { value: 'idea', label: 'Ideas', count: ideaCount },
-          { value: 'bet', label: 'Bets', count: betCount }
-        ].map(f => (
-          <button
-            key={f.value}
-            onClick={() => setFilter(f.value)}
-            style={{
-              padding: '8px 16px',
-              background: filter === f.value 
-                ? 'rgba(45, 212, 191, 0.15)' 
-                : 'rgba(255,255,255,0.03)',
-              border: `1px solid ${filter === f.value ? '#2dd4bf' : 'rgba(255,255,255,0.1)'}`,
-              borderRadius: 8,
-              color: filter === f.value ? '#2dd4bf' : '#94a3b8',
-              fontSize: '0.9rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6
-            }}
-          >
-            {f.label}
-            <span style={{ 
-              fontSize: '0.75rem', 
-              color: filter === f.value ? '#2dd4bf' : '#64748b' 
-            }}>
-              ({f.count})
-            </span>
-          </button>
-        ))}
+      {/* Header - no button */}
+      <div style={{ marginBottom: 32 }}>
+        <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#f1f5f9', marginBottom: 8 }}>
+          Marketplace
+        </h1>
+        <p style={{ color: '#64748b', fontSize: '0.95rem' }}>
+          Bets waiting for a sponsor. Claim one to add it to your queue.
+        </p>
       </div>
 
       {/* Entries list */}
-      {filteredIdeas.length === 0 ? (
+      {betIdeas.length === 0 ? (
         <div style={{ 
           textAlign: 'center', 
           padding: '60px 20px',
           color: '#64748b' 
         }}>
-          No {filter !== 'all' ? filter + 's' : 'entries'} yet.
+          No bets in marketplace yet. Create one using the "New Bet" button!
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {filteredIdeas.map(idea => {
+          {betIdeas.map(idea => {
             const hasScores = idea.viability_score || idea.relevance_score || idea.overall_score;
             const isExpanded = expandedRationale === idea.id;
             
@@ -195,22 +99,14 @@ function IdeasQueue({
                   marginBottom: 12 
                 }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: 8, 
-                      marginBottom: 8 
+                    <h3 style={{ 
+                      color: '#f1f5f9', 
+                      fontSize: '1.1rem', 
+                      fontWeight: 600,
+                      margin: '0 0 8px 0' 
                     }}>
-                      <h3 style={{ 
-                        color: '#f1f5f9', 
-                        fontSize: '1.1rem', 
-                        fontWeight: 600,
-                        margin: 0 
-                      }}>
-                        {idea.title}
-                      </h3>
-                      <EntryTypeBadge type={idea.entry_type || 'idea'} />
-                    </div>
+                      {idea.title}
+                    </h3>
                     <div style={{ 
                       fontSize: '0.8rem', 
                       color: '#64748b' 
