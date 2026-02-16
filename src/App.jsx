@@ -8,7 +8,6 @@ import { OrganizationSetup, ContextCheck, shouldShowContextCheck, OrgSwitcher } 
 import IdeaSubmission from './components/IdeaSubmission';
 import IdeasQueue from './components/IdeasQueue';
 import BetSubmissionNarrative from './components/BetSubmissionNarrative';
-import StoryReview from './components/StoryReview';
 import SponsorReview from './components/SponsorReview';
 import EntryTypeChooser from './components/EntryTypeChooser';
 import SignalSubmission from './components/SignalSubmission';
@@ -16,7 +15,6 @@ import SuggestionCard from './components/SuggestionCard';
 import { getOrgLearnings } from './utils/orgLearnings';
 import { supabase } from './lib/supabase';
 import BetConfirmation from './components/BetConfirmation';
-import ScoreReview from './components/ScoreReview';
 
 // ============================================
 // CHZCLOTH Free - Where Bets Get Smarter
@@ -3276,10 +3274,8 @@ const { ideas, loading: ideasLoading, updateIdeaStatus, claimIdea, submitIdea, u
   const [emailSent, setEmailSent] = useState(false);
   const [betToReplace, setBetToReplace] = useState(null);
   const [pendingBet, setPendingBet] = useState(null);
-  const [showStoryReview, setShowStoryReview] = useState(false);
-  const [pendingBetForReview, setPendingBetForReview] = useState(null);
   const [pendingConfirmation, setPendingConfirmation] = useState(null);
-  const [pendingScoreReview, setPendingScoreReview] = useState(null);
+
   
   // FIX: Progressive loading messages for Supabase free tier cold starts (5-8s)
   // Instead of a 3s timeout that forces a wrong routing decision,
@@ -3359,22 +3355,11 @@ const { ideas, loading: ideasLoading, updateIdeaStatus, claimIdea, submitIdea, u
   };
   
 const handleBetComplete = async (betData, ideaId = null) => {
-  console.log('BET DATA RECEIVED:', betData);  // Debug log
-  setPendingBetForReview({ betData, ideaId });
-  setShowStoryReview(true);
-};
-  
-const handleStoryReviewContinue = async () => {
-  setShowStoryReview(false);
-  
-  // Go to BetConfirmation screen instead of creating bet
-  setPendingConfirmation({
-    betData: pendingBetForReview.betData,
-ideaId: pendingBetForReview.ideaId || null
-  });
-  setPendingBetForReview(null);
+  console.log('BET DATA RECEIVED:', betData);
+  setPendingConfirmation({ betData, ideaId });  // ✅ Skip straight to confirmation
   setScreen('bet_confirmation');
 };
+  
 
   const handleConfirmationContinue = async (userParams) => {
   console.log('DEBUG:', { 
@@ -3382,9 +3367,11 @@ ideaId: pendingBetForReview.ideaId || null
     orgId: currentOrg?.orgId,
     userId: user?.id 
   });
-  // User confirmed parameters, now get scores
+const handleConfirmationContinue = async (userParams) => {
   try {
-    const orgLearnings = await getOrgLearnings(currentOrg?.orgId, user?.id, 'bet');
+    const orgLearnings = (currentOrg?.orgId && user?.id) 
+      ? await getOrgLearnings(currentOrg.orgId, user.id, 'bet')
+      : [];
     
     // Add user parameters to betData
     const betDataWithParams = {
@@ -3395,61 +3382,27 @@ ideaId: pendingBetForReview.ideaId || null
       inactionImpact: userParams.inactionImpact
     };
     
-    // Get scores
-    const scores = await scoreBet(betDataWithParams, {
-      name: currentOrg?.name,
-      strategy: null,
-      industry: null,
-      learnings: orgLearnings
-    });
+    // Save bet (createBet will score it internally)
+    const { data, error } = await createBet(
+      betDataWithParams,
+      pendingConfirmation.ideaId
+    );
     
-    // Store for ScoreReview
-    setPendingScoreReview({
-      betData: betDataWithParams,
-      scores: scores,
-      ideaId: pendingConfirmation.ideaId
-    });
-    
-    setPendingConfirmation(null);
-    setScreen('score_review');
+    if (error) {
+      console.error('Error creating bet:', error);
+      alert('Error saving bet. Please try again.');
+    } else {
+      setCurrentBet(data);
+      setPendingConfirmation(null);
+      setScreen('score');  // ← Go to old circular score screen
+    }
   } catch (error) {
-    console.error('Error fetching scores:', error);
-    alert('Error scoring bet. Please try again.');
-  }
-};
-
-const handleScoreReviewSubmit = async (dataWithJustification) => {
-  const { data, error } = await createBet(
-    dataWithJustification,
-    pendingScoreReview.ideaId,
-    pendingScoreReview.scores  // ← Pass precomputed scores as 3rd param
-  );
-  
-  if (error) {
-    console.error('Error creating bet:', error);
+    console.error('Error:', error);
     alert('Error saving bet. Please try again.');
-  } else {
-    setCurrentBet(data);
-    setPendingScoreReview(null);
-    setScreen('score');
   }
 };
 
-const handleScoreReviewCancel = () => {
-  // Go back to confirmation screen
-  setPendingConfirmation({
-    betData: pendingScoreReview.betData,
-    ideaId: pendingScoreReview.ideaId
-  });
-  setPendingScoreReview(null);
-  setScreen('bet_confirmation');
-};
 
-const handleStoryReviewEdit = () => {
-  setShowStoryReview(false);
-  // Keep pendingBetForReview so they can continue editing
-  // Stay on 'bet' screen
-};
 const handleUseAIEnhancement = async () => {
   if (!currentBet.scoringRationale?.suggestion) return;
   
@@ -3824,13 +3777,7 @@ const handleRejectBet = async (betId, reason) => {
   />
 )}
 
-{showStoryReview && (
-  <StoryReview 
-    betData={pendingBetForReview?.betData}
-    onEdit={handleStoryReviewEdit}
-    onContinue={handleStoryReviewContinue}
-  />
-)}
+
       {screen === 'bet_confirmation' && pendingConfirmation && (
   <BetConfirmation
     extractedData={pendingConfirmation.betData}
@@ -3846,14 +3793,6 @@ const handleRejectBet = async (betId, reason) => {
   />
 )}
 
-{screen === 'score_review' && pendingScoreReview && (
-  <ScoreReview
-    scores={pendingScoreReview.scores}
-    betData={pendingScoreReview.betData}
-    onSubmit={handleScoreReviewSubmit}
-    onCancel={handleScoreReviewCancel}
-  />
-)}
 
       {screen === 'submit_signal' && (
   <SignalSubmission
