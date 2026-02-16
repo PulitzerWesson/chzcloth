@@ -3377,6 +3377,11 @@ ideaId: pendingBetForReview.ideaId || null
 };
 
   const handleConfirmationContinue = async (userParams) => {
+  console.log('DEBUG:', { 
+    currentOrg, 
+    orgId: currentOrg?.orgId,
+    userId: user?.id 
+  });
   // User confirmed parameters, now get scores
   try {
     const orgLearnings = await getOrgLearnings(currentOrg?.orgId, user?.id, 'bet');
