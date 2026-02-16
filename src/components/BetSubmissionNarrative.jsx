@@ -61,6 +61,11 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
       });
 
       const review = await response.json();
+      console.log('AI EXTRACTED:', {
+  evidence: review.extracted?.evidence,
+  hasValidationIssue: review.issues?.some(i => i.field.toLowerCase().includes('validation') || i.field.toLowerCase().includes('evidence')),
+  allIssues: review.issues
+});
 
       if (!response.ok) {
         throw new Error(review.error || 'Analysis failed');
