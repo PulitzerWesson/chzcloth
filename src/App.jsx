@@ -3764,7 +3764,7 @@ const handleRejectBet = async (betId, reason) => {
   />
 )}
 
-{screen === 'bet' && !showStoryReview && (
+{screen === 'bet' && (
   <BetSubmissionNarrative 
     onComplete={handleBetComplete}
     orgMode={currentOrg?.mode}
