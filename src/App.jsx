@@ -3361,12 +3361,7 @@ const handleBetComplete = async (betData, ideaId = null) => {
 };
   
 
-  const handleConfirmationContinue = async (userParams) => {
-  console.log('DEBUG:', { 
-    currentOrg, 
-    orgId: currentOrg?.orgId,
-    userId: user?.id 
-  });
+
 const handleConfirmationContinue = async (userParams) => {
   try {
     const orgLearnings = (currentOrg?.orgId && user?.id) 
