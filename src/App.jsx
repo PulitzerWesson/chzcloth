@@ -3628,26 +3628,35 @@ const handleIdeaSubmitted = async (ideaData) => {
   }
 };
 
-const handleStructureBetFromIdea = (idea) => {
-  setCurrentBet({ fromIdea: idea });
-  setScreen('bet');
-};
 
-  const handleClaimAndStructure = async (idea) => {
-  // Claim first
-  const { error } = await claimIdea(idea.id);
-  if (error) {
-    console.error('Error claiming idea:', error);
+const handleClaimAndStructure = async (idea) => {
+  // Claim the idea
+  const { error: claimError } = await claimIdea(idea.id);
+  if (claimError) {
+    console.error('Error claiming idea:', claimError);
+    alert('Error claiming bet');
     return;
   }
 
+  // Convert marketplace bet directly to Priority Queue as APPROVED
+  const betData = {
+    ...idea.bet_data,  // The original bet data
+    approvalStatus: 'approved',  // Approved when sponsored
+    sponsoredFrom: idea.id,  // Track where it came from
+    isOwnIdea: false,  // This is someone else's bet
+    ideaSource: idea.submittedByEmail  // Who created it
+  };
 
+  const { data, error } = await createBet(betData);
   
-  // Then open bet form immediately
-  setCurrentBet({ fromIdea: idea });
-  setScreen('bet');
+  if (error) {
+    console.error('Error creating bet:', error);
+    alert('Error adding bet to your queue');
+  } else {
+    alert('Bet approved and added to Priority Queue!');
+    setScreen('priority_queue');
+  }
 };
-
       const handleApproveBet = async (betId) => {
   const { error } = await approveBet(betId);
   if (error) {
@@ -3664,12 +3673,6 @@ const handleRejectBet = async (betId, reason) => {
   }
 };
 
-  const handleClaimIdea = async (ideaId) => {
-  const { error } = await claimIdea(ideaId);
-  if (error) {
-    console.error('Error claiming idea:', error);
-  }
-};
   
   // FIX: Removed pendingDashboard (was set but never used in routing)
   const handleDashboardClick = () => {
