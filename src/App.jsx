@@ -3414,11 +3414,10 @@ const handleStoryReviewContinue = async () => {
 };
 
 const handleScoreReviewSubmit = async (dataWithJustification) => {
-  // User submitted (with justification if needed)
   const { data, error } = await createBet(
     dataWithJustification,
-    pendingScoreReview.scores,
-    pendingScoreReview.ideaId
+    pendingScoreReview.ideaId,
+    pendingScoreReview.scores  // ← Pass precomputed scores as 3rd param
   );
   
   if (error) {
