@@ -3379,7 +3379,7 @@ ideaId: pendingBetForReview.ideaId || null
   const handleConfirmationContinue = async (userParams) => {
   // User confirmed parameters, now get scores
   try {
-    const orgLearnings = await getOrgLearnings(currentOrg?.id, user?.id, 'bet');
+    const orgLearnings = await getOrgLearnings(currentOrg?.orgId, user?.id, 'bet');
     
     // Add user parameters to betData
     const betDataWithParams = {
