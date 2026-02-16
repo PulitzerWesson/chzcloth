@@ -1,6 +1,4 @@
 
-
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './hooks/useAuth';
 import { useIdeas } from './hooks/useIdeas';
@@ -16,7 +14,9 @@ import EntryTypeChooser from './components/EntryTypeChooser';
 import SignalSubmission from './components/SignalSubmission';
 import SuggestionCard from './components/SuggestionCard';
 import { getOrgLearnings } from './utils/orgLearnings';
-import { supabase } from './lib/supabase'
+import { supabase } from './lib/supabase';
+import BetConfirmation from './components/BetConfirmation';
+import ScoreReview from './components/ScoreReview';
 
 // ============================================
 // CHZCLOTH Free - Where Bets Get Smarter
@@ -3278,6 +3278,8 @@ const { ideas, loading: ideasLoading, updateIdeaStatus, claimIdea, submitIdea, u
   const [pendingBet, setPendingBet] = useState(null);
   const [showStoryReview, setShowStoryReview] = useState(false);
   const [pendingBetForReview, setPendingBetForReview] = useState(null);
+  const [pendingConfirmation, setPendingConfirmation] = useState(null);
+  const [pendingScoreReview, setPendingScoreReview] = useState(null);
   
   // FIX: Progressive loading messages for Supabase free tier cold starts (5-8s)
   // Instead of a 3s timeout that forces a wrong routing decision,
@@ -3365,10 +3367,58 @@ const handleBetComplete = async (betData, ideaId = null) => {
 const handleStoryReviewContinue = async () => {
   setShowStoryReview(false);
   
-  // Create bet immediately (no questions)
+  // Go to BetConfirmation screen instead of creating bet
+  setPendingConfirmation({
+    betData: pendingBetForReview.betData,
+    ideaId: pendingBetForReview.ideaId
+  });
+  setPendingBetForReview(null);
+  setScreen('bet_confirmation');
+};
+
+  const handleConfirmationContinue = async (userParams) => {
+  // User confirmed parameters, now get scores
+  try {
+    const orgLearnings = await getOrgLearnings(currentOrg?.id, user?.id, 'bet');
+    
+    // Add user parameters to betData
+    const betDataWithParams = {
+      ...pendingConfirmation.betData,
+      confidence: userParams.confidence,
+      strategicAlignment: userParams.strategicAlignment,
+      estimatedEffort: userParams.estimatedEffort,
+      inactionImpact: userParams.inactionImpact
+    };
+    
+    // Get scores
+    const scores = await scoreBet(betDataWithParams, {
+      name: currentOrg?.name,
+      strategy: null,
+      industry: null,
+      learnings: orgLearnings
+    });
+    
+    // Store for ScoreReview
+    setPendingScoreReview({
+      betData: betDataWithParams,
+      scores: scores,
+      ideaId: pendingConfirmation.ideaId
+    });
+    
+    setPendingConfirmation(null);
+    setScreen('score_review');
+  } catch (error) {
+    console.error('Error fetching scores:', error);
+    alert('Error scoring bet. Please try again.');
+  }
+};
+
+const handleScoreReviewSubmit = async (dataWithJustification) => {
+  // User submitted (with justification if needed)
   const { data, error } = await createBet(
-    pendingBetForReview.betData,
-    pendingBetForReview.ideaId
+    dataWithJustification,
+    pendingScoreReview.scores,
+    pendingScoreReview.ideaId
   );
   
   if (error) {
@@ -3376,9 +3426,19 @@ const handleStoryReviewContinue = async () => {
     alert('Error saving bet. Please try again.');
   } else {
     setCurrentBet(data);
-    setPendingBetForReview(null);
+    setPendingScoreReview(null);
     setScreen('score');
   }
+};
+
+const handleScoreReviewCancel = () => {
+  // Go back to confirmation screen
+  setPendingConfirmation({
+    betData: pendingScoreReview.betData,
+    ideaId: pendingScoreReview.ideaId
+  });
+  setPendingScoreReview(null);
+  setScreen('bet_confirmation');
 };
 
 const handleStoryReviewEdit = () => {
@@ -3765,6 +3825,29 @@ const handleRejectBet = async (betId, reason) => {
     betData={pendingBetForReview?.betData}
     onEdit={handleStoryReviewEdit}
     onContinue={handleStoryReviewContinue}
+  />
+)}
+      {screen === 'bet_confirmation' && pendingConfirmation && (
+  <BetConfirmation
+    extractedData={pendingConfirmation.betData}
+    onContinue={handleConfirmationContinue}
+    onBack={() => {
+      setPendingBetForReview({
+        betData: pendingConfirmation.betData,
+        ideaId: pendingConfirmation.ideaId
+      });
+      setPendingConfirmation(null);
+      setShowStoryReview(true);
+    }}
+  />
+)}
+
+{screen === 'score_review' && pendingScoreReview && (
+  <ScoreReview
+    scores={pendingScoreReview.scores}
+    betData={pendingScoreReview.betData}
+    onSubmit={handleScoreReviewSubmit}
+    onCancel={handleScoreReviewCancel}
   />
 )}
 
