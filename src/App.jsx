@@ -3370,7 +3370,7 @@ const handleStoryReviewContinue = async () => {
   // Go to BetConfirmation screen instead of creating bet
   setPendingConfirmation({
     betData: pendingBetForReview.betData,
-    ideaId: pendingBetForReview.ideaId
+ideaId: pendingBetForReview.ideaId || null
   });
   setPendingBetForReview(null);
   setScreen('bet_confirmation');
