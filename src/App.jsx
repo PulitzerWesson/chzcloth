@@ -3930,7 +3930,6 @@ const handleRejectBet = async (betId, reason) => {
     onClaimIdea={claimIdea}
     onUnclaimIdea={unclaimIdea}
     onClaimAndStructure={handleClaimAndStructure}
-    onStructureBet={handleStructureBetFromIdea}
     setScreen={setScreen}
   />
 )}
