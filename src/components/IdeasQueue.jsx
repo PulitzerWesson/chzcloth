@@ -168,14 +168,25 @@ function IdeasQueue({
                   </div>
                 )}
 
-                {/* Description */}
-                <div style={{ 
-                  color: '#cbd5e1', 
-                  lineHeight: 1.6, 
-                  marginBottom: 16 
-                }}>
-                  {idea.description}
-                </div>
+{/* Metrics & Effort - no hypothesis duplication */}
+{idea.description?.includes('Metrics:') && (
+  <div style={{ marginBottom: 16 }}>
+    <div style={{ marginBottom: 8 }}>
+      <span style={{ color: '#64748b', fontSize: '0.85rem' }}>Metrics: </span>
+      <span style={{ color: '#2dd4bf', fontSize: '0.9rem' }}>
+        {idea.description.split('Metrics:')[1]?.split('Effort:')[0]?.trim()}
+      </span>
+    </div>
+    {idea.description.includes('Effort:') && (
+      <div>
+        <span style={{ color: '#64748b', fontSize: '0.85rem' }}>Effort: </span>
+        <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
+          {idea.description.split('Effort:')[1]?.trim()}
+        </span>
+      </div>
+    )}
+  </div>
+)}
 
                 {/* Optional fields */}
                 {idea.problem && (
