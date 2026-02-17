@@ -156,15 +156,38 @@ function IdeasQueue({
       ENHANCED
     </div>
   </div>
-    {/* Dimension scores - compact */}
-    {(idea.viability_score || idea.relevance_score) && (
-      <div style={{ 
-        display: 'flex', 
-        gap: 8, 
-        flexShrink: 0,
-        paddingLeft: 8,
-        borderLeft: '1px solid rgba(255,255,255,0.1)'
-      }}>
+) : idea.overall_score ? (
+  <div style={{
+    textAlign: 'center',
+    background: 'rgba(45, 212, 191, 0.08)',
+    border: '1px solid rgba(45, 212, 191, 0.2)',
+    borderRadius: 10,
+    padding: '10px 14px',
+    minWidth: 65
+  }}>
+    <div style={{ 
+      fontSize: '0.65rem', 
+      color: '#64748b', 
+      marginBottom: 2,
+      fontWeight: 600
+    }}>
+      SCORE
+    </div>
+    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#2dd4bf' }}>
+      {idea.overall_score}
+    </div>
+  </div>
+) : null}
+
+{/* Dimension scores - compact */}
+{(idea.viability_score || idea.relevance_score) && (
+  <div style={{ 
+    display: 'flex', 
+    gap: 8, 
+    flexShrink: 0,
+    paddingLeft: 8,
+    borderLeft: '1px solid rgba(255,255,255,0.1)'
+  }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '0.6rem', color: '#64748b', marginBottom: 2 }}>APR</div>
           <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#2dd4bf' }}>
