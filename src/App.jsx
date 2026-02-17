@@ -3638,20 +3638,42 @@ const handleClaimAndStructure = async (idea) => {
     return;
   }
 
-  // Convert marketplace bet directly to Priority Queue as APPROVED
+  // Map marketplace idea to bet structure with required fields
   const betData = {
-    ...idea.bet_data,  // The original bet data
-    approvalStatus: 'approved',  // Approved when sponsored
-    sponsoredFrom: idea.id,  // Track where it came from
-    isOwnIdea: false,  // This is someone else's bet
-    ideaSource: idea.submittedByEmail  // Who created it
+    // Required fields with fallbacks
+    hypothesis: idea.bet_data?.hypothesis || idea.title || idea.description,
+    metric: idea.bet_data?.metric || 'Not specified',
+    prediction: idea.bet_data?.prediction || idea.bet_data?.metrics || idea.expectedImpact || 'Not specified',
+    baseline: idea.bet_data?.baseline || '',
+    confidence: idea.bet_data?.confidence || 70,
+    timeframe: idea.bet_data?.timeframe || '90',
+    betType: idea.bet_data?.betType || 'improve',
+    metricDomain: idea.bet_data?.metricDomain || 'product',
+    strategicAlignment: idea.bet_data?.strategicAlignment || 'inner',
+    estimatedEffort: idea.bet_data?.estimatedEffort || idea.bet_data?.effort || '2-3-sprints',
+    inactionImpact: idea.bet_data?.inactionImpact || 'nothing',
+    assumptions: idea.bet_data?.assumptions || '',
+    cheapTest: idea.bet_data?.cheapTest || '',
+    measurementTool: idea.bet_data?.measurementTool || '',
+    
+    // AI Scoring if available
+    approachScore: idea.viability_score || idea.bet_data?.approachScore,
+    potentialScore: idea.bet_data?.potentialScore,
+    fitScore: idea.relevance_score || idea.bet_data?.fitScore,
+    scoringRationale: idea.bet_data?.scoringRationale,
+    
+    // Approval and source tracking
+    approvalStatus: 'approved',
+    sponsoredFrom: idea.id,
+    isOwnIdea: false,
+    ideaSource: idea.submittedByEmail
   };
 
   const { data, error } = await createBet(betData);
   
   if (error) {
     console.error('Error creating bet:', error);
-    alert('Error adding bet to your queue');
+    alert(`Error adding bet: ${error.message}`);
   } else {
     alert('Bet approved and added to Priority Queue!');
     setScreen('priority_queue');
