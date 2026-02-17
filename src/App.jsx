@@ -3669,7 +3669,23 @@ const handleClaimAndStructure = async (idea) => {
     ideaSource: idea.submittedByEmail
   };
 
-  const { data, error } = await createBet(betData);
+  // Prepare precomputed scores to avoid re-scoring
+const precomputedScores = {
+  approach: {
+    score: idea.viability_score || idea.bet_data?.approachScore || 70,
+    rationale: idea.bet_data?.scoringRationale?.approach?.rationale || 'Transferred from marketplace'
+  },
+  potential: {
+    score: idea.bet_data?.potentialScore || 70,
+    rationale: idea.bet_data?.scoringRationale?.potential?.rationale || 'Transferred from marketplace'
+  },
+  fit: {
+    score: idea.relevance_score || idea.bet_data?.fitScore || 70,
+    rationale: idea.bet_data?.scoringRationale?.fit?.rationale || 'Transferred from marketplace'
+  }
+};
+
+const { data, error } = await createBet(betData, idea.id, precomputedScores);
   
   if (error) {
     console.error('Error creating bet:', error);
@@ -3939,10 +3955,44 @@ const handleRejectBet = async (betId, reason) => {
             />
           )}
           
-          {screen === 'priority_queue' && (
-            <div style={{ color: '#94a3b8' }}>Priority Queue content coming soon</div>
-          )}
-          
+{screen === 'priority_queue' && (
+  <div>
+    <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#f1f5f9', marginBottom: 8 }}>
+      Priority Queue
+    </h1>
+    <p style={{ color: '#64748b', fontSize: '0.95rem', marginBottom: 32 }}>
+      Approved bets ready to execute
+    </p>
+
+    {bets?.filter(b => b.approvalStatus === 'approved').length === 0 ? (
+      <div style={{ textAlign: 'center', padding: '60px 20px', color: '#64748b' }}>
+        No approved bets yet. Sponsor bets from the Marketplace to add them here.
+      </div>
+    ) : (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {bets?.filter(b => b.approvalStatus === 'approved').map(bet => (
+          <div
+            key={bet.id}
+            style={{
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: 12,
+              padding: 20
+            }}
+          >
+            <div style={{ color: '#f1f5f9', marginBottom: 8, fontWeight: 600 }}>
+              {bet.hypothesis}
+            </div>
+            <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
+              Metric: <span style={{ color: '#2dd4bf' }}>{bet.metric}</span> • 
+              Prediction: <span style={{ color: '#94a3b8' }}>{bet.prediction}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+)}
 {screen === 'ideas_queue' && (
   <IdeasQueue 
     ideas={ideas || []}
