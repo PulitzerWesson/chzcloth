@@ -3638,61 +3638,22 @@ const handleClaimAndStructure = async (idea) => {
     return;
   }
 
-  // Map marketplace idea to bet structure with required fields
-  const betData = {
-    // Required fields with fallbacks
-    hypothesis: idea.bet_data?.hypothesis || idea.title || idea.description,
-    metric: idea.bet_data?.metric || 'Not specified',
-    prediction: idea.bet_data?.prediction || idea.bet_data?.metrics || idea.expectedImpact || 'Not specified',
-    baseline: idea.bet_data?.baseline || '',
-    confidence: idea.bet_data?.confidence || 70,
-    timeframe: idea.bet_data?.timeframe || '90',
-    betType: idea.bet_data?.betType || 'improve',
-    metricDomain: idea.bet_data?.metricDomain || 'product',
-    strategicAlignment: idea.bet_data?.strategicAlignment || 'inner',
-    estimatedEffort: idea.bet_data?.estimatedEffort || idea.bet_data?.effort || '2-3-sprints',
-    inactionImpact: idea.bet_data?.inactionImpact || 'nothing',
-    assumptions: idea.bet_data?.assumptions || '',
-    cheapTest: idea.bet_data?.cheapTest || '',
-    measurementTool: idea.bet_data?.measurementTool || '',
+  // If this idea came from a bet you created, just approve it (don't duplicate)
+  if (idea.bet_data?.id) {
+    const { error } = await supabase
+      .from('bets')
+      .update({ approval_status: 'approved' })
+      .eq('id', idea.bet_data.id);
     
-    // AI Scoring if available
-    approachScore: idea.viability_score || idea.bet_data?.approachScore,
-    potentialScore: idea.bet_data?.potentialScore,
-    fitScore: idea.relevance_score || idea.bet_data?.fitScore,
-    scoringRationale: idea.bet_data?.scoringRationale,
-    
-    // Approval and source tracking
-    approvalStatus: 'approved',
-    sponsoredFrom: idea.id,
-    isOwnIdea: false,
-    ideaSource: idea.submittedByEmail
-  };
-
-  // Prepare precomputed scores to avoid re-scoring
-const precomputedScores = {
-  approach: {
-    score: idea.viability_score || idea.bet_data?.approachScore || 70,
-    rationale: idea.bet_data?.scoringRationale?.approach?.rationale || 'Transferred from marketplace'
-  },
-  potential: {
-    score: idea.bet_data?.potentialScore || 70,
-    rationale: idea.bet_data?.scoringRationale?.potential?.rationale || 'Transferred from marketplace'
-  },
-  fit: {
-    score: idea.relevance_score || idea.bet_data?.fitScore || 70,
-    rationale: idea.bet_data?.scoringRationale?.fit?.rationale || 'Transferred from marketplace'
-  }
-};
-
-const { data, error } = await createBet(betData, idea.id, precomputedScores);
-  
-  if (error) {
-    console.error('Error creating bet:', error);
-    alert(`Error adding bet: ${error.message}`);
+    if (error) {
+      console.error('Error approving bet:', error);
+      alert('Error approving bet');
+    } else {
+      alert('Bet approved and added to Priority Queue!');
+      setScreen('priority_queue');
+    }
   } else {
-    alert('Bet approved and added to Priority Queue!');
-    setScreen('priority_queue');
+    alert('This idea is missing bet data');
   }
 };
       const handleApproveBet = async (betId) => {
