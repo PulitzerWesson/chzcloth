@@ -3653,7 +3653,10 @@ const handleClaimAndStructure = async (idea) => {
 
     const { error } = await supabase
       .from('bets')
-      .update({ approval_status: 'approved' })
+       .update({ 
+    approval_status: 'approved',
+    sponsored_by: user.id
+  })
       .eq('id', betData.id);
     
     if (error) throw error;
