@@ -148,7 +148,7 @@ if (!scores) {
     name: orgId, 
     strategy: null, 
     industry: null,
-    learnings: orgLearnings
+    learnings: orgLearnings?.learnings || []
   });
 }
 try {
