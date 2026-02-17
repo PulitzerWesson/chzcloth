@@ -142,7 +142,7 @@ function IdeasQueue({
         x="16" 
         y="22" 
         fontFamily="Arial, sans-serif" 
-        fontSize="14" 
+        fontSize="10" 
         fontWeight="bold" 
         fill={`url(#chz-grad-${idea.id})`}
         textAnchor="middle"
