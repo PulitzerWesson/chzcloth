@@ -4,7 +4,8 @@ export default async function handler(req, res) {
   }
   
   try {
-const { bet, orgMode, orgName, orgContext, orgLearnings, clarifyingAnswers } = req.body;    
+    const { bet, orgMode, orgName, orgContext, orgLearnings, clarifyingAnswers } = req.body;    
+    
     // Build clarifying answers section if provided
     let clarifyingSection = '';
     if (clarifyingAnswers && Object.keys(clarifyingAnswers).length > 0) {
@@ -44,7 +45,7 @@ Consider these patterns when scoring.
         max_tokens: 500,
         messages: [{
           role: 'user',
-content: `Quickly assess if this bet needs web search for accurate scoring.
+          content: `Quickly assess if this bet needs web search for accurate scoring.
 
 BET DETAILS:
 Hypothesis: "${bet.hypothesis}"
@@ -89,8 +90,7 @@ Return ONLY JSON:
     
     const assessmentData = await assessmentResponse.json();
     let needsSearch = false;
-    
-let searchReason = null;
+    let searchReason = null;
     
     try {
       const assessmentText = assessmentData.content[0].text;
@@ -98,7 +98,7 @@ let searchReason = null;
       if (assessmentMatch) {
         const assessment = JSON.parse(assessmentMatch[0]);
         needsSearch = assessment.needs_search;
-        searchReason = assessment.reason;  // ← Capture it
+        searchReason = assessment.reason;
         console.log('Web search decision:', assessment.reason);
       }
     } catch (e) {
@@ -134,9 +134,9 @@ Assumptions: ${bet.assumptions || 'Not specified'}
 
 ORGANIZATIONAL CONTEXT:
 ${orgName ? `Company: ${orgName}` : 'Company: Unknown'}
-${orgIndustry ? `Industry: ${orgIndustry}` : ''}
-${orgStrategy ? `Strategy: ${orgStrategy}` : ''}
 Mode: ${orgMode || 'growth'}
+
+${orgContext ? `COMPANY DETAILS:\n${orgContext}\n` : ''}
 ${learningsSection}
 ${clarifyingSection}
 
@@ -251,7 +251,7 @@ Return ONLY valid JSON (no markdown, no preamble):
       scores.suggestion.market_evidence = stripCitations(scores.suggestion.market_evidence);
     }
 
-        // Add web search metadata
+    // Add web search metadata
     scores.web_search_used = needsSearch;
     scores.web_search_reason = searchReason; 
     
