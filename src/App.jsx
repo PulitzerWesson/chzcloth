@@ -3949,13 +3949,58 @@ const handleRejectBet = async (betId, reason) => {
               padding: 20
             }}
           >
-            <div style={{ color: '#f1f5f9', marginBottom: 8, fontWeight: 600 }}>
-              {bet.hypothesis}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+              <div style={{ color: '#f1f5f9', flex: 1, fontWeight: 600 }}>
+                {bet.hypothesis}
+              </div>
+              
+              {/* AI Scores */}
+              {bet.approachScore && (
+                <div style={{ display: 'flex', gap: 8, marginLeft: 16 }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.65rem', color: '#64748b' }}>APR</div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#2dd4bf' }}>{bet.approachScore}</div>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.65rem', color: '#64748b' }}>POT</div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#fbbf24' }}>{bet.potentialScore}</div>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.65rem', color: '#64748b' }}>FIT</div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#7dd3fc' }}>{bet.fitScore}</div>
+                  </div>
+                </div>
+              )}
             </div>
-            <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
+            
+            <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: 8 }}>
               Metric: <span style={{ color: '#2dd4bf' }}>{bet.metric}</span> • 
               Prediction: <span style={{ color: '#94a3b8' }}>{bet.prediction}</span>
             </div>
+            
+            {/* Show rationale if available */}
+            {bet.scoringRationale && (
+              <div style={{ 
+                marginTop: 12, 
+                paddingTop: 12, 
+                borderTop: '1px solid rgba(255,255,255,0.05)',
+                fontSize: '0.8rem',
+                color: '#64748b'
+              }}>
+                <div style={{ marginBottom: 4 }}>
+                  <span style={{ color: '#2dd4bf', fontWeight: 600 }}>Approach:</span>
+                  <span style={{ color: '#94a3b8', marginLeft: 8 }}>{bet.scoringRationale?.approach?.rationale}</span>
+                </div>
+                <div style={{ marginBottom: 4 }}>
+                  <span style={{ color: '#fbbf24', fontWeight: 600 }}>Potential:</span>
+                  <span style={{ color: '#94a3b8', marginLeft: 8 }}>{bet.scoringRationale?.potential?.rationale}</span>
+                </div>
+                <div>
+                  <span style={{ color: '#7dd3fc', fontWeight: 600 }}>Fit:</span>
+                  <span style={{ color: '#94a3b8', marginLeft: 8 }}>{bet.scoringRationale?.fit?.rationale}</span>
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
