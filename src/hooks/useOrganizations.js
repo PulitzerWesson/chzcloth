@@ -63,9 +63,9 @@ export function useOrganizations() {
           teamSize: uo.organizations.team_size,
           industry: uo.organizations.industry,
           currentMode: uo.organizations.current_mode,
-          userContext: uo.organizations.user_context,      // ← Add
-          aiContext: uo.organizations.ai_context,          // ← Add  
-          combinedContext: uo.organizations.combined_context
+          userContext: uo.organizations.user_context,
+          aiContext: uo.organizations.ai_context,
+          combinedContext: uo.organizations.combined_context,
           role: uo.role,
           seniority: uo.seniority,
           startedAt: uo.started_at,
