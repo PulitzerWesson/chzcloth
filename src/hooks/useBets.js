@@ -173,7 +173,6 @@ try {
           measurement_tool: betData.measurementTool,
           is_past_bet: false,
           // New score fields
-// New score fields
           approach_score: scores?.approach?.score ?? null,
           potential_score: scores?.potential?.score ?? null,
           fit_score: scores?.fit?.score ?? null,
@@ -181,12 +180,12 @@ try {
           strategic_alignment: betData.strategicAlignment || null,
           estimated_effort: betData.estimatedEffort || null,
           inaction_impact: betData.inactionImpact || null,
-              idea_id: ideaId,
-    approval_status: ideaId ? 'pending_approval' : 'draft',
-    structured_by: ideaId ? user.id : null,
-            document_provided: betData.documentProvided || false,
-    document_name: betData.documentName || null,
-    document_type: betData.documentType || null
+          idea_id: ideaId,
+          approval_status: betData.approvalStatus || (ideaId ? 'pending_approval' : 'draft'),
+          structured_by: ideaId ? user.id : null,
+          document_provided: betData.documentProvided || false,
+          document_name: betData.documentName || null,
+          document_type: betData.documentType || null
         })
         .select()
         .single()
