@@ -3956,6 +3956,7 @@ const handleRejectBet = async (betId, reason) => {
     ) : (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {bets?.filter(b => b.approvalStatus === 'approved').map(bet => {
+        console.log('PRIORITY BET:', bet);
           const isExpanded = expandedPriorityBet === bet.id;
           const isAIEnhanced = bet.aiEnhanced;
           const aiScore = bet.aiPredictedScore;
