@@ -2118,71 +2118,39 @@ function ScoreResult({ bet, onNewBet, onSkipToDashboard, onSavePersonal, onAddTo
               </div>
             </div>
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <button
-                onClick={onSavePersonal}
-                style={{
-                  padding: '16px 24px',
-                  background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
-                  border: 'none',
-                  borderRadius: 10,
-                  color: '#0a0f1a',
-                  fontSize: '1rem',
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
-              >
-                Save to Personal Queue
-              </button>
-              
-              <button
-                onClick={onAddToMarketplace}
-                style={{
-                  padding: '16px 24px',
-                  background: 'rgba(251, 191, 36, 0.15)',
-                  border: '1px solid rgba(251, 191, 36, 0.3)',
-                  borderRadius: 10,
-                  color: '#fbbf24',
-                  fontSize: '1rem',
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
-              >
-                Add to Marketplace for Sponsorship
-              </button>
-              
-              <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-                <button
-                  onClick={onNewBet}
-                  style={{
-                    flex: 1,
-                    padding: '14px',
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: 10,
-                    color: '#94a3b8',
-                    fontSize: '0.95rem',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Submit Another Bet
-                </button>
-                <button
-                  onClick={onSkipToDashboard}
-                  style={{
-                    flex: 1,
-                    padding: '14px',
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: 10,
-                    color: '#94a3b8',
-                    fontSize: '0.95rem',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Go to Dashboard
-                </button>
-              </div>
+<div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+  <button
+    onClick={onSavePersonal}
+    style={{
+      padding: '16px 24px',
+      background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
+      border: 'none',
+      borderRadius: 10,
+      color: '#0a0f1a',
+      fontSize: '1rem',
+      fontWeight: 700,
+      cursor: 'pointer'
+    }}
+  >
+    Add to My Queue
+  </button>
+  
+  <button
+    onClick={onAddToMarketplace}
+    style={{
+      padding: '16px 24px',
+      background: 'rgba(251, 191, 36, 0.15)',
+      border: '1px solid rgba(251, 191, 36, 0.3)',
+      borderRadius: 10,
+      color: '#fbbf24',
+      fontSize: '1rem',
+      fontWeight: 600,
+      cursor: 'pointer'
+    }}
+  >
+    Add to Marketplace
+  </button>
+</div>
             </div>
           </>
         )}
