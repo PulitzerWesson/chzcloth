@@ -88,98 +88,119 @@ function IdeasQueue({
                   padding: 20
                 }}
               >
-                {/* Header with scores */}
-                <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'flex-start',
-                  marginBottom: 12 
-                }}>
-                  <div style={{ flex: 1, paddingRight: 16 }}>
-                    <h3 style={{ 
-                      color: '#f1f5f9', 
-                      fontSize: '1.05rem', 
-                      fontWeight: 600,
-                      margin: '0 0 8px 0',
-                      lineHeight: 1.4,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6
-                    }}>
-                      <span>{idea.title}</span>
-                      {isAIEnhanced && <CHZCLOTHBadge />}
-                    </h3>
-                    <div style={{ 
-                      fontSize: '0.8rem', 
-                      color: '#64748b' 
-                    }}>
-                      Submitted by {idea.submittedByEmail} • {new Date(idea.createdAt).toLocaleDateString()}
-                    </div>
-                  </div>
+{/* Header with scores */}
+<div style={{ 
+  display: 'flex', 
+  justifyContent: 'space-between', 
+  alignItems: 'flex-start',
+  marginBottom: 12 
+}}>
+  <div style={{ flex: 1, paddingRight: 16 }}>
+    <h3 style={{ 
+      color: '#f1f5f9', 
+      fontSize: '1.05rem', 
+      fontWeight: 600,
+      margin: '0 0 8px 0',
+      lineHeight: 1.4,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 6
+    }}>
+      <span>{idea.title}</span>
+      {isAIEnhanced && <CHZCLOTHBadge />}
+    </h3>
+    <div style={{ 
+      fontSize: '0.8rem', 
+      color: '#64748b' 
+    }}>
+      Submitted by {idea.submittedByEmail} • {new Date(idea.createdAt).toLocaleDateString()}
+    </div>
+  </div>
 
-                  {/* Overall Score - prominent if AI-enhanced */}
-                  <div style={{ 
-                    display: 'flex', 
-                    gap: 16, 
-                    flexShrink: 0,
-                    alignItems: 'center'
-                  }}>
-                    {/* Show AI score prominently if available */}
-                    {isAIEnhanced && aiScore ? (
-                      <div style={{
-                        textAlign: 'center',
-                        background: 'rgba(45, 212, 191, 0.1)',
-                        border: '1px solid rgba(45, 212, 191, 0.3)',
-                        borderRadius: 8,
-                        padding: '8px 12px',
-                        marginRight: 8
-                      }}>
-                        <div style={{ fontSize: '0.65rem', color: '#64748b', marginBottom: 2 }}>
-                          AI SCORE
-                        </div>
-                        <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#2dd4bf' }}>
-                          {aiScore}
-                        </div>
-                      </div>
-                    ) : idea.overall_score ? (
-                      <div style={{
-                        textAlign: 'center',
-                        marginRight: 8
-                      }}>
-                        <div style={{ fontSize: '0.65rem', color: '#64748b', marginBottom: 2 }}>
-                          SCORE
-                        </div>
-                        <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#2dd4bf' }}>
-                          {idea.overall_score}
-                        </div>
-                      </div>
-                    ) : null}
+  {/* Scores section - CHZCLOTH score first, then dimensions */}
+  <div style={{ 
+    display: 'flex', 
+    gap: 12, 
+    flexShrink: 0,
+    alignItems: 'center'
+  }}>
+    {/* CHZCLOTH Score - Prominent */}
+    {isAIEnhanced && aiScore ? (
+      <div style={{
+        textAlign: 'center',
+        background: 'rgba(45, 212, 191, 0.15)',
+        border: '2px solid rgba(45, 212, 191, 0.4)',
+        borderRadius: 10,
+        padding: '10px 14px',
+        minWidth: 65
+      }}>
+        <div style={{ 
+          fontSize: '0.65rem', 
+          color: '#2dd4bf', 
+          marginBottom: 2,
+          fontWeight: 700,
+          letterSpacing: '0.05em'
+        }}>
+          C SCORE
+        </div>
+        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#2dd4bf' }}>
+          {aiScore}
+        </div>
+      </div>
+    ) : idea.overall_score ? (
+      <div style={{
+        textAlign: 'center',
+        background: 'rgba(45, 212, 191, 0.08)',
+        border: '1px solid rgba(45, 212, 191, 0.2)',
+        borderRadius: 10,
+        padding: '10px 14px',
+        minWidth: 65
+      }}>
+        <div style={{ 
+          fontSize: '0.65rem', 
+          color: '#64748b', 
+          marginBottom: 2,
+          fontWeight: 600
+        }}>
+          SCORE
+        </div>
+        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#2dd4bf' }}>
+          {idea.overall_score}
+        </div>
+      </div>
+    ) : null}
 
-                    {/* Compact dimension scores */}
-                    {(idea.viability_score || idea.relevance_score) && (
-                      <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: '0.65rem', color: '#64748b' }}>APR</div>
-                          <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#2dd4bf' }}>
-                            {idea.viability_score || '-'}
-                          </div>
-                        </div>
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: '0.65rem', color: '#64748b' }}>POT</div>
-                          <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#fbbf24' }}>
-                            {betData?.potentialScore || '-'}
-                          </div>
-                        </div>
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: '0.65rem', color: '#64748b' }}>FIT</div>
-                          <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#7dd3fc' }}>
-                            {idea.relevance_score || '-'}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
+    {/* Dimension scores - compact */}
+    {(idea.viability_score || idea.relevance_score) && (
+      <div style={{ 
+        display: 'flex', 
+        gap: 8, 
+        flexShrink: 0,
+        paddingLeft: 8,
+        borderLeft: '1px solid rgba(255,255,255,0.1)'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '0.6rem', color: '#64748b', marginBottom: 2 }}>APR</div>
+          <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#2dd4bf' }}>
+            {idea.viability_score || '-'}
+          </div>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '0.6rem', color: '#64748b', marginBottom: 2 }}>POT</div>
+          <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#fbbf24' }}>
+            {betData?.potentialScore || '-'}
+          </div>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '0.6rem', color: '#64748b', marginBottom: 2 }}>FIT</div>
+          <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#7dd3fc' }}>
+            {idea.relevance_score || '-'}
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+</div>
 
                 {/* Expandable rationale */}
                 {betData?.scoringRationale && (
@@ -220,8 +241,8 @@ function IdeasQueue({
                           alignItems: 'center',
                           gap: 6
                         }}>
-                          AI Scoring Rationale
-                          {isAIEnhanced && <span style={{ color: '#2dd4bf' }}>• Enhanced</span>}
+CHZCLOTH SCORING RATIONALE
+{isAIEnhanced && <span style={{ color: '#2dd4bf', fontWeight: 700 }}>• ENHANCED</span>}
                         </div>
                         
                         <div style={{ marginBottom: 12 }}>
