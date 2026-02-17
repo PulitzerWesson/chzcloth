@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Upload, FileText } from 'lucide-react';
 
 function BetSubmission({ 
   onSubmit, 
@@ -143,8 +142,7 @@ function BetSubmission({
                 justifyContent: 'center'
               }}
             >
-              <FileText size={16} />
-              Auto-fill from text or document
+📄 Auto-fill from text or document
             </button>
           ) : (
             <div style={{
