@@ -38,18 +38,6 @@ const COMPANY_STAGES = [
   { value: 'enterprise', label: 'Enterprise / Public' }
 ]
 
-const INDUSTRIES = [
-  { value: 'saas', label: 'SaaS / B2B Software' },
-  { value: 'consumer', label: 'Consumer / B2C' },
-  { value: 'fintech', label: 'Fintech' },
-  { value: 'healthcare', label: 'Healthcare' },
-  { value: 'marketplace', label: 'Marketplace' },
-  { value: 'ecommerce', label: 'E-commerce' },
-  { value: 'edtech', label: 'EdTech' },
-  { value: 'ai', label: 'AI / ML' },
-  { value: 'other', label: 'Other' }
-]
-
 const ROLES = [
   { value: 'pm', label: 'Product Manager / Product Owner' },
   { value: 'founder', label: 'Founder / CEO' },
@@ -70,12 +58,15 @@ export function OrganizationSetup({ onComplete, initialData = {} }) {
   const [step, setStep] = useState(1)
   const [formData, setFormData] = useState({
     companyName: initialData.companyName || '',
+    website: initialData.website || '',
+    userContext: initialData.userContext || '',
+    aiContext: initialData.aiContext || '',
     stage: initialData.stage || '',
-    industry: initialData.industry || '',
     currentMode: initialData.currentMode || '',
     role: initialData.role || '',
     seniority: initialData.seniority || ''
   })
+  const [analyzing, setAnalyzing] = useState(false)
   const [saving, setSaving] = useState(false)
 
   const totalSteps = 4
@@ -84,11 +75,37 @@ export function OrganizationSetup({ onComplete, initialData = {} }) {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
+  const handleAnalyzeWebsite = async () => {
+    if (!formData.website) return
+    
+    setAnalyzing(true)
+    try {
+      const response = await fetch('/api/analyze-company-website', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          website: formData.website,
+          userContext: formData.userContext
+        })
+      })
+      
+      if (!response.ok) throw new Error('Analysis failed')
+      
+      const data = await response.json()
+      updateField('aiContext', data.ai_context)
+    } catch (err) {
+      console.error('Website analysis error:', err)
+      updateField('aiContext', 'Website analysis unavailable - using your context only')
+    } finally {
+      setAnalyzing(false)
+    }
+  }
+
   const canProceed = () => {
     switch (step) {
-      case 1: return formData.companyName.trim().length >= 2
-      case 2: return formData.stage && formData.industry
-      case 3: return formData.currentMode
+      case 1: return formData.companyName.trim().length >= 2 && formData.website.trim().length >= 3
+      case 2: return formData.userContext.trim().length >= 20
+      case 3: return formData.stage && formData.currentMode
       case 4: return formData.role && formData.seniority
       default: return false
     }
@@ -111,12 +128,20 @@ export function OrganizationSetup({ onComplete, initialData = {} }) {
   const handleSubmit = async () => {
     setSaving(true)
     try {
+      // Combine contexts
+      const combinedContext = formData.aiContext
+        ? `${formData.userContext}\n\nWebsite Analysis:\n${formData.aiContext}`
+        : formData.userContext
+
       await onComplete({
         organization: {
           name: formData.companyName,
+          website: formData.website,
           stage: formData.stage,
-          industry: formData.industry,
-          currentMode: formData.currentMode
+          currentMode: formData.currentMode,
+          userContext: formData.userContext,
+          aiContext: formData.aiContext || null,
+          combinedContext: combinedContext
         },
         userOrg: {
           role: formData.role,
@@ -129,11 +154,6 @@ export function OrganizationSetup({ onComplete, initialData = {} }) {
     } finally {
       setSaving(false)
     }
-  }
-
-  const getModeLabel = (mode) => {
-    const found = COMPANY_MODES.find(m => m.value === mode)
-    return found ? found.label : mode
   }
 
   return (
@@ -182,7 +202,7 @@ export function OrganizationSetup({ onComplete, initialData = {} }) {
           </div>
         </div>
 
-        {/* Step 1: Company Name */}
+        {/* Step 1: Company Name + Website */}
         {step === 1 && (
           <div>
             <h2 style={{ 
@@ -194,36 +214,75 @@ export function OrganizationSetup({ onComplete, initialData = {} }) {
               What company do you work for?
             </h2>
             <p style={{ color: '#64748b', marginBottom: 32, lineHeight: 1.6 }}>
-              This helps us give you relevant comparisons and context.
+              This helps us analyze your company and give you relevant context.
             </p>
 
-            <input
-              type="text"
-              value={formData.companyName}
-              onChange={(e) => updateField('companyName', e.target.value)}
-              placeholder="Company name"
-              autoFocus
-              style={{
-                width: '100%',
-                padding: '16px 20px',
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: 12,
-                color: '#f1f5f9',
-                fontSize: '1.1rem',
-                outline: 'none',
-                boxSizing: 'border-box'
-              }}
-            />
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ 
+                display: 'block', 
+                color: '#94a3b8', 
+                fontSize: '0.9rem', 
+                marginBottom: 10,
+                fontWeight: 500
+              }}>
+                Company Name
+              </label>
+              <input
+                type="text"
+                value={formData.companyName}
+                onChange={(e) => updateField('companyName', e.target.value)}
+                placeholder="Acme Corp"
+                autoFocus
+                style={{
+                  width: '100%',
+                  padding: '16px 20px',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 12,
+                  color: '#f1f5f9',
+                  fontSize: '1.1rem',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
 
-            <p style={{ 
-              color: '#475569', 
-              fontSize: '0.85rem', 
-              marginTop: 12,
-              lineHeight: 1.5
-            }}>
-              This is used for grouping and context only. Your bets are private.
-            </p>
+            <div>
+              <label style={{ 
+                display: 'block', 
+                color: '#94a3b8', 
+                fontSize: '0.9rem', 
+                marginBottom: 10,
+                fontWeight: 500
+              }}>
+                Company Website
+              </label>
+              <input
+                type="text"
+                value={formData.website}
+                onChange={(e) => updateField('website', e.target.value)}
+                placeholder="acme.com"
+                style={{
+                  width: '100%',
+                  padding: '16px 20px',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 12,
+                  color: '#f1f5f9',
+                  fontSize: '1.1rem',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+              <p style={{ 
+                color: '#475569', 
+                fontSize: '0.85rem', 
+                marginTop: 12,
+                lineHeight: 1.5
+              }}>
+                We'll use this to better understand your business model and market
+              </p>
+            </div>
           </div>
         )}
 
@@ -239,7 +298,127 @@ export function OrganizationSetup({ onComplete, initialData = {} }) {
               Tell us about {formData.companyName}
             </h2>
             <p style={{ color: '#64748b', marginBottom: 32, lineHeight: 1.6 }}>
-              This helps us compare you to similar companies.
+              This context helps AI evaluate if product bets align with your business model and strategy.
+            </p>
+
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ 
+                display: 'block', 
+                color: '#94a3b8', 
+                fontSize: '0.9rem', 
+                marginBottom: 10,
+                fontWeight: 500
+              }}>
+                How do you make money? What are your strategic priorities?
+              </label>
+              <textarea
+                value={formData.userContext}
+                onChange={(e) => updateField('userContext', e.target.value)}
+                placeholder="Example: B2B SaaS selling project management software to mid-market construction companies. $5M ARR, growing 10% MoM. Main revenue from annual contracts ($10K-50K). Current priority: enterprise sales readiness. Key challenge: 6-month sales cycles."
+                rows={6}
+                style={{
+                  width: '100%',
+                  padding: '16px 20px',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 12,
+                  color: '#f1f5f9',
+                  fontSize: '0.95rem',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  fontFamily: 'inherit',
+                  lineHeight: 1.6,
+                  resize: 'vertical'
+                }}
+              />
+              <div style={{ 
+                color: '#64748b', 
+                fontSize: '0.85rem', 
+                marginTop: 8
+              }}>
+                {formData.userContext.length} characters (minimum 20)
+              </div>
+            </div>
+
+            <div>
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center',
+                marginBottom: 10
+              }}>
+                <label style={{ 
+                  color: '#94a3b8', 
+                  fontSize: '0.9rem', 
+                  fontWeight: 500
+                }}>
+                  AI Website Analysis (optional)
+                </label>
+                <button
+                  onClick={handleAnalyzeWebsite}
+                  disabled={!formData.website || analyzing}
+                  style={{
+                    padding: '8px 16px',
+                    background: analyzing 
+                      ? 'rgba(255,255,255,0.05)'
+                      : 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
+                    border: 'none',
+                    borderRadius: 8,
+                    color: analyzing ? '#64748b' : '#0a0f1a',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    cursor: analyzing || !formData.website ? 'not-allowed' : 'pointer',
+                    opacity: analyzing ? 0.7 : 1
+                  }}
+                >
+                  {analyzing ? 'Analyzing...' : 'Analyze Website'}
+                </button>
+              </div>
+              <textarea
+                value={formData.aiContext}
+                onChange={(e) => updateField('aiContext', e.target.value)}
+                placeholder="Click 'Analyze Website' to auto-fill this section, or leave blank to skip"
+                rows={5}
+                style={{
+                  width: '100%',
+                  padding: '16px 20px',
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: 12,
+                  color: '#94a3b8',
+                  fontSize: '0.9rem',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  fontFamily: 'inherit',
+                  lineHeight: 1.6,
+                  resize: 'vertical'
+                }}
+              />
+              <p style={{ 
+                color: '#475569', 
+                fontSize: '0.85rem', 
+                marginTop: 8,
+                lineHeight: 1.5
+              }}>
+                AI analysis is editable - adjust as needed before continuing
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: Stage + Current Mode */}
+        {step === 3 && (
+          <div>
+            <h2 style={{ 
+              fontSize: '1.5rem', 
+              fontWeight: 600, 
+              color: '#f1f5f9', 
+              marginBottom: 12 
+            }}>
+              Company stage and current priority
+            </h2>
+            <p style={{ color: '#64748b', marginBottom: 32, lineHeight: 1.6 }}>
+              This helps us evaluate if bets align with where your company is now.
             </p>
 
             <div style={{ marginBottom: 24 }}>
@@ -252,7 +431,7 @@ export function OrganizationSetup({ onComplete, initialData = {} }) {
               }}>
                 Company Stage
               </label>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
                 {COMPANY_STAGES.map(s => (
                   <button
                     key={s.value}
@@ -265,7 +444,7 @@ export function OrganizationSetup({ onComplete, initialData = {} }) {
                       border: `1px solid ${formData.stage === s.value ? 'rgba(45, 212, 191, 0.5)' : 'rgba(255,255,255,0.08)'}`,
                       borderRadius: 10,
                       color: formData.stage === s.value ? '#2dd4bf' : '#cbd5e1',
-                      fontSize: '0.95rem',
+                      fontSize: '0.85rem',
                       textAlign: 'left',
                       cursor: 'pointer',
                       transition: 'all 0.15s'
@@ -285,96 +464,43 @@ export function OrganizationSetup({ onComplete, initialData = {} }) {
                 marginBottom: 10,
                 fontWeight: 500
               }}>
-                Industry
+                Current Priority
               </label>
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(3, 1fr)', 
-                gap: 8 
-              }}>
-                {INDUSTRIES.map(ind => (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {COMPANY_MODES.map(mode => (
                   <button
-                    key={ind.value}
-                    onClick={() => updateField('industry', ind.value)}
+                    key={mode.value}
+                    onClick={() => updateField('currentMode', mode.value)}
                     style={{
-                      padding: '12px 14px',
-                      background: formData.industry === ind.value 
+                      padding: '18px 20px',
+                      background: formData.currentMode === mode.value 
                         ? 'rgba(45, 212, 191, 0.15)' 
                         : 'rgba(255,255,255,0.03)',
-                      border: `1px solid ${formData.industry === ind.value ? 'rgba(45, 212, 191, 0.5)' : 'rgba(255,255,255,0.08)'}`,
-                      borderRadius: 8,
-                      color: formData.industry === ind.value ? '#2dd4bf' : '#cbd5e1',
-                      fontSize: '0.85rem',
+                      border: `1px solid ${formData.currentMode === mode.value ? 'rgba(45, 212, 191, 0.5)' : 'rgba(255,255,255,0.08)'}`,
+                      borderRadius: 12,
+                      textAlign: 'left',
                       cursor: 'pointer',
                       transition: 'all 0.15s'
                     }}
                   >
-                    {ind.label}
+                    <div style={{ 
+                      color: formData.currentMode === mode.value ? '#2dd4bf' : '#f1f5f9',
+                      fontSize: '1rem',
+                      fontWeight: 500,
+                      marginBottom: 4
+                    }}>
+                      {mode.label}
+                    </div>
+                    <div style={{ 
+                      color: formData.currentMode === mode.value ? '#5eead4' : '#64748b',
+                      fontSize: '0.85rem'
+                    }}>
+                      {mode.description}
+                    </div>
                   </button>
                 ))}
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Step 3: Company Priority/Mode */}
-        {step === 3 && (
-          <div>
-            <h2 style={{ 
-              fontSize: '1.5rem', 
-              fontWeight: 600, 
-              color: '#f1f5f9', 
-              marginBottom: 12 
-            }}>
-              What's {formData.companyName}'s current priority?
-            </h2>
-            <p style={{ color: '#64748b', marginBottom: 32, lineHeight: 1.6 }}>
-              This helps us give context on whether your bets align with what your org likely values right now.
-            </p>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {COMPANY_MODES.map(mode => (
-                <button
-                  key={mode.value}
-                  onClick={() => updateField('currentMode', mode.value)}
-                  style={{
-                    padding: '18px 20px',
-                    background: formData.currentMode === mode.value 
-                      ? 'rgba(45, 212, 191, 0.15)' 
-                      : 'rgba(255,255,255,0.03)',
-                    border: `1px solid ${formData.currentMode === mode.value ? 'rgba(45, 212, 191, 0.5)' : 'rgba(255,255,255,0.08)'}`,
-                    borderRadius: 12,
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s'
-                  }}
-                >
-                  <div style={{ 
-                    color: formData.currentMode === mode.value ? '#2dd4bf' : '#f1f5f9',
-                    fontSize: '1rem',
-                    fontWeight: 500,
-                    marginBottom: 4
-                  }}>
-                    {mode.label}
-                  </div>
-                  <div style={{ 
-                    color: formData.currentMode === mode.value ? '#5eead4' : '#64748b',
-                    fontSize: '0.85rem'
-                  }}>
-                    {mode.description}
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            <p style={{ 
-              color: '#475569', 
-              fontSize: '0.85rem', 
-              marginTop: 16,
-              lineHeight: 1.5
-            }}>
-              💡 You can update this anytime if priorities shift.
-            </p>
           </div>
         )}
 
