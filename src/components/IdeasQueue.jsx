@@ -124,57 +124,41 @@ function IdeasQueue({
     flexShrink: 0,
     alignItems: 'center'
   }}>
-{/* CHZCLOTH Score - Prominent */}
+{/* CHZCLOTH Score - Logo + Score */}
 {isAIEnhanced && aiScore ? (
   <div style={{
-    textAlign: 'center',
-    background: 'rgba(45, 212, 191, 0.15)',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    background: 'rgba(45, 212, 191, 0.1)',
     border: '2px solid rgba(45, 212, 191, 0.4)',
     borderRadius: 10,
-    padding: '12px 16px',
-    minWidth: 80
+    padding: '8px 12px'
   }}>
-    <div style={{ 
-      fontSize: '0.6rem', 
-      color: '#2dd4bf', 
-      marginBottom: 4,
-      fontWeight: 700,
-      letterSpacing: '0.05em'
-    }}>
-      CHZCLOTH
-    </div>
-    <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#2dd4bf', margin: '4px 0' }}>
+    {/* CHZCLOTH C logo */}
+    <svg width="28" height="28" viewBox="0 0 32 32">
+      <defs>
+        <linearGradient id={`chz-grad-${idea.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style={{stopColor: '#2dd4bf'}} />
+          <stop offset="100%" style={{stopColor: '#22d3ee'}} />
+        </linearGradient>
+      </defs>
+      <text 
+        x="16" 
+        y="22" 
+        fontFamily="Arial, sans-serif" 
+        fontSize="14" 
+        fontWeight="bold" 
+        fill={`url(#chz-grad-${idea.id})`}
+        textAnchor="middle"
+      >
+        C
+      </text>
+    </svg>
+    
+    {/* Score */}
+    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#2dd4bf', lineHeight: 1 }}>
       {aiScore}
-    </div>
-    <div style={{ 
-      fontSize: '0.6rem', 
-      color: '#2dd4bf', 
-      marginTop: 4,
-      fontWeight: 700,
-      letterSpacing: '0.05em'
-    }}>
-      ENHANCED
-    </div>
-  </div>
-) : idea.overall_score ? (
-  <div style={{
-    textAlign: 'center',
-    background: 'rgba(45, 212, 191, 0.08)',
-    border: '1px solid rgba(45, 212, 191, 0.2)',
-    borderRadius: 10,
-    padding: '10px 14px',
-    minWidth: 65
-  }}>
-    <div style={{ 
-      fontSize: '0.65rem', 
-      color: '#64748b', 
-      marginBottom: 2,
-      fontWeight: 600
-    }}>
-      SCORE
-    </div>
-    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#2dd4bf' }}>
-      {idea.overall_score}
     </div>
   </div>
 ) : null}
