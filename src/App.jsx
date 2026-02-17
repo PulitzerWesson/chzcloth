@@ -3630,17 +3630,25 @@ const handleIdeaSubmitted = async (ideaData) => {
 
 
 const handleClaimAndStructure = async (idea) => {
+  console.log('FULL IDEA:', idea);
+  console.log('BET_DATA TYPE:', typeof idea.bet_data);
+  console.log('BET_DATA:', idea.bet_data);
+  
   try {
-    // Parse bet_data (it's stored as a JSON string in DB)
     const betData = typeof idea.bet_data === 'string' 
       ? JSON.parse(idea.bet_data) 
       : idea.bet_data;
     
-    // Claim the idea
+    console.log('PARSED BET_DATA:', betData);
+    console.log('BET ID:', betData?.id);
+    
+    if (!betData?.id) {
+      throw new Error('No bet ID found in bet_data');
+    }
+    
     const { error: claimError } = await claimIdea(idea.id);
     if (claimError) throw claimError;
 
-    // Update the existing bet to approved (don't create duplicate)
     const { error } = await supabase
       .from('bets')
       .update({ approval_status: 'approved' })
@@ -3652,7 +3660,7 @@ const handleClaimAndStructure = async (idea) => {
     setScreen('priority_queue');
     
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Full error:', error);
     alert(`Error: ${error.message}`);
   }
 };
