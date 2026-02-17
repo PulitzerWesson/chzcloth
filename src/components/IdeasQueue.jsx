@@ -124,24 +124,39 @@ function IdeasQueue({
     flexShrink: 0,
     alignItems: 'center'
   }}>
-{/* CHZCLOTH Score - Super minimal */}
+{/* CHZCLOTH Score - Compact version */}
 {isAIEnhanced && aiScore ? (
   <div style={{
-    fontSize: '1.5rem',
-    fontWeight: 800,
-    color: '#2dd4bf',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 6
+    textAlign: 'center',
+    background: 'rgba(45, 212, 191, 0.1)',
+    border: '2px solid rgba(45, 212, 191, 0.4)',
+    borderRadius: 8,
+    padding: '8px 10px',
+    minWidth: 65
   }}>
-    <span style={{ 
-      background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
-      WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent',
-      backgroundClip: 'text'
-    }}>C</span>
-    {aiScore}
+    <div style={{ 
+      fontSize: '0.5rem', 
+      color: '#2dd4bf', 
+      marginBottom: 2,
+      fontWeight: 700,
+      letterSpacing: '0.05em'
+    }}>
+      CHZCLOTH
+    </div>
+    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#2dd4bf', margin: '2px 0' }}>
+      {aiScore}
+    </div>
+    <div style={{ 
+      fontSize: '0.5rem', 
+      color: '#2dd4bf', 
+      marginTop: 2,
+      fontWeight: 700,
+      letterSpacing: '0.05em'
+    }}>
+      ENHANCED
+    </div>
   </div>
+) : null}
 ) : null}
 
 {/* Dimension scores - compact */}
