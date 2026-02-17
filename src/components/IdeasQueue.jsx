@@ -27,39 +27,9 @@ function IdeasQueue({
     );
   }
 
-  // Score badge component for compact display
-  const ScoreBadge = ({ score, label }) => {
-    const getScoreColor = (s) => {
-      if (s >= 80) return '#2dd4bf';
-      if (s >= 60) return '#fbbf24';
-      return '#ef4444';
-    };
-    
-    return (
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: 6,
-        padding: '4px 12px',
-        background: 'rgba(255,255,255,0.05)',
-        borderRadius: 6,
-        border: `1px solid ${getScoreColor(score)}40`
-      }}>
-        <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{label}</span>
-        <span style={{ 
-          fontSize: '0.85rem', 
-          fontWeight: 700, 
-          color: getScoreColor(score) 
-        }}>
-          {score}
-        </span>
-      </div>
-    );
-  };
-
   return (
     <>
-      {/* Header - no button */}
+      {/* Header */}
       <div style={{ marginBottom: 32 }}>
         <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#f1f5f9', marginBottom: 8 }}>
           Marketplace
@@ -81,8 +51,8 @@ function IdeasQueue({
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {betIdeas.map(idea => {
-            const hasScores = idea.viability_score || idea.relevance_score || idea.overall_score;
             const isExpanded = expandedRationale === idea.id;
+            const betData = typeof idea.bet_data === 'string' ? JSON.parse(idea.bet_data) : idea.bet_data;
             
             return (
               <div
@@ -94,19 +64,20 @@ function IdeasQueue({
                   padding: 20
                 }}
               >
-                {/* Header */}
+                {/* Header with scores */}
                 <div style={{ 
                   display: 'flex', 
                   justifyContent: 'space-between', 
                   alignItems: 'flex-start',
                   marginBottom: 12 
                 }}>
-                  <div style={{ flex: 1 }}>
+                  <div style={{ flex: 1, paddingRight: 16 }}>
                     <h3 style={{ 
                       color: '#f1f5f9', 
-                      fontSize: '1.1rem', 
+                      fontSize: '1.05rem', 
                       fontWeight: 600,
-                      margin: '0 0 8px 0' 
+                      margin: '0 0 8px 0',
+                      lineHeight: 1.4
                     }}>
                       {idea.title}
                     </h3>
@@ -117,188 +88,150 @@ function IdeasQueue({
                       Submitted by {idea.submittedByEmail} • {new Date(idea.createdAt).toLocaleDateString()}
                     </div>
                   </div>
+
+                  {/* Compact scores - top right */}
+                  {(idea.viability_score || idea.relevance_score) && (
+                    <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.65rem', color: '#64748b' }}>APR</div>
+                        <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#2dd4bf' }}>
+                          {idea.viability_score || '-'}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.65rem', color: '#64748b' }}>POT</div>
+                        <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#fbbf24' }}>
+                          {betData?.potentialScore || '-'}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.65rem', color: '#64748b' }}>FIT</div>
+                        <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#7dd3fc' }}>
+                          {idea.relevance_score || '-'}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* AI Scores - Compact display */}
-                {hasScores && (
+                {/* Expandable rationale */}
+                {betData?.scoringRationale && (
                   <div style={{ marginBottom: 16 }}>
-                    <div style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: 12,
-                      marginBottom: 8 
-                    }}>
-                      {idea.overall_score && <ScoreBadge score={idea.overall_score} label="Overall" />}
-                      {idea.viability_score && <ScoreBadge score={idea.viability_score} label="Viability" />}
-                      {idea.relevance_score && <ScoreBadge score={idea.relevance_score} label="Relevance" />}
-                      
-                      {idea.scoring_rationale && (
-                        <button
-                          onClick={() => setExpandedRationale(isExpanded ? null : idea.id)}
-                          style={{
-                            padding: '4px 10px',
-                            background: 'transparent',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            borderRadius: 6,
-                            color: '#7dd3fc',
-                            fontSize: '0.75rem',
-                            cursor: 'pointer',
-                            marginLeft: 'auto'
-                          }}
-                        >
-                          {isExpanded ? 'Hide' : 'Why?'}
-                        </button>
-                      )}
-                    </div>
-                    
-                    {/* Rationale - Expandable */}
-                    {isExpanded && idea.scoring_rationale && (
+                    <button
+                      onClick={() => setExpandedRationale(isExpanded ? null : idea.id)}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#64748b',
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                        padding: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4
+                      }}
+                    >
+                      <span style={{ fontSize: '0.7rem' }}>{isExpanded ? '▼' : '▶'}</span>
+                      {isExpanded ? 'Hide details' : 'Show details'}
+                    </button>
+
+                    {isExpanded && (
                       <div style={{
-                        background: 'rgba(125, 211, 252, 0.05)',
-                        border: '1px solid rgba(125, 211, 252, 0.15)',
-                        borderRadius: 8,
-                        padding: 12,
-                        fontSize: '0.85rem',
-                        color: '#94a3b8',
-                        lineHeight: 1.6
+                        marginTop: 12,
+                        padding: 16,
+                        background: 'rgba(255,255,255,0.02)',
+                        border: '1px solid rgba(255,255,255,0.05)',
+                        borderRadius: 8
                       }}>
-                        {idea.scoring_rationale}
+                        <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          AI Scoring Rationale
+                        </div>
+                        
+                        <div style={{ marginBottom: 12 }}>
+                          <div style={{ color: '#2dd4bf', fontWeight: 600, fontSize: '0.85rem', marginBottom: 4 }}>
+                            Approach:
+                          </div>
+                          <div style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                            {betData.scoringRationale.approach?.rationale || 'No rationale provided'}
+                          </div>
+                        </div>
+
+                        <div style={{ marginBottom: 12 }}>
+                          <div style={{ color: '#fbbf24', fontWeight: 600, fontSize: '0.85rem', marginBottom: 4 }}>
+                            Potential:
+                          </div>
+                          <div style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                            {betData.scoringRationale.potential?.rationale || 'No rationale provided'}
+                          </div>
+                        </div>
+
+                        <div>
+                          <div style={{ color: '#7dd3fc', fontWeight: 600, fontSize: '0.85rem', marginBottom: 4 }}>
+                            Fit:
+                          </div>
+                          <div style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                            {betData.scoringRationale.fit?.rationale || 'No rationale provided'}
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>
                 )}
 
-{/* Metrics & Effort - no hypothesis duplication */}
-{idea.description?.includes('Metrics:') && (
-  <div style={{ marginBottom: 16 }}>
-    <div style={{ marginBottom: 8 }}>
-      <span style={{ color: '#64748b', fontSize: '0.85rem' }}>Metrics: </span>
-      <span style={{ color: '#2dd4bf', fontSize: '0.9rem' }}>
-        {idea.description.split('Metrics:')[1]?.split('Effort:')[0]?.trim()}
-      </span>
-    </div>
-    {idea.description.includes('Effort:') && (
-      <div>
-        <span style={{ color: '#64748b', fontSize: '0.85rem' }}>Effort: </span>
-        <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
-          {idea.description.split('Effort:')[1]?.trim()}
-        </span>
-      </div>
-    )}
-  </div>
-)}
-
-                {/* Optional fields */}
-                {idea.problem && (
-                  <div style={{ marginBottom: 12 }}>
-                    <div style={{ color: '#64748b', fontSize: '0.8rem', marginBottom: 4 }}>
-                      Problem:
-                    </div>
-                    <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
-                      {idea.problem}
-                    </div>
-                  </div>
-                )}
-
-                {idea.expectedImpact && (
+                {/* Metrics & Effort */}
+                {idea.description?.includes('Metrics:') && (
                   <div style={{ marginBottom: 16 }}>
-                    <div style={{ color: '#64748b', fontSize: '0.8rem', marginBottom: 4 }}>
-                      Expected Impact:
+                    <div style={{ marginBottom: 8 }}>
+                      <span style={{ color: '#64748b', fontSize: '0.85rem' }}>Metrics: </span>
+                      <span style={{ color: '#2dd4bf', fontSize: '0.9rem' }}>
+                        {idea.description.split('Metrics:')[1]?.split('Effort:')[0]?.trim()}
+                      </span>
                     </div>
-                    <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
-                      {idea.expectedImpact}
-                    </div>
-                  </div>
-                )}
-
-                {/* Claimed info */}
-                {idea.status === 'claimed' && idea.claimedByEmail && (
-                  <div style={{
-                    background: 'rgba(251, 191, 36, 0.1)',
-                    border: '1px solid rgba(251, 191, 36, 0.2)',
-                    borderRadius: 8,
-                    padding: 12,
-                    marginBottom: 16,
-                    fontSize: '0.85rem',
-                    color: '#fbbf24'
-                  }}>
-                    ⚡ Claimed by {idea.claimedByEmail} on {new Date(idea.claimedAt).toLocaleDateString()}
+                    {idea.description.includes('Effort:') && (
+                      <div>
+                        <span style={{ color: '#64748b', fontSize: '0.85rem' }}>Effort: </span>
+                        <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
+                          {idea.description.split('Effort:')[1]?.trim()}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
 
                 {/* Actions */}
                 <div style={{ display: 'flex', gap: 12 }}>
-                  {idea.status === 'pending' && (
-                    <>
-                      <button
-                        onClick={() => onClaimIdea && onClaimIdea(idea.id)}
-                        style={{
-                          flex: 1,
-                          padding: '10px 16px',
-                          background: 'rgba(251, 191, 36, 0.15)',
-                          border: '1px solid rgba(251, 191, 36, 0.3)',
-                          borderRadius: 8,
-                          color: '#fbbf24',
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          fontSize: '0.9rem'
-                        }}
-                      >
-                        Refine
-                      </button>
-                      <button
-                        onClick={() => onClaimAndStructure && onClaimAndStructure(idea)}
-                        style={{
-                          flex: 1,
-                          padding: '10px 16px',
-                          background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
-                          border: 'none',
-                          borderRadius: 8,
-                          color: '#0a0f1a',
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          fontSize: '0.9rem'
-                        }}
-                      >
-                        Sponsor →
-                      </button>
-                    </>
-                  )}
-
-                  {idea.status === 'claimed' && (
-                    <>
-                      <button
-                        onClick={() => onUnclaimIdea && onUnclaimIdea(idea.id)}
-                        style={{
-                          padding: '10px 16px',
-                          background: 'rgba(255,255,255,0.05)',
-                          border: '1px solid rgba(255,255,255,0.1)',
-                          borderRadius: 8,
-                          color: '#94a3b8',
-                          fontSize: '0.9rem',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        Unclaim
-                      </button>
-                      <button
-                        onClick={() => onStructureBet && onStructureBet(idea)}
-                        style={{
-                          flex: 1,
-                          padding: '10px 16px',
-                          background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
-                          border: 'none',
-                          borderRadius: 8,
-                          color: '#0a0f1a',
-                          fontSize: '0.9rem',
-                          fontWeight: 600,
-                          cursor: 'pointer'
-                        }}
-                      >
-                        Sponsor Bet →
-                      </button>
-                    </>
-                  )}
+                  <button
+                    onClick={() => onClaimIdea && onClaimIdea(idea.id)}
+                    style={{
+                      flex: 1,
+                      padding: '10px 16px',
+                      background: 'rgba(251, 191, 36, 0.15)',
+                      border: '1px solid rgba(251, 191, 36, 0.3)',
+                      borderRadius: 8,
+                      color: '#fbbf24',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      fontSize: '0.9rem'
+                    }}
+                  >
+                    Refine
+                  </button>
+                  <button
+                    onClick={() => onClaimAndStructure && onClaimAndStructure(idea)}
+                    style={{
+                      flex: 1,
+                      padding: '10px 16px',
+                      background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
+                      border: 'none',
+                      borderRadius: 8,
+                      color: '#0a0f1a',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      fontSize: '0.9rem'
+                    }}
+                  >
+                    Sponsor →
+                  </button>
                 </div>
               </div>
             );
