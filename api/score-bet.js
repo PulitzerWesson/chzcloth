@@ -4,8 +4,7 @@ export default async function handler(req, res) {
   }
   
   try {
-    const { bet, orgMode, orgName, orgStrategy, orgIndustry, orgLearnings, clarifyingAnswers } = req.body;
-    
+const { bet, orgMode, orgName, orgContext, orgLearnings, clarifyingAnswers } = req.body;    
     // Build clarifying answers section if provided
     let clarifyingSection = '';
     if (clarifyingAnswers && Object.keys(clarifyingAnswers).length > 0) {
@@ -61,9 +60,9 @@ Assumptions: ${bet.assumptions || 'Not specified'}
 
 ORGANIZATIONAL CONTEXT:
 ${orgName ? `Company: ${orgName}` : 'Company: Unknown'}
-${orgIndustry ? `Industry: ${orgIndustry}` : ''}
-${orgStrategy ? `Strategy: ${orgStrategy}` : ''}
 Mode: ${orgMode || 'growth'}
+
+${orgContext ? `COMPANY DETAILS:\n${orgContext}\n` : ''}
 ${learningsSection}
 ${clarifyingSection}
 
