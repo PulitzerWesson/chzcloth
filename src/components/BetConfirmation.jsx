@@ -32,7 +32,7 @@ export default function BetConfirmation({ extractedData, onContinue, onBack }) {
     <div className="bet-confirmation-container">
       <h2>Set Your Bet Parameters</h2>
       <p className="confirmation-intro">
-        Confirm a few parameters before scoring.
+        Confirm a few params before scoring.
       </p>
 
       {/* Confidence Slider */}
