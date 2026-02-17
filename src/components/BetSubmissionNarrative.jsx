@@ -1,436 +1,608 @@
-// BetSubmissionNarrative.jsx - Single smart field with AI validation
-
 import React, { useState } from 'react';
-import './BetSubmissionNarrative.css';
+import { Upload, FileText } from 'lucide-react';
 
-export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg }) {
-  const [goalContext, setGoalContext] = useState('');
-  const [narrative, setNarrative] = useState('');
-  const [story, setStory] = useState({
-    validationMethod: '',
-    validationTimeframe: '90'
+function BetSubmission({ 
+  onSubmit, 
+  onCancel,
+  currentOrg,
+  initialData = null
+}) {
+  const [step, setStep] = useState(1); // 1 = bet details, 2 = meta fields
+  const [showAutoFill, setShowAutoFill] = useState(false);
+  const [autoFillText, setAutoFillText] = useState('');
+  const [parsing, setParsing] = useState(false);
+  
+  // Bet data fields
+  const [betData, setBetData] = useState({
+    hypothesis: initialData?.hypothesis || '',
+    metric: initialData?.metric || '',
+    prediction: initialData?.prediction || '',
+    baseline: initialData?.baseline || '',
+    assumptions: initialData?.assumptions || '',
+    timeframe: initialData?.timeframe || '90',
+    measurementTool: initialData?.measurementTool || 'analytics',
+    // Meta fields (step 2)
+    confidence: initialData?.confidence || 70,
+    strategicAlignment: initialData?.strategicAlignment || 'inner',
+    estimatedEffort: initialData?.estimatedEffort || '2-3-sprints',
+    inactionImpact: initialData?.inactionImpact || 'lose-opportunity',
+    metricDomain: initialData?.metricDomain || 'product',
+    betType: initialData?.betType || 'improve'
   });
-  const [uploadedFile, setUploadedFile] = useState(null);
-  const [uploadError, setUploadError] = useState(null);
-  const [showExample, setShowExample] = useState(false);
 
-  // Convert file to base64
-  const fileToBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = reader.result.split(',')[1]; // Remove data:...;base64, prefix
-        resolve(base64);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [aiReview, setAiReview] = useState(null);
-  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [errors, setErrors] = useState({});
 
-  // Check if org has leadership goal
-  const hasLeadershipGoal = currentOrg?.leadershipGoal;
-  const leadershipGoal = hasLeadershipGoal ? currentOrg.leadershipGoal : null;
-
-  const exampleNarrative = `Add 5 video testimonials from enterprise customers to our pricing page.
-
-Currently, our pricing page converts at 8% (45 signups/week measured in Stripe). We expect this to grow to 12% conversion (68 signups/week) - a 50% increase.
-
-This will work because prospects bounce due to lack of trust. Exit surveys show "need social proof" as the #2 reason for not signing up (127 responses in Q4 2024). Real customer stories with specific outcomes will reduce skepticism and increase trial signups.
-
-Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks and saw conversion increase from 8% to 11.5%. Customer interviews (15 churned users) confirmed that 12 mentioned "didn't trust the product would work" as primary concern.`;
-
-  const handleSubmit = async () => {
-    setHasSubmitted(true);
-    setIsAnalyzing(true);
-    setAiReview(null);
-
+  // Auto-fill from text/document
+  const handleAutoFill = async () => {
+    if (!autoFillText.trim()) return;
+    
+    setParsing(true);
     try {
-      const response = await fetch('/api/parse-narrative', {
+      const response = await fetch('/api/parse-bet', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          narrative,
-          goalContext: hasLeadershipGoal ? leadershipGoal : goalContext,
-          uploadedFile  // Include uploaded file if present
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          text: autoFillText,
+          orgId: currentOrg?.id 
         })
       });
 
-      const review = await response.json();
-      console.log('AI EXTRACTED:', {
-  evidence: review.extracted?.evidence,
-  hasValidationIssue: review.issues?.some(i => i.field.toLowerCase().includes('validation') || i.field.toLowerCase().includes('evidence')),
-  allIssues: review.issues
-});
+      const data = await response.json();
+      
+      if (data.error) throw new Error(data.error);
 
-      if (!response.ok) {
-        throw new Error(review.error || 'Analysis failed');
-      }
+      // Populate fields with parsed data
+      setBetData(prev => ({
+        ...prev,
+        hypothesis: data.hypothesis || prev.hypothesis,
+        metric: data.metric || prev.metric,
+        prediction: data.prediction || prev.prediction,
+        baseline: data.baseline || prev.baseline,
+        assumptions: data.assumptions || prev.assumptions,
+        timeframe: data.timeframe || prev.timeframe,
+        measurementTool: data.measurementTool || prev.measurementTool
+      }));
 
-      setAiReview(review);
-    } catch (error) {
-      console.error('AI review error:', error);
-      setAiReview({
-        extracted: {},
-        goalAlignment: { aligned: false, reasoning: "Could not analyze alignment" },
-        issues: [{ field: "analysis", severity: "missing", message: "AI analysis failed. Please check your narrative and try again." }],
-        strengths: [],
-        readyToScore: false
-      });
+      setShowAutoFill(false);
+      setAutoFillText('');
+    } catch (err) {
+      console.error('Error parsing bet:', err);
+      alert('Error parsing text: ' + err.message);
     } finally {
-      setIsAnalyzing(false);
+      setParsing(false);
     }
   };
 
-  const handleContinue = () => {
-    if (!aiReview || !aiReview.readyToScore) {
-      return;
-    }
-
-    const extracted = aiReview.extracted;
-    const betData = {
-      hypothesis: extracted.change 
-        ? `If we ${extracted.change}, then ${extracted.baseline || 'the metric'} will improve to ${extracted.magnitude || 'target'}, because ${extracted.mechanism || 'of expected impact'}`
-        : narrative.substring(0, 200) || 'Bet based on uploaded document',
-      metricDomain: inferMetricDomain(narrative || extracted.change),
-      metric: inferMetric(narrative || extracted.change),
-      baseline: extracted.baseline || '',
-      prediction: extracted.magnitude || '',
-      confidence: 70,
-      timeframe: parseInt(story.validationTimeframe),
-      validationMethod: story.validationMethod,
-      assumptions: extracted.mechanism || '',
-      cheapTest: '',
-      measurementTool: 'analytics',
-      strategicAlignment: 'inner',
-      estimatedEffort: parseEffort(extracted.effort),
-      inactionImpact: 'lose-opportunity',
-      isOwnIdea: true,
-      betType: 'improve',
-      goalContext: hasLeadershipGoal ? leadershipGoal : goalContext,
-      goalAlignment: aiReview.goalAlignment,
-      // Document metadata
-      documentProvided: !!uploadedFile,
-      documentName: uploadedFile?.name || null,
-      documentType: uploadedFile?.type || null,
-      // Pass data for review screen
-      change: extracted.change || '',
-      baseline: extracted.baseline || '',
-      magnitude: extracted.magnitude || '',
-      mechanism: extracted.mechanism || '',
-      evidenceType: 'tested',
-      evidenceDetails: extracted.evidence || '',
-      cheaperTest: ''
-    };
-
-    console.log('Bet data:', betData);
-    onComplete(betData);
-  };
-
-  const inferMetricDomain = (text) => {
-    if (!text) return 'growth';
-    const lower = text.toLowerCase();
-    if (lower.includes('revenue') || lower.includes('monetiz')) return 'monetization';
-    if (lower.includes('retention') || lower.includes('churn')) return 'retention';
-    if (lower.includes('conversion') || lower.includes('signup')) return 'growth';
-    if (lower.includes('engagement') || lower.includes('active')) return 'retention';
-    return 'growth';
-  };
-
-  const inferMetric = (text) => {
-    if (!text) return 'Custom metric';
-    const lower = text.toLowerCase();
-    if (lower.includes('conversion')) return 'Conversion rate';
-    if (lower.includes('retention')) return 'Retention rate';
-    if (lower.includes('revenue') || lower.includes('mrr')) return 'Revenue/MRR';
-    if (lower.includes('signup')) return 'Signups';
-    if (lower.includes('churn')) return 'Churn rate';
-    return 'Custom metric';
-  };
-
-  const parseEffort = (effortText) => {
-    if (!effortText) return '2-3-sprints';
-    const lower = effortText.toLowerCase();
-    if (lower.includes('1 sprint') || lower.includes('2 week')) return '1-sprint';
-    if (lower.includes('2-3 sprint') || lower.includes('4-6 week')) return '2-3-sprints';
-    if (lower.includes('4-6 sprint') || lower.includes('8-12 week')) return '4-6-sprints';
-    if (lower.includes('6+ sprint') || lower.includes('12+ week')) return '6-plus-sprints';
-    return '2-3-sprints';
-  };
-
-  const canSubmit = () => {
-    // Must have goal context
-    if (!hasLeadershipGoal && goalContext.length < 10) return false;
+  // Validate step 1
+  const validateStep1 = () => {
+    const newErrors = {};
+    if (!betData.hypothesis.trim()) newErrors.hypothesis = 'Required';
+    if (!betData.metric.trim()) newErrors.metric = 'Required';
+    if (!betData.prediction.trim()) newErrors.prediction = 'Required';
     
-    // Must have EITHER narrative OR uploaded file
-    const hasNarrative = narrative.length >= 100;
-    const hasDocument = !!uploadedFile;
-    if (!hasNarrative && !hasDocument) return false;
-    
-    // Must have validation method
-    if (!story.validationMethod || story.validationMethod.length < 5) return false;
-    
-    return true;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    // Validate file type
-    const allowedTypes = [
-      'application/pdf',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
-      'text/plain',
-      'text/markdown'
-    ];
-    
-    if (!allowedTypes.includes(file.type)) {
-      setUploadError('Please upload a PDF, Word document, or text file');
-      return;
-    }
-
-    // Validate file size (32MB limit)
-    if (file.size > 32 * 1024 * 1024) {
-      setUploadError('File size must be under 32MB');
-      return;
-    }
-
-    try {
-      const base64Data = await fileToBase64(file);
-      setUploadedFile({
-        name: file.name,
-        type: file.type,
-        data: base64Data
-      });
-      setUploadError(null);
-    } catch (error) {
-      setUploadError('Failed to upload file. Please try again.');
-      console.error('File upload error:', error);
+  // Handle step progression
+  const handleNext = () => {
+    if (step === 1 && validateStep1()) {
+      setStep(2);
     }
   };
 
-  const handleRemoveFile = () => {
-    setUploadedFile(null);
-    setUploadError(null);
+  const handleBack = () => {
+    setStep(1);
+  };
+
+  const handleSubmit = () => {
+    onSubmit(betData);
+  };
+
+  const updateField = (field, value) => {
+    setBetData(prev => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: null }));
+    }
   };
 
   return (
-    <div className="narrative-container">
+    <div style={{ maxWidth: 800, margin: '0 auto' }}>
       {/* Header */}
-      <div className="narrative-header">
-        <h1>Make a Bet</h1>
-        <p className="header-subtitle">
-          Describe what you'll build, why it matters, and how you'll validate it
+      <div style={{ marginBottom: 32 }}>
+        <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#f1f5f9', marginBottom: 8 }}>
+          {step === 1 ? 'New Bet' : 'Bet Context'}
+        </h1>
+        <p style={{ color: '#64748b', fontSize: '0.95rem' }}>
+          {step === 1 
+            ? 'Define your hypothesis and expected outcomes'
+            : 'Add strategic context and effort estimates'
+          }
         </p>
       </div>
 
-      <div className="single-field-container">
-        {/* Goal Context */}
-        {hasLeadershipGoal ? (
-          <div className="goal-context-display">
-            <div className="context-label">Supporting Leadership Goal:</div>
-            <div className="context-goal">{leadershipGoal}</div>
-          </div>
-        ) : (
-          <div className="goal-context-input">
-            <label>Company/Department Goal</label>
-            <input
-              type="text"
-              value={goalContext}
-              onChange={e => setGoalContext(e.target.value)}
-              placeholder="e.g., Grow revenue by 30% this year, Reduce churn to below 5%, Increase trial signups by 50%"
-              className="goal-input"
-            />
-            <div className="goal-hint">
-              AI will check if your bet actually achieves this goal (e.g., more customers ≠ more revenue)
-            </div>
-          </div>
-        )}
-
-        {/* Show Example Toggle */}
-        <div className="example-toggle-container">
-          <button
-            onClick={() => setShowExample(!showExample)}
-            className="btn-show-example"
-          >
-            {showExample ? 'Hide Example' : 'Show Example of Strong Bet'}
-          </button>
-        </div>
-
-        {/* Example (collapsible) */}
-        {showExample && (
-          <div className="example-display">
-            <div className="example-header">Example of a Strong Bet:</div>
-            <div className="example-content">{exampleNarrative}</div>
-          </div>
-        )}
-
-        {/* Main Narrative Field */}
-        <div className="narrative-field">
-          <label>
-            Describe Your Bet {uploadedFile && <span className="optional-tag">(optional - you uploaded a doc)</span>}
-          </label>
-          <textarea
-            value={narrative}
-            onChange={e => setNarrative(e.target.value)}
-            placeholder={uploadedFile 
-              ? "Add any additional context not in the document..." 
-              : "Include: What you'll change, current state (with numbers), expected outcome (with numbers), why it will work, and evidence you have..."}
-            className="narrative-textarea"
-            rows={16}
-          />
-          <div className="character-count">
-            {narrative.length} characters 
-            {!uploadedFile && narrative.length < 100 && ` (minimum 100 required)`}
-            {uploadedFile && ` (optional with document)`}
-          </div>
-        </div>
-
-        {/* File Upload (Optional) */}
-        <div className="file-upload-section">
-          <label>Upload Document (alternative to writing narrative)</label>
-          <div className="file-upload-hint">
-            Upload a PRD, meeting notes, or research doc instead of typing everything out
-          </div>
+      {/* Step 1: Bet Details */}
+      {step === 1 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           
-          {!uploadedFile ? (
-            <div className="file-upload-zone">
-              <input
-                type="file"
-                id="file-upload"
-                accept=".pdf,.docx,.txt,.md"
-                onChange={handleFileUpload}
-                className="file-input"
-              />
-              <label htmlFor="file-upload" className="file-upload-label">
-                <div className="upload-icon">📄</div>
-                <div className="upload-text">Click to upload or drag and drop</div>
-                <div className="upload-formats">PDF, Word, Text, or Markdown (max 32MB)</div>
-              </label>
-            </div>
-          ) : (
-            <div className="file-uploaded">
-              <div className="file-info">
-                <span className="file-icon">📄</span>
-                <span className="file-name">{uploadedFile.name}</span>
-              </div>
-              <button
-                type="button"
-                onClick={handleRemoveFile}
-                className="btn-remove-file"
-              >
-                Remove
-              </button>
-            </div>
-          )}
-          
-          {uploadError && (
-            <div className="upload-error">{uploadError}</div>
-          )}
-        </div>
-
-        {/* Validation Plan */}
-        <div className="validation-plan">
-          <div className="validation-field">
-            <label>How will you validate this worked?</label>
-            <input
-              type="text"
-              value={story.validationMethod}
-              onChange={e => setStory({ ...story, validationMethod: e.target.value })}
-              placeholder="e.g., Check Stripe conversion rate, Measure in PostHog, Review Salesforce pipeline"
-              className="validation-input"
-            />
-          </div>
-
-          <div className="validation-field">
-            <label>When will you check?</label>
-            <select
-              value={story.validationTimeframe}
-              onChange={e => setStory({ ...story, validationTimeframe: e.target.value })}
-              className="validation-select"
-            >
-              <option value="30">30 days after launch</option>
-              <option value="60">60 days after launch</option>
-              <option value="90">90 days after launch</option>
-              <option value="120">120 days after launch</option>
-              <option value="180">6 months after launch</option>
-            </select>
-          </div>
-        </div>
-
-        {/* AI Review Results */}
-        {hasSubmitted && aiReview && (
-          <div className="ai-review-section">
-            <h3>CHZCLOTH Review</h3>
-
-            {/* Goal Alignment */}
-            <div className={`alignment-check ${aiReview.goalAlignment.aligned ? 'aligned' : 'misaligned'}`}>
-              <div className="alignment-header">
-                {aiReview.goalAlignment.aligned ? 'Goal Aligned' : 'Goal Misalignment Detected'}
-              </div>
-              <div className="alignment-text">{aiReview.goalAlignment.reasoning}</div>
-            </div>
-
-            {/* Strengths */}
-            {aiReview.strengths.length > 0 && (
-              <div className="review-section strengths">
-                <div className="section-header">Strengths</div>
-                <ul>
-                  {aiReview.strengths.map((strength, idx) => (
-                    <li key={idx}>{strength}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Issues */}
-            {aiReview.issues.length > 0 && (
-              <div className="review-section issues">
-                <div className="section-header">Issues to Address</div>
-                {aiReview.issues.map((issue, idx) => (
-                  <div key={idx} className={`issue-item ${issue.severity}`}>
-                    <div className="issue-field">{issue.field}</div>
-                    <div className="issue-message">{issue.message}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Action Buttons */}
-        <div className="action-buttons">
-          {!hasSubmitted || (hasSubmitted && !aiReview?.readyToScore) ? (
+          {/* Auto-fill section */}
+          {!showAutoFill ? (
             <button
-              onClick={handleSubmit}
-              disabled={!canSubmit() || isAnalyzing}
-              className="btn-submit"
+              onClick={() => setShowAutoFill(true)}
+              style={{
+                padding: '12px 20px',
+                background: 'rgba(125, 211, 252, 0.1)',
+                border: '1px dashed rgba(125, 211, 252, 0.3)',
+                borderRadius: 8,
+                color: '#7dd3fc',
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                justifyContent: 'center'
+              }}
             >
-              {isAnalyzing ? 'Analyzing...' : hasSubmitted ? 'Re-submit for Review' : 'Submit for Review'}
+              <FileText size={16} />
+              Auto-fill from text or document
             </button>
           ) : (
-            <>
-              <button
-                onClick={handleSubmit}
-                className="btn-revise"
-              >
-                Revise & Re-submit
-              </button>
-              <button
-                onClick={handleContinue}
-                className="btn-continue"
-              >
-                Continue to Scoring
-              </button>
-            </>
+            <div style={{
+              background: 'rgba(125, 211, 252, 0.05)',
+              border: '1px solid rgba(125, 211, 252, 0.2)',
+              borderRadius: 12,
+              padding: 20
+            }}>
+              <div style={{ marginBottom: 12, color: '#7dd3fc', fontWeight: 600, fontSize: '0.9rem' }}>
+                Paste your bet text or document content
+              </div>
+              <textarea
+                value={autoFillText}
+                onChange={(e) => setAutoFillText(e.target.value)}
+                placeholder="Paste your hypothesis, metrics, and any relevant context here..."
+                style={{
+                  width: '100%',
+                  minHeight: 150,
+                  padding: 12,
+                  background: 'rgba(0,0,0,0.2)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 8,
+                  color: '#f1f5f9',
+                  fontSize: '0.9rem',
+                  resize: 'vertical',
+                  marginBottom: 12
+                }}
+              />
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button
+                  onClick={handleAutoFill}
+                  disabled={parsing || !autoFillText.trim()}
+                  style={{
+                    flex: 1,
+                    padding: '10px 16px',
+                    background: parsing ? 'rgba(125, 211, 252, 0.1)' : 'linear-gradient(135deg, #7dd3fc 0%, #22d3ee 100%)',
+                    border: 'none',
+                    borderRadius: 8,
+                    color: parsing ? '#64748b' : '#0a0f1a',
+                    fontWeight: 600,
+                    cursor: parsing ? 'not-allowed' : 'pointer',
+                    fontSize: '0.9rem'
+                  }}
+                >
+                  {parsing ? 'Parsing...' : 'Parse & Fill Fields'}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowAutoFill(false);
+                    setAutoFillText('');
+                  }}
+                  style={{
+                    padding: '10px 16px',
+                    background: 'transparent',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 8,
+                    color: '#94a3b8',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem'
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
           )}
+
+          {/* Hypothesis */}
+          <div>
+            <label style={{ display: 'block', color: '#f1f5f9', marginBottom: 8, fontWeight: 600 }}>
+              Hypothesis (if/then/because) <span style={{ color: '#ef4444' }}>*</span>
+            </label>
+            <textarea
+              value={betData.hypothesis}
+              onChange={(e) => updateField('hypothesis', e.target.value)}
+              placeholder="If we [action], then [current state] will improve to [desired state], because [reasoning]"
+              style={{
+                width: '100%',
+                minHeight: 120,
+                padding: 12,
+                background: 'rgba(255,255,255,0.05)',
+                border: `1px solid ${errors.hypothesis ? '#ef4444' : 'rgba(255,255,255,0.1)'}`,
+                borderRadius: 8,
+                color: '#f1f5f9',
+                fontSize: '0.95rem',
+                resize: 'vertical'
+              }}
+            />
+            {errors.hypothesis && (
+              <div style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: 4 }}>
+                {errors.hypothesis}
+              </div>
+            )}
+          </div>
+
+          {/* Metric */}
+          <div>
+            <label style={{ display: 'block', color: '#f1f5f9', marginBottom: 8, fontWeight: 600 }}>
+              Metric <span style={{ color: '#ef4444' }}>*</span>
+            </label>
+            <input
+              type="text"
+              value={betData.metric}
+              onChange={(e) => updateField('metric', e.target.value)}
+              placeholder="e.g., Conversion rate, Daily active users, Revenue"
+              style={{
+                width: '100%',
+                padding: 12,
+                background: 'rgba(255,255,255,0.05)',
+                border: `1px solid ${errors.metric ? '#ef4444' : 'rgba(255,255,255,0.1)'}`,
+                borderRadius: 8,
+                color: '#f1f5f9',
+                fontSize: '0.95rem'
+              }}
+            />
+            {errors.metric && (
+              <div style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: 4 }}>
+                {errors.metric}
+              </div>
+            )}
+          </div>
+
+          {/* Prediction and Baseline (side by side) */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div>
+              <label style={{ display: 'block', color: '#f1f5f9', marginBottom: 8, fontWeight: 600 }}>
+                Prediction <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <input
+                type="text"
+                value={betData.prediction}
+                onChange={(e) => updateField('prediction', e.target.value)}
+                placeholder="e.g., 12% conversion rate"
+                style={{
+                  width: '100%',
+                  padding: 12,
+                  background: 'rgba(255,255,255,0.05)',
+                  border: `1px solid ${errors.prediction ? '#ef4444' : 'rgba(255,255,255,0.1)'}`,
+                  borderRadius: 8,
+                  color: '#f1f5f9',
+                  fontSize: '0.95rem'
+                }}
+              />
+              {errors.prediction && (
+                <div style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: 4 }}>
+                  {errors.prediction}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label style={{ display: 'block', color: '#f1f5f9', marginBottom: 8, fontWeight: 600 }}>
+                Baseline
+              </label>
+              <input
+                type="text"
+                value={betData.baseline}
+                onChange={(e) => updateField('baseline', e.target.value)}
+                placeholder="e.g., 8% conversion rate"
+                style={{
+                  width: '100%',
+                  padding: 12,
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 8,
+                  color: '#f1f5f9',
+                  fontSize: '0.95rem'
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Assumptions */}
+          <div>
+            <label style={{ display: 'block', color: '#f1f5f9', marginBottom: 8, fontWeight: 600 }}>
+              Assumptions
+            </label>
+            <textarea
+              value={betData.assumptions}
+              onChange={(e) => updateField('assumptions', e.target.value)}
+              placeholder="What needs to be true for this to work?"
+              style={{
+                width: '100%',
+                minHeight: 80,
+                padding: 12,
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 8,
+                color: '#f1f5f9',
+                fontSize: '0.95rem',
+                resize: 'vertical'
+              }}
+            />
+          </div>
+
+          {/* Timeframe and Measurement Tool */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div>
+              <label style={{ display: 'block', color: '#f1f5f9', marginBottom: 8, fontWeight: 600 }}>
+                Timeframe (days)
+              </label>
+              <input
+                type="number"
+                value={betData.timeframe}
+                onChange={(e) => updateField('timeframe', e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: 12,
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 8,
+                  color: '#f1f5f9',
+                  fontSize: '0.95rem'
+                }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', color: '#f1f5f9', marginBottom: 8, fontWeight: 600 }}>
+                Measurement Tool
+              </label>
+              <select
+                value={betData.measurementTool}
+                onChange={(e) => updateField('measurementTool', e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: 12,
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 8,
+                  color: '#f1f5f9',
+                  fontSize: '0.95rem'
+                }}
+              >
+                <option value="analytics">Analytics</option>
+                <option value="manual">Manual tracking</option>
+                <option value="survey">Survey</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+            <button
+              onClick={onCancel}
+              style={{
+                padding: '12px 24px',
+                background: 'transparent',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 8,
+                color: '#94a3b8',
+                cursor: 'pointer',
+                fontSize: '0.95rem'
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleNext}
+              style={{
+                flex: 1,
+                padding: '12px 24px',
+                background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
+                border: 'none',
+                borderRadius: 8,
+                color: '#0a0f1a',
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontSize: '0.95rem'
+              }}
+            >
+              Next: Add Context →
+            </button>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Step 2: Meta Fields */}
+      {step === 2 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          
+          {/* Confidence */}
+          <div>
+            <label style={{ display: 'block', color: '#f1f5f9', marginBottom: 8, fontWeight: 600 }}>
+              Confidence: {betData.confidence}%
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={betData.confidence}
+              onChange={(e) => updateField('confidence', parseInt(e.target.value))}
+              style={{ width: '100%' }}
+            />
+          </div>
+
+          {/* Bet Type */}
+          <div>
+            <label style={{ display: 'block', color: '#f1f5f9', marginBottom: 8, fontWeight: 600 }}>
+              Bet Type
+            </label>
+            <select
+              value={betData.betType}
+              onChange={(e) => updateField('betType', e.target.value)}
+              style={{
+                width: '100%',
+                padding: 12,
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 8,
+                color: '#f1f5f9',
+                fontSize: '0.95rem'
+              }}
+            >
+              <option value="improve">Improve existing metric</option>
+              <option value="introduce">Introduce new capability</option>
+              <option value="remove">Remove/deprecate feature</option>
+            </select>
+          </div>
+
+          {/* Metric Domain */}
+          <div>
+            <label style={{ display: 'block', color: '#f1f5f9', marginBottom: 8, fontWeight: 600 }}>
+              Metric Domain
+            </label>
+            <select
+              value={betData.metricDomain}
+              onChange={(e) => updateField('metricDomain', e.target.value)}
+              style={{
+                width: '100%',
+                padding: 12,
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 8,
+                color: '#f1f5f9',
+                fontSize: '0.95rem'
+              }}
+            >
+              <option value="product">Product/Growth</option>
+              <option value="retention">Retention</option>
+              <option value="revenue">Revenue</option>
+              <option value="efficiency">Operational Efficiency</option>
+              <option value="quality">Quality/Experience</option>
+            </select>
+          </div>
+
+          {/* Strategic Alignment */}
+          <div>
+            <label style={{ display: 'block', color: '#f1f5f9', marginBottom: 8, fontWeight: 600 }}>
+              Strategic Alignment
+            </label>
+            <select
+              value={betData.strategicAlignment}
+              onChange={(e) => updateField('strategicAlignment', e.target.value)}
+              style={{
+                width: '100%',
+                padding: 12,
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 8,
+                color: '#f1f5f9',
+                fontSize: '0.95rem'
+              }}
+            >
+              <option value="inner">Inner circle (core product)</option>
+              <option value="middle">Middle ring (important but not core)</option>
+              <option value="outer">Outer ring (experimental/nice-to-have)</option>
+            </select>
+          </div>
+
+          {/* Estimated Effort */}
+          <div>
+            <label style={{ display: 'block', color: '#f1f5f9', marginBottom: 8, fontWeight: 600 }}>
+              Estimated Effort
+            </label>
+            <select
+              value={betData.estimatedEffort}
+              onChange={(e) => updateField('estimatedEffort', e.target.value)}
+              style={{
+                width: '100%',
+                padding: 12,
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 8,
+                color: '#f1f5f9',
+                fontSize: '0.95rem'
+              }}
+            >
+              <option value="1-sprint">1 sprint</option>
+              <option value="2-3-sprints">2-3 sprints</option>
+              <option value="1-quarter">1 quarter</option>
+              <option value="multi-quarter">Multi-quarter</option>
+            </select>
+          </div>
+
+          {/* Inaction Impact */}
+          <div>
+            <label style={{ display: 'block', color: '#f1f5f9', marginBottom: 8, fontWeight: 600 }}>
+              Cost of Inaction
+            </label>
+            <select
+              value={betData.inactionImpact}
+              onChange={(e) => updateField('inactionImpact', e.target.value)}
+              style={{
+                width: '100%',
+                padding: 12,
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 8,
+                color: '#f1f5f9',
+                fontSize: '0.95rem'
+              }}
+            >
+              <option value="nothing">Nothing (we're fine)</option>
+              <option value="lose-opportunity">Lose opportunity</option>
+              <option value="competitive-risk">Competitive risk</option>
+              <option value="existential">Existential threat</option>
+            </select>
+          </div>
+
+          {/* Actions */}
+          <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+            <button
+              onClick={handleBack}
+              style={{
+                padding: '12px 24px',
+                background: 'transparent',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 8,
+                color: '#94a3b8',
+                cursor: 'pointer',
+                fontSize: '0.95rem'
+              }}
+            >
+              ← Back
+            </button>
+            <button
+              onClick={handleSubmit}
+              style={{
+                flex: 1,
+                padding: '12px 24px',
+                background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
+                border: 'none',
+                borderRadius: 8,
+                color: '#0a0f1a',
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontSize: '0.95rem'
+              }}
+            >
+              Review Bet →
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+export default BetSubmission;
