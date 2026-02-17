@@ -2151,7 +2151,6 @@ function ScoreResult({ bet, onNewBet, onSkipToDashboard, onSavePersonal, onAddTo
     Add to Marketplace
   </button>
 </div>
-            </div>
           </>
         )}
       </div>
