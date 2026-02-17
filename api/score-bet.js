@@ -175,8 +175,8 @@ ${orgContext ? '- How does this align with their stated strategic priorities and
 ${needsSearch ? '- What is the market timing for this type of initiative? (search if needed)' : ''}
 
 SUGGESTION RULES:
-- Calculate average score first
-- If avg >= 70: return suggestion as null (bet is good enough)
+- ALWAYS provide a suggestion regardless of score (TESTING MODE)
+- If avg >= 70: provide "complement" type - suggest minor polish/improvements
 - If avg 60-69: provide "complement" type - keep core intent, polish the specifics, make it more measurable
 - If avg < 60: provide "alternative" type - suggest a different approach to achieve the same underlying goal
 
@@ -203,7 +203,7 @@ Return ONLY valid JSON (no markdown, no preamble):
     "reasoning": "Why this improvement${needsSearch ? ', citing research' : ''}${orgContext ? ', citing company context' : ''}",
     "expected_score": estimated score with improvements,
     "market_evidence": ${needsSearch ? '"Supporting web findings"' : 'null'}
-  } OR null if score >= 70
+  }
 }`
         }],
         tools: needsSearch ? [{
