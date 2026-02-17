@@ -1831,7 +1831,7 @@ function ScoreResult({ bet, onNewBet, onSkipToDashboard, onSavePersonal, onAddTo
     ? Math.round((aiScores.approach.score + aiScores.potential.score + aiScores.fit.score) / 3)
     : oldScore.total;
   
-  const hasSuggestion = aiScores?.suggestion && avgScore < 70;
+const hasSuggestion = aiScores?.suggestion; // TESTING: Always show if suggestion exists
   const suggestionType = aiScores?.suggestion?.type;
 
   return (
