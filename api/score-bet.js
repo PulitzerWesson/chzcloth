@@ -43,6 +43,7 @@ Consider these patterns when scoring.
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 500,
+        temperature: 0,
         messages: [{
           role: 'user',
           content: `Quickly assess if this bet needs web search for accurate scoring.
@@ -116,6 +117,7 @@ Return ONLY JSON:
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 4000,
+        temperature: 0,
         messages: [{
           role: 'user',
           content: `You are evaluating a product bet for a ${orgMode || 'growth'} stage company.${needsSearch ? ' Search web for benchmarks, competitive intelligence, and industry data ONLY when it would materially impact scoring.' : ' Score based on available context - web search was deemed unnecessary.'}
