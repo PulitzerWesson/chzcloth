@@ -3630,6 +3630,14 @@ const handleIdeaSubmitted = async (ideaData) => {
 
 
 const handleClaimAndStructure = async (idea) => {
+
+    console.log('🔍 IDEA OBJECT:', idea);
+  console.log('🔍 BET_DATA TYPE:', typeof idea.bet_data);
+  console.log('🔍 BET_DATA VALUE:', idea.bet_data);
+  
+  // Don't change anything else yet - just see what we're getting
+  alert('Check the console');
+};
   // Claim the idea
     const betData = typeof idea.bet_data === 'string' ? JSON.parse(idea.bet_data) : idea.bet_data;
 
