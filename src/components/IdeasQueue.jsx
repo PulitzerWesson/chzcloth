@@ -13,8 +13,11 @@ function IdeasQueue({
 }) {
   const [expandedRationale, setExpandedRationale] = useState(null);
   
-  // Only show bets (filter out any non-bet entries)
-  const betIdeas = ideas.filter(i => i.entry_type === 'bet' || !i.entry_type);
+  // Only show unclaimed/unsponsored bets
+  const betIdeas = ideas.filter(i => 
+    (i.entry_type === 'bet' || !i.entry_type) && 
+    i.status === 'pending'
+  );
 
   if (loading) {
     return (
