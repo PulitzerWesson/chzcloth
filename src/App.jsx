@@ -3631,6 +3631,8 @@ const handleIdeaSubmitted = async (ideaData) => {
 
 const handleClaimAndStructure = async (idea) => {
   // Claim the idea
+    const betData = typeof idea.bet_data === 'string' ? JSON.parse(idea.bet_data) : idea.bet_data;
+
   const { error: claimError } = await claimIdea(idea.id);
   if (claimError) {
     console.error('Error claiming idea:', claimError);
