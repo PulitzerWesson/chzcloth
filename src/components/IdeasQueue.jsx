@@ -198,40 +198,24 @@ function IdeasQueue({
                   </div>
                 )}
 
-                {/* Actions */}
-                <div style={{ display: 'flex', gap: 12 }}>
-                  <button
-                    onClick={() => onClaimIdea && onClaimIdea(idea.id)}
-                    style={{
-                      flex: 1,
-                      padding: '10px 16px',
-                      background: 'rgba(251, 191, 36, 0.15)',
-                      border: '1px solid rgba(251, 191, 36, 0.3)',
-                      borderRadius: 8,
-                      color: '#fbbf24',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      fontSize: '0.9rem'
-                    }}
-                  >
-                    Refine
-                  </button>
-                  <button
-                    onClick={() => onClaimAndStructure && onClaimAndStructure(idea)}
-                    style={{
-                      flex: 1,
-                      padding: '10px 16px',
-                      background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
-                      border: 'none',
-                      borderRadius: 8,
-                      color: '#0a0f1a',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      fontSize: '0.9rem'
-                    }}
-                  >
-                    Sponsor →
-                  </button>
+{/* Actions */}
+<div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+  <button
+    onClick={() => onClaimAndStructure && onClaimAndStructure(idea)}
+    style={{
+      padding: '10px 24px',
+      background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
+      border: 'none',
+      borderRadius: 8,
+      color: '#0a0f1a',
+      fontWeight: 600,
+      cursor: 'pointer',
+      fontSize: '0.9rem'
+    }}
+  >
+    Sponsor →
+  </button>
+
                 </div>
               </div>
             );
