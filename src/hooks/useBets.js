@@ -13,6 +13,8 @@ export function useBets(orgId, orgMode) {
 
   // AI scoring function
 const scoreBet = async (betData, orgContext) => {
+    console.log('SCOREBET RECEIVED:', orgContext);
+  console.log('CONTEXT VALUE:', orgContext?.context?.substring(0, 100));
   try {
     const response = await fetch('/api/score-bet', {
       method: 'POST',
