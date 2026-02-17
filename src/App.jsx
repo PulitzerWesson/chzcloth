@@ -3983,7 +3983,6 @@ const handleRejectBet = async (betId, reason) => {
                     gap: 6
                   }}>
                     {bet.hypothesis}
-                    {isAIEnhanced && <CHZCLOTHBadge />}
                   </div>
                 </div>
                 
