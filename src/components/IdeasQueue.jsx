@@ -107,7 +107,7 @@ function IdeasQueue({
       gap: 6
     }}>
       <span>{idea.title}</span>
-      {isAIEnhanced && <CHZCLOTHBadge />}
+    
     </h3>
     <div style={{ 
       fontSize: '0.8rem', 
@@ -124,52 +124,38 @@ function IdeasQueue({
     flexShrink: 0,
     alignItems: 'center'
   }}>
-    {/* CHZCLOTH Score - Prominent */}
-    {isAIEnhanced && aiScore ? (
-      <div style={{
-        textAlign: 'center',
-        background: 'rgba(45, 212, 191, 0.15)',
-        border: '2px solid rgba(45, 212, 191, 0.4)',
-        borderRadius: 10,
-        padding: '10px 14px',
-        minWidth: 65
-      }}>
-        <div style={{ 
-          fontSize: '0.65rem', 
-          color: '#2dd4bf', 
-          marginBottom: 2,
-          fontWeight: 700,
-          letterSpacing: '0.05em'
-        }}>
-          C SCORE
-        </div>
-        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#2dd4bf' }}>
-          {aiScore}
-        </div>
-      </div>
-    ) : idea.overall_score ? (
-      <div style={{
-        textAlign: 'center',
-        background: 'rgba(45, 212, 191, 0.08)',
-        border: '1px solid rgba(45, 212, 191, 0.2)',
-        borderRadius: 10,
-        padding: '10px 14px',
-        minWidth: 65
-      }}>
-        <div style={{ 
-          fontSize: '0.65rem', 
-          color: '#64748b', 
-          marginBottom: 2,
-          fontWeight: 600
-        }}>
-          SCORE
-        </div>
-        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#2dd4bf' }}>
-          {idea.overall_score}
-        </div>
-      </div>
-    ) : null}
-
+{/* CHZCLOTH Score - Prominent */}
+{isAIEnhanced && aiScore ? (
+  <div style={{
+    textAlign: 'center',
+    background: 'rgba(45, 212, 191, 0.15)',
+    border: '2px solid rgba(45, 212, 191, 0.4)',
+    borderRadius: 10,
+    padding: '12px 16px',
+    minWidth: 80
+  }}>
+    <div style={{ 
+      fontSize: '0.6rem', 
+      color: '#2dd4bf', 
+      marginBottom: 4,
+      fontWeight: 700,
+      letterSpacing: '0.05em'
+    }}>
+      CHZCLOTH
+    </div>
+    <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#2dd4bf', margin: '4px 0' }}>
+      {aiScore}
+    </div>
+    <div style={{ 
+      fontSize: '0.6rem', 
+      color: '#2dd4bf', 
+      marginTop: 4,
+      fontWeight: 700,
+      letterSpacing: '0.05em'
+    }}>
+      ENHANCED
+    </div>
+  </div>
     {/* Dimension scores - compact */}
     {(idea.viability_score || idea.relevance_score) && (
       <div style={{ 
