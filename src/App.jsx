@@ -3162,11 +3162,10 @@ const avgScore = betsWithScores.length > 0
     Record Outcome →
   </button>
 </div>
-  );
-})}
-
-  </div>
-)}
+            </div>  {/* Close bet card */}
+          ))}
+        </div>
+      )}
         
         {/* Completed bets */}
         {completedBets.length > 0 && (
