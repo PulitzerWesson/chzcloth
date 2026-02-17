@@ -124,19 +124,14 @@ function IdeasQueue({
     flexShrink: 0,
     alignItems: 'center'
   }}>
-{/* CHZCLOTH Score - Logo + Score */}
+{/* CHZCLOTH Score - Minimal */}
 {isAIEnhanced && aiScore ? (
   <div style={{
     display: 'flex',
     alignItems: 'center',
-    gap: 8,
-    background: 'rgba(45, 212, 191, 0.1)',
-    border: '2px solid rgba(45, 212, 191, 0.4)',
-    borderRadius: 10,
-    padding: '8px 12px'
+    gap: 8
   }}>
-    {/* CHZCLOTH C logo */}
-    <svg width="28" height="28" viewBox="0 0 32 32">
+    <svg width="32" height="32" viewBox="0 0 32 32">
       <defs>
         <linearGradient id={`chz-grad-${idea.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" style={{stopColor: '#2dd4bf'}} />
@@ -155,9 +150,7 @@ function IdeasQueue({
         C
       </text>
     </svg>
-    
-    {/* Score */}
-    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#2dd4bf', lineHeight: 1 }}>
+    <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#2dd4bf' }}>
       {aiScore}
     </div>
   </div>
