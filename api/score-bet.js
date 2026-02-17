@@ -140,13 +140,21 @@ ${orgContext ? `COMPANY DETAILS:\n${orgContext}\n` : ''}
 ${learningsSection}
 ${clarifyingSection}
 
-SCORING CRITERIA:
+${orgContext ? `CRITICAL INSTRUCTION:
+Your rationale for EACH score MUST cite specific details from the COMPANY DETAILS above. Reference their business model, industry dynamics, scale, competitive position, or strategic context. Generic scoring that could apply to any company is unacceptable when detailed company context is provided.
+
+For example:
+- Bad: "Aligns with growth stage focus on conversion optimization"
+- Good: "For Further's senior living platform serving 5,500 communities, tour conversion is the critical bottleneck in their buyer journey from prospect to move-in"
+
+` : ''}SCORING CRITERIA:
 
 1. APPROACH (0-100):
 - Is the hypothesis structured properly (if/then/because)?
 - Is the action specific and clear?
 - Is the mechanism explained?
 - Are assumptions identified?
+${orgContext ? '- How does this fit their specific business model and industry context?' : ''}
 ${needsSearch ? '- How does this compare to similar bets in the industry? (search if needed)' : ''}
 
 2. POTENTIAL (0-100):
@@ -155,6 +163,7 @@ ${needsSearch ? '- How does this compare to similar bets in the industry? (searc
 - Is the metric measurable?
 - Is the timeframe appropriate for the change?
 - Does the effort match the expected impact?
+${orgContext ? '- Is this prediction realistic given their scale and market position?' : ''}
 ${needsSearch ? '- What do benchmarks say about typical results? (search if needed)' : ''}
 
 3. FIT (0-100):
@@ -162,6 +171,7 @@ ${needsSearch ? '- What do benchmarks say about typical results? (search if need
 - Does strategic alignment match effort?
 - Is cost of inaction justified?
 - Does this match patterns from past learnings?
+${orgContext ? '- How does this align with their stated strategic priorities and business model?' : ''}
 ${needsSearch ? '- What is the market timing for this type of initiative? (search if needed)' : ''}
 
 SUGGESTION RULES:
@@ -174,15 +184,15 @@ Return ONLY valid JSON (no markdown, no preamble):
 {
   "approach": {
     "score": 0-100,
-    "rationale": "Brief explanation${needsSearch ? ' citing any relevant web findings' : ''}"
+    "rationale": "Brief explanation${needsSearch ? ' citing any relevant web findings' : ''}${orgContext ? ' citing specific company details' : ''}"
   },
   "potential": {
     "score": 0-100,
-    "rationale": "Brief explanation${needsSearch ? ' citing benchmarks if found' : ''}"
+    "rationale": "Brief explanation${needsSearch ? ' citing benchmarks if found' : ''}${orgContext ? ' citing company scale and market position' : ''}"
   },
   "fit": {
     "score": 0-100,
-    "rationale": "Brief explanation${needsSearch ? ' citing market context if found' : ''}"
+    "rationale": "Brief explanation${needsSearch ? ' citing market context if found' : ''}${orgContext ? ' citing strategic priorities and business model' : ''}"
   },
   "market_context": ${needsSearch ? '"Key web findings about similar initiatives"' : 'null'},
   "suggestion": {
@@ -190,7 +200,7 @@ Return ONLY valid JSON (no markdown, no preamble):
     "hypothesis": "Improved/alternative hypothesis",
     "metrics": "Improved/alternative prediction",
     "effort": "Estimated effort",
-    "reasoning": "Why this improvement${needsSearch ? ', citing research' : ''}",
+    "reasoning": "Why this improvement${needsSearch ? ', citing research' : ''}${orgContext ? ', citing company context' : ''}",
     "expected_score": estimated score with improvements,
     "market_evidence": ${needsSearch ? '"Supporting web findings"' : 'null'}
   } OR null if score >= 70
