@@ -8,14 +8,17 @@ export default function BetConfirmation({ extractedData, onContinue, onBack }) {
   const [strategicAlignment, setStrategicAlignment] = useState('inner');
   const [inactionImpact, setInactionImpact] = useState('lose-opportunity');
   const [estimatedEffort, setEstimatedEffort] = useState(extractedData.effort || '2-3-sprints');
+  const [isScoring, setIsScoring] = useState(false);
 
-  const handleSubmit = () => {
-    onContinue({
+  const handleSubmit = async () => {
+    setIsScoring(true);
+    await onContinue({
       confidence,
       strategicAlignment,
       inactionImpact,
       estimatedEffort
     });
+    // Note: onContinue navigates away, so no need to setIsScoring(false)
   };
 
   const getConfidenceLabel = () => {
@@ -209,11 +212,27 @@ export default function BetConfirmation({ extractedData, onContinue, onBack }) {
 
       {/* Actions */}
       <div className="confirmation-actions">
-        <button onClick={onBack} className="btn-back">
+        <button 
+          onClick={onBack} 
+          className="btn-back"
+          disabled={isScoring}
+          style={{
+            opacity: isScoring ? 0.5 : 1,
+            cursor: isScoring ? 'not-allowed' : 'pointer'
+          }}
+        >
           ← Back to Review
         </button>
-        <button onClick={handleSubmit} className="btn-continue">
-          Continue to Scoring →
+        <button 
+          onClick={handleSubmit} 
+          className="btn-continue"
+          disabled={isScoring}
+          style={{
+            opacity: isScoring ? 0.7 : 1,
+            cursor: isScoring ? 'wait' : 'pointer'
+          }}
+        >
+          {isScoring ? 'Scoring... ⏳' : 'Score Bet →'}
         </button>
       </div>
     </div>
