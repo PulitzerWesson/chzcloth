@@ -1,5 +1,27 @@
 import React, { useState } from 'react';
 
+// CHZCLOTH Badge component
+const CHZCLOTHBadge = () => (
+  <span 
+    style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: 18,
+      height: 18,
+      background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
+      borderRadius: '50%',
+      fontSize: '0.65rem',
+      fontWeight: 700,
+      color: '#0a0f1a',
+      marginLeft: 6
+    }}
+    title="AI-Enhanced by CHZCLOTH"
+  >
+    C
+  </span>
+);
+
 function IdeasQueue({ 
   ideas = [], 
   loading = false,
@@ -53,6 +75,8 @@ function IdeasQueue({
           {betIdeas.map(idea => {
             const isExpanded = expandedRationale === idea.id;
             const betData = typeof idea.bet_data === 'string' ? JSON.parse(idea.bet_data) : idea.bet_data;
+            const isAIEnhanced = betData?.aiEnhanced || idea.ai_enhanced;
+            const aiScore = betData?.aiPredictedScore || null;
             
             return (
               <div
@@ -77,9 +101,13 @@ function IdeasQueue({
                       fontSize: '1.05rem', 
                       fontWeight: 600,
                       margin: '0 0 8px 0',
-                      lineHeight: 1.4
+                      lineHeight: 1.4,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6
                     }}>
-                      {idea.title}
+                      <span>{idea.title}</span>
+                      {isAIEnhanced && <CHZCLOTHBadge />}
                     </h3>
                     <div style={{ 
                       fontSize: '0.8rem', 
@@ -89,29 +117,68 @@ function IdeasQueue({
                     </div>
                   </div>
 
-                  {/* Compact scores - top right */}
-                  {(idea.viability_score || idea.relevance_score) && (
-                    <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '0.65rem', color: '#64748b' }}>APR</div>
-                        <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#2dd4bf' }}>
-                          {idea.viability_score || '-'}
+                  {/* Overall Score - prominent if AI-enhanced */}
+                  <div style={{ 
+                    display: 'flex', 
+                    gap: 16, 
+                    flexShrink: 0,
+                    alignItems: 'center'
+                  }}>
+                    {/* Show AI score prominently if available */}
+                    {isAIEnhanced && aiScore ? (
+                      <div style={{
+                        textAlign: 'center',
+                        background: 'rgba(45, 212, 191, 0.1)',
+                        border: '1px solid rgba(45, 212, 191, 0.3)',
+                        borderRadius: 8,
+                        padding: '8px 12px',
+                        marginRight: 8
+                      }}>
+                        <div style={{ fontSize: '0.65rem', color: '#64748b', marginBottom: 2 }}>
+                          AI SCORE
+                        </div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#2dd4bf' }}>
+                          {aiScore}
                         </div>
                       </div>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '0.65rem', color: '#64748b' }}>POT</div>
-                        <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#fbbf24' }}>
-                          {betData?.potentialScore || '-'}
+                    ) : idea.overall_score ? (
+                      <div style={{
+                        textAlign: 'center',
+                        marginRight: 8
+                      }}>
+                        <div style={{ fontSize: '0.65rem', color: '#64748b', marginBottom: 2 }}>
+                          SCORE
+                        </div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#2dd4bf' }}>
+                          {idea.overall_score}
                         </div>
                       </div>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '0.65rem', color: '#64748b' }}>FIT</div>
-                        <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#7dd3fc' }}>
-                          {idea.relevance_score || '-'}
+                    ) : null}
+
+                    {/* Compact dimension scores */}
+                    {(idea.viability_score || idea.relevance_score) && (
+                      <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '0.65rem', color: '#64748b' }}>APR</div>
+                          <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#2dd4bf' }}>
+                            {idea.viability_score || '-'}
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '0.65rem', color: '#64748b' }}>POT</div>
+                          <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#fbbf24' }}>
+                            {betData?.potentialScore || '-'}
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '0.65rem', color: '#64748b' }}>FIT</div>
+                          <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#7dd3fc' }}>
+                            {idea.relevance_score || '-'}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
 
                 {/* Expandable rationale */}
@@ -143,8 +210,18 @@ function IdeasQueue({
                         border: '1px solid rgba(255,255,255,0.05)',
                         borderRadius: 8
                       }}>
-                        <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        <div style={{ 
+                          fontSize: '0.75rem', 
+                          color: '#64748b', 
+                          marginBottom: 12, 
+                          textTransform: 'uppercase', 
+                          letterSpacing: '0.05em',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6
+                        }}>
                           AI Scoring Rationale
+                          {isAIEnhanced && <span style={{ color: '#2dd4bf' }}>• Enhanced</span>}
                         </div>
                         
                         <div style={{ marginBottom: 12 }}>
@@ -178,41 +255,40 @@ function IdeasQueue({
                   </div>
                 )}
 
-{/* Metrics & Prediction - using bet_data */}
-{betData && (betData.metric || betData.prediction) && (
-  <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: 16 }}>
-    {betData.metric && (
-      <>
-        Metric: <span style={{ color: '#2dd4bf' }}>{betData.metric}</span>
-        {betData.prediction && ' • '}
-      </>
-    )}
-    {betData.prediction && (
-      <>
-        Prediction: <span style={{ color: '#94a3b8' }}>{betData.prediction}</span>
-      </>
-    )}
-  </div>
-)}
+                {/* Metrics & Prediction - using bet_data */}
+                {betData && (betData.metric || betData.prediction) && (
+                  <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: 16 }}>
+                    {betData.metric && (
+                      <>
+                        Metric: <span style={{ color: '#2dd4bf' }}>{betData.metric}</span>
+                        {betData.prediction && ' • '}
+                      </>
+                    )}
+                    {betData.prediction && (
+                      <>
+                        Prediction: <span style={{ color: '#94a3b8' }}>{betData.prediction}</span>
+                      </>
+                    )}
+                  </div>
+                )}
 
-{/* Actions */}
-<div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-  <button
-    onClick={() => onClaimAndStructure && onClaimAndStructure(idea)}
-    style={{
-      padding: '10px 24px',
-      background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
-      border: 'none',
-      borderRadius: 8,
-      color: '#0a0f1a',
-      fontWeight: 600,
-      cursor: 'pointer',
-      fontSize: '0.9rem'
-    }}
-  >
-    Sponsor →
-  </button>
-
+                {/* Actions */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <button
+                    onClick={() => onClaimAndStructure && onClaimAndStructure(idea)}
+                    style={{
+                      padding: '10px 24px',
+                      background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
+                      border: 'none',
+                      borderRadius: 8,
+                      color: '#0a0f1a',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      fontSize: '0.9rem'
+                    }}
+                  >
+                    Sponsor →
+                  </button>
                 </div>
               </div>
             );
