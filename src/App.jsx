@@ -3994,38 +3994,38 @@ const handleRejectBet = async (betId, reason) => {
                   flexShrink: 0,
                   alignItems: 'center'
                 }}>
-                  {/* CHZCLOTH Score - Prominent */}
-                  {isAIEnhanced && aiScore ? (
-                    <div style={{
-                      textAlign: 'center',
-                      background: 'rgba(45, 212, 191, 0.15)',
-                      border: '2px solid rgba(45, 212, 191, 0.4)',
-                      borderRadius: 10,
-                      padding: '12px 16px',
-                      minWidth: 80
-                    }}>
-                      <div style={{ 
-                        fontSize: '0.6rem', 
-                        color: '#2dd4bf', 
-                        marginBottom: 4,
-                        fontWeight: 700,
-                        letterSpacing: '0.05em'
-                      }}>
-                        CHZCLOTH
-                      </div>
-                      <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#2dd4bf', margin: '4px 0' }}>
-                        {aiScore}
-                      </div>
-                      <div style={{ 
-                        fontSize: '0.6rem', 
-                        color: '#2dd4bf', 
-                        marginTop: 4,
-                        fontWeight: 700,
-                        letterSpacing: '0.05em'
-                      }}>
-                        ENHANCED
-                      </div>
-                    </div>
+          {/* CHZCLOTH Score - Compact */}
+{isAIEnhanced && aiScore ? (
+  <div style={{
+    textAlign: 'center',
+    background: 'rgba(45, 212, 191, 0.1)',
+    border: '2px solid rgba(45, 212, 191, 0.4)',
+    borderRadius: 8,
+    padding: '8px 10px',
+    minWidth: 65
+  }}>
+    <div style={{ 
+      fontSize: '0.5rem', 
+      color: '#2dd4bf', 
+      marginBottom: 2,
+      fontWeight: 700,
+      letterSpacing: '0.05em'
+    }}>
+      CHZCLOTH
+    </div>
+    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#2dd4bf', margin: '2px 0' }}>
+      {aiScore}
+    </div>
+    <div style={{ 
+      fontSize: '0.5rem', 
+      color: '#2dd4bf', 
+      marginTop: 2,
+      fontWeight: 700,
+      letterSpacing: '0.05em'
+    }}>
+      ENHANCED
+    </div>
+  </div>
                   ) : null}
                   
                   {/* Compact dimension scores */}
