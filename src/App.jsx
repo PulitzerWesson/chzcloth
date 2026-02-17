@@ -3953,6 +3953,8 @@ const handleRejectBet = async (betId, reason) => {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {bets?.filter(b => b.approvalStatus === 'approved').map(bet => {
           const isExpanded = expandedPriorityBet === bet.id;
+          const isAIEnhanced = bet.aiEnhanced;
+          const aiScore = bet.aiPredictedScore;
           
           return (
             <div
@@ -3965,27 +3967,86 @@ const handleRejectBet = async (betId, reason) => {
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                <div style={{ color: '#f1f5f9', flex: 1, fontWeight: 600, fontSize: '1.05rem', lineHeight: 1.4, paddingRight: 16 }}>
-                  {bet.hypothesis}
+                <div style={{ flex: 1, paddingRight: 16 }}>
+                  <div style={{ 
+                    color: '#f1f5f9', 
+                    fontWeight: 600, 
+                    fontSize: '1.05rem', 
+                    lineHeight: 1.4,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6
+                  }}>
+                    {bet.hypothesis}
+                    {isAIEnhanced && <CHZCLOTHBadge />}
+                  </div>
                 </div>
                 
-                {/* Compact scores */}
-                {bet.approachScore && (
-                  <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: '0.65rem', color: '#64748b' }}>APR</div>
-                      <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#2dd4bf' }}>{bet.approachScore}</div>
+                {/* Scores section - CHZCLOTH score first if enhanced, then dimensions */}
+                <div style={{ 
+                  display: 'flex', 
+                  gap: 12, 
+                  flexShrink: 0,
+                  alignItems: 'center'
+                }}>
+                  {/* CHZCLOTH Score - Prominent */}
+                  {isAIEnhanced && aiScore ? (
+                    <div style={{
+                      textAlign: 'center',
+                      background: 'rgba(45, 212, 191, 0.15)',
+                      border: '2px solid rgba(45, 212, 191, 0.4)',
+                      borderRadius: 10,
+                      padding: '12px 16px',
+                      minWidth: 80
+                    }}>
+                      <div style={{ 
+                        fontSize: '0.6rem', 
+                        color: '#2dd4bf', 
+                        marginBottom: 4,
+                        fontWeight: 700,
+                        letterSpacing: '0.05em'
+                      }}>
+                        CHZCLOTH
+                      </div>
+                      <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#2dd4bf', margin: '4px 0' }}>
+                        {aiScore}
+                      </div>
+                      <div style={{ 
+                        fontSize: '0.6rem', 
+                        color: '#2dd4bf', 
+                        marginTop: 4,
+                        fontWeight: 700,
+                        letterSpacing: '0.05em'
+                      }}>
+                        ENHANCED
+                      </div>
                     </div>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: '0.65rem', color: '#64748b' }}>POT</div>
-                      <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#fbbf24' }}>{bet.potentialScore}</div>
+                  ) : null}
+                  
+                  {/* Compact dimension scores */}
+                  {bet.approachScore && (
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: 8, 
+                      flexShrink: 0,
+                      paddingLeft: isAIEnhanced && aiScore ? 8 : 0,
+                      borderLeft: isAIEnhanced && aiScore ? '1px solid rgba(255,255,255,0.1)' : 'none'
+                    }}>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.6rem', color: '#64748b', marginBottom: 2 }}>APR</div>
+                        <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#2dd4bf' }}>{bet.approachScore}</div>
+                      </div>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.6rem', color: '#64748b', marginBottom: 2 }}>POT</div>
+                        <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#fbbf24' }}>{bet.potentialScore}</div>
+                      </div>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.6rem', color: '#64748b', marginBottom: 2 }}>FIT</div>
+                        <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#7dd3fc' }}>{bet.fitScore}</div>
+                      </div>
                     </div>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: '0.65rem', color: '#64748b' }}>FIT</div>
-                      <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#7dd3fc' }}>{bet.fitScore}</div>
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
               
               <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: bet.scoringRationale ? 16 : 0 }}>
@@ -4022,8 +4083,18 @@ const handleRejectBet = async (betId, reason) => {
                       border: '1px solid rgba(255,255,255,0.05)',
                       borderRadius: 8
                     }}>
-                      <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        AI Scoring Rationale
+                      <div style={{ 
+                        fontSize: '0.75rem', 
+                        color: '#64748b', 
+                        marginBottom: 12, 
+                        textTransform: 'uppercase', 
+                        letterSpacing: '0.05em',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6
+                      }}>
+                        CHZCLOTH SCORING RATIONALE
+                        {isAIEnhanced && <span style={{ color: '#2dd4bf', fontWeight: 700 }}>• ENHANCED</span>}
                       </div>
                       
                       <div style={{ marginBottom: 12 }}>
