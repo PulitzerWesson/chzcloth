@@ -33,23 +33,28 @@ export function useIdeas(orgId) {
 
       if (ideasError) throw ideasError
 
-      const transformed = (ideasData || []).map(idea => ({
-        id: idea.id,
-        orgId: idea.org_id,
-        submittedBy: idea.submitted_by,
-        submittedByEmail: idea.submitted_by_profile?.email,
-        title: idea.title,
-        description: idea.description,
-        problem: idea.problem,
-        expectedImpact: idea.expected_impact,
-        status: idea.status,
-        claimedBy: idea.claimed_by,
-        claimedByEmail: idea.claimed_by_profile?.email,
-        claimedAt: idea.claimed_at,
-        createdAt: idea.created_at,
-        updatedAt: idea.updated_at
-      }))
-
+const transformed = (ideasData || []).map(idea => ({
+  id: idea.id,
+  orgId: idea.org_id,
+  submittedBy: idea.submitted_by,
+  submittedByEmail: idea.submitted_by_profile?.email,
+  title: idea.title,
+  description: idea.description,
+  problem: idea.problem,
+  expectedImpact: idea.expected_impact,
+  status: idea.status,
+  claimedBy: idea.claimed_by,
+  claimedByEmail: idea.claimed_by_profile?.email,
+  claimedAt: idea.claimed_at,
+  createdAt: idea.created_at,
+  updatedAt: idea.updated_at,
+  entry_type: idea.entry_type,
+  bet_data: idea.bet_data,
+  viability_score: idea.viability_score,
+  relevance_score: idea.relevance_score,
+  overall_score: idea.overall_score,
+  scoring_rationale: idea.scoring_rationale
+}))
       setIdeas(transformed)
       setError(null)
     } catch (err) {
