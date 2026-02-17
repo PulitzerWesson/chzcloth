@@ -1832,7 +1832,7 @@ function ScoreResult({ bet, onNewBet, onSkipToDashboard, onSavePersonal, onAddTo
     : oldScore.total;
   
   const hasSuggestion = aiScores?.suggestion && avgScore < 70;
-  const suggestionType = aiScores?.suggestion?.type; // 'alternative' or 'complement'
+  const suggestionType = aiScores?.suggestion?.type;
 
   return (
     <div style={{ padding: '60px 24px' }}>
@@ -1994,12 +1994,11 @@ function ScoreResult({ bet, onNewBet, onSkipToDashboard, onSavePersonal, onAddTo
               )}
               
               <div style={{ display: 'flex', gap: 12 }}>
-             <button
+                <button
                   onClick={async () => {
                     await onUseAI();
                     setEnhancementDecided(true);
                   }}
-                                  
                   style={{
                     flex: 1,
                     padding: '14px 24px',
@@ -2041,6 +2040,26 @@ function ScoreResult({ bet, onNewBet, onSkipToDashboard, onSavePersonal, onAddTo
 
         {(enhancementDecided || !hasSuggestion) && (
           <>
+            {/* Show AI-enhanced score if it exists */}
+            {bet.aiEnhanced && bet.aiPredictedScore && (
+              <div style={{
+                background: 'rgba(45, 212, 191, 0.1)',
+                border: '1px solid rgba(45, 212, 191, 0.3)',
+                borderRadius: 12,
+                padding: 16,
+                marginBottom: 24,
+                textAlign: 'center'
+              }}>
+                <div style={{ color: '#2dd4bf', fontSize: '1.75rem', fontWeight: 800 }}>
+                  {bet.aiPredictedScore}
+                </div>
+                <div style={{ color: '#64748b', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                  AI-Enhanced Score
+                  <CHZCLOTHBadge />
+                </div>
+              </div>
+            )}
+            
             <div style={{ marginBottom: 32 }}>
               <h3 style={{ 
                 color: '#f1f5f9', 
@@ -2118,39 +2137,39 @@ function ScoreResult({ bet, onNewBet, onSkipToDashboard, onSavePersonal, onAddTo
               </div>
             </div>
             
-<div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-  <button
-    onClick={onSavePersonal}
-    style={{
-      padding: '16px 24px',
-      background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
-      border: 'none',
-      borderRadius: 10,
-      color: '#0a0f1a',
-      fontSize: '1rem',
-      fontWeight: 700,
-      cursor: 'pointer'
-    }}
-  >
-    Add to My Queue
-  </button>
-  
-  <button
-    onClick={onAddToMarketplace}
-    style={{
-      padding: '16px 24px',
-      background: 'rgba(251, 191, 36, 0.15)',
-      border: '1px solid rgba(251, 191, 36, 0.3)',
-      borderRadius: 10,
-      color: '#fbbf24',
-      fontSize: '1rem',
-      fontWeight: 600,
-      cursor: 'pointer'
-    }}
-  >
-    Add to Marketplace
-  </button>
-</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <button
+                onClick={onSavePersonal}
+                style={{
+                  padding: '16px 24px',
+                  background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
+                  border: 'none',
+                  borderRadius: 10,
+                  color: '#0a0f1a',
+                  fontSize: '1rem',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                Add to My Queue
+              </button>
+              
+              <button
+                onClick={onAddToMarketplace}
+                style={{
+                  padding: '16px 24px',
+                  background: 'rgba(251, 191, 36, 0.15)',
+                  border: '1px solid rgba(251, 191, 36, 0.3)',
+                  borderRadius: 10,
+                  color: '#fbbf24',
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                Add to Marketplace
+              </button>
+            </div>
           </>
         )}
       </div>
@@ -3391,7 +3410,7 @@ const handleUseAIEnhancement = async () => {
   
   const suggestion = currentBet.scoringRationale.suggestion;
   
-  // Update bet in DB with AI enhancement
+  // Update bet in DB with AI enhancement AND predicted score
   const { error } = await supabase
     .from('bets')
     .update({
@@ -3399,7 +3418,12 @@ const handleUseAIEnhancement = async () => {
       prediction: suggestion.metrics,
       estimated_effort: suggestion.effort,
       ai_enhanced: true,
-      original_hypothesis: currentBet.hypothesis
+      ai_predicted_score: suggestion.expected_score, // ← NEW: Save predicted score
+      original_hypothesis: currentBet.hypothesis,
+      // Also update the individual scores to match the AI suggestion
+      approach_score: currentBet.scoringRationale.approach.score,
+      potential_score: currentBet.scoringRationale.potential.score,
+      fit_score: currentBet.scoringRationale.fit.score
     })
     .eq('id', currentBet.id);
   
@@ -3414,6 +3438,7 @@ const handleUseAIEnhancement = async () => {
       prediction: suggestion.metrics,
       estimatedEffort: suggestion.effort,
       aiEnhanced: true,
+      aiPredictedScore: suggestion.expected_score, // ← NEW: Update local state
       originalHypothesis: currentBet.hypothesis
     });
   }
@@ -3427,20 +3452,32 @@ const handleUseAIEnhancement = async () => {
 };
 
 const handleAddToMarketplace = async () => {
+  // Use AI-predicted score if available, otherwise calculate from components
+  const overallScore = currentBet.aiPredictedScore 
+    ? currentBet.aiPredictedScore
+    : Math.round((currentBet.approachScore + currentBet.potentialScore + currentBet.fitScore) / 3);
+  
   // Convert bet to marketplace Idea
   const ideaEntry = {
     title: currentBet.hypothesis || 'Untitled Bet',
     description: `Hypothesis: ${currentBet.hypothesis}\n\nMetrics: ${currentBet.prediction}\n\nEffort: ${currentBet.estimatedEffort}`,
     entry_type: 'bet',
-    bet_data: currentBet,
+    bet_data: {
+      ...currentBet,
+      // Ensure AI enhancement metadata is preserved
+      aiEnhanced: currentBet.aiEnhanced || false,
+      aiPredictedScore: currentBet.aiPredictedScore || null,
+      originalHypothesis: currentBet.originalHypothesis || null
+    },
     viability_score: currentBet.approachScore,
     relevance_score: currentBet.fitScore,
-    overall_score: Math.round((currentBet.approachScore + currentBet.potentialScore + currentBet.fitScore) / 3),
+    overall_score: overallScore, // ← Use AI score if available!
     scoring_rationale: currentBet.scoringRationale ? 
       `Approach: ${currentBet.scoringRationale.approach?.rationale}\nPotential: ${currentBet.scoringRationale.potential?.rationale}\nFit: ${currentBet.scoringRationale.fit?.rationale}` 
-      : null
+      : null,
+    ai_enhanced: currentBet.aiEnhanced || false // ← Add flag at top level
   };
-
+  
   const { error } = await submitIdea(ideaEntry);
   
   if (error) {
