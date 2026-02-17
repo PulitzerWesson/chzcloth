@@ -3364,10 +3364,12 @@ const handleConfirmationContinue = async (userParams) => {
     };
     
     // Save bet (createBet will score it internally)
-    const { data, error } = await createBet(
-      betDataWithParams,
-      pendingConfirmation.ideaId
-    );
+const { data, error } = await createBet(
+  betDataWithParams,
+  pendingConfirmation.ideaId,
+  null,  // precomputedScores
+  currentOrg  // orgContext
+);
     
     if (error) {
       console.error('Error creating bet:', error);
