@@ -178,25 +178,22 @@ function IdeasQueue({
                   </div>
                 )}
 
-                {/* Metrics & Effort */}
-                {idea.description?.includes('Metrics:') && (
-                  <div style={{ marginBottom: 16 }}>
-                    <div style={{ marginBottom: 8 }}>
-                      <span style={{ color: '#64748b', fontSize: '0.85rem' }}>Metrics: </span>
-                      <span style={{ color: '#2dd4bf', fontSize: '0.9rem' }}>
-                        {idea.description.split('Metrics:')[1]?.split('Effort:')[0]?.trim()}
-                      </span>
-                    </div>
-                    {idea.description.includes('Effort:') && (
-                      <div>
-                        <span style={{ color: '#64748b', fontSize: '0.85rem' }}>Effort: </span>
-                        <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
-                          {idea.description.split('Effort:')[1]?.trim()}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
+{/* Metrics & Prediction - using bet_data */}
+{betData && (betData.metric || betData.prediction) && (
+  <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: 16 }}>
+    {betData.metric && (
+      <>
+        Metric: <span style={{ color: '#2dd4bf' }}>{betData.metric}</span>
+        {betData.prediction && ' • '}
+      </>
+    )}
+    {betData.prediction && (
+      <>
+        Prediction: <span style={{ color: '#94a3b8' }}>{betData.prediction}</span>
+      </>
+    )}
+  </div>
+)}
 
 {/* Actions */}
 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
