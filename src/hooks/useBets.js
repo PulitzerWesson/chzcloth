@@ -21,8 +21,7 @@ const scoreBet = async (betData, orgContext) => {
         bet: betData, 
         orgMode: orgMode || 'growth',
         orgName: orgContext?.name,
-        orgStrategy: orgContext?.strategy,
-        orgIndustry: orgContext?.industry,
+        orgContext: orgContext?.context,
         orgLearnings: orgContext?.learnings
       })
     });
