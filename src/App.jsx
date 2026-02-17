@@ -3141,24 +3141,27 @@ const avgScore = betsWithScores.length > 0
         </>
       )}
       
-      {/* Record Outcome Button */}
-      <button
-        onClick={() => onRecordOutcome(bet)}
-        style={{
-          width: '100%',
-          padding: '10px 16px',
-          background: 'rgba(45, 212, 191, 0.1)',
-          border: '1px solid rgba(45, 212, 191, 0.3)',
-          borderRadius: 8,
-          color: '#2dd4bf',
-          fontSize: '0.9rem',
-          fontWeight: 500,
-          cursor: 'pointer'
-        }}
-      >
-        Record Outcome →
-      </button>
-    </div>
+{/* Record Outcome button */}
+<div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+  <button
+    onClick={() => {
+      setCurrentBet(bet);
+      setScreen('record_outcome');
+    }}
+    style={{
+      padding: '10px 24px',
+      background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
+      border: 'none',
+      borderRadius: 8,
+      color: '#0a0f1a',
+      fontWeight: 600,
+      cursor: 'pointer',
+      fontSize: '0.9rem'
+    }}
+  >
+    Record Outcome →
+  </button>
+</div>
   );
 })}
 
