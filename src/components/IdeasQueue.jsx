@@ -157,7 +157,6 @@ function IdeasQueue({
     </div>
   </div>
 ) : null}
-) : null}
 
 {/* Dimension scores - compact */}
 {(idea.viability_score || idea.relevance_score) && (
