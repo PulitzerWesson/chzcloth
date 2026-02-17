@@ -3630,40 +3630,30 @@ const handleIdeaSubmitted = async (ideaData) => {
 
 
 const handleClaimAndStructure = async (idea) => {
+  try {
+    // Parse bet_data (it's stored as a JSON string in DB)
+    const betData = typeof idea.bet_data === 'string' 
+      ? JSON.parse(idea.bet_data) 
+      : idea.bet_data;
+    
+    // Claim the idea
+    const { error: claimError } = await claimIdea(idea.id);
+    if (claimError) throw claimError;
 
-    console.log('🔍 IDEA OBJECT:', idea);
-  console.log('🔍 BET_DATA TYPE:', typeof idea.bet_data);
-  console.log('🔍 BET_DATA VALUE:', idea.bet_data);
-  
-  // Don't change anything else yet - just see what we're getting
-  alert('Check the console');
-};
-  // Claim the idea
-    const betData = typeof idea.bet_data === 'string' ? JSON.parse(idea.bet_data) : idea.bet_data;
-
-  const { error: claimError } = await claimIdea(idea.id);
-  if (claimError) {
-    console.error('Error claiming idea:', claimError);
-    alert('Error claiming bet');
-    return;
-  }
-
-  // If this idea came from a bet you created, just approve it (don't duplicate)
-  if (idea.bet_data?.id) {
+    // Update the existing bet to approved (don't create duplicate)
     const { error } = await supabase
       .from('bets')
       .update({ approval_status: 'approved' })
-      .eq('id', idea.bet_data.id);
+      .eq('id', betData.id);
     
-    if (error) {
-      console.error('Error approving bet:', error);
-      alert('Error approving bet');
-    } else {
-      alert('Bet approved and added to Priority Queue!');
-      setScreen('priority_queue');
-    }
-  } else {
-    alert('This idea is missing bet data');
+    if (error) throw error;
+    
+    alert('Bet approved and added to Priority Queue!');
+    setScreen('priority_queue');
+    
+  } catch (error) {
+    console.error('Error:', error);
+    alert(`Error: ${error.message}`);
   }
 };
       const handleApproveBet = async (betId) => {
