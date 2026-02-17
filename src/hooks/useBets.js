@@ -136,7 +136,7 @@ const transformedBets = (betsData || []).map(bet => {
     fetchBets()
   }, [fetchBets])
 
-const createBet = async (betData, ideaId = null, precomputedScores = null) => {
+const createBet = async (betData, ideaId = null, precomputedScores = null, orgContext = null) => {
   if (!user) return { error: { message: 'Not authenticated' } }
 
 // Use precomputed scores if provided, otherwise fetch them
@@ -144,12 +144,11 @@ let scores = precomputedScores;
 if (!scores) {
   const orgLearnings = await getOrgLearnings(orgId, user.id, 'bet');
   
-  scores = await scoreBet(betData, { 
-    name: orgId, 
-    strategy: null, 
-    industry: null,
-    learnings: orgLearnings?.learnings || []
-  });
+scores = await scoreBet(betData, { 
+  name: orgContext?.name || orgId, 
+  context: orgContext?.combinedContext || orgContext?.userContext,
+  learnings: orgLearnings?.learnings || []
+});
 }
 try {
     const { data, error } = await supabase
