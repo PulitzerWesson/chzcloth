@@ -3542,7 +3542,11 @@ const handleSubmitToMarketplace = async () => {
       approachScore: betData.approachScore,
       potentialScore: betData.potentialScore,
       fitScore: betData.fitScore,
-      scoringRationale: betData.scoringRationale
+      scoringRationale: betData.scoringRationale,
+      aiEnhanced: bet.ai_enhanced,
+aiPredictedScore: bet.ai_predicted_score,
+originalHypothesis: bet.original_hypothesis,
+approvalStatus: bet.approval_status,
     },
     viability_score: betData.approachScore,
     relevance_score: betData.fitScore,
