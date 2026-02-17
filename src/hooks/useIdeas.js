@@ -97,22 +97,28 @@ const submitIdea = async (ideaData) => {
 
     if (error) throw error
 
-    const newIdea = {
-      id: data.id,
-      orgId: data.org_id,
-      submittedBy: data.submitted_by,
-      submittedByEmail: user.email,
-      title: data.title,
-      description: data.description,
-      problem: data.problem,
-      expectedImpact: data.expected_impact,
-      status: data.status,
-      claimedBy: null,
-      claimedByEmail: null,
-      claimedAt: null,
-      createdAt: data.created_at,
-      updatedAt: data.updated_at
-    }
+const newIdea = {
+  id: data.id,
+  orgId: data.org_id,
+  submittedBy: data.submitted_by,
+  submittedByEmail: user.email,
+  title: data.title,
+  description: data.description,
+  problem: data.problem,
+  expectedImpact: data.expected_impact,
+  status: data.status,
+  claimedBy: null,
+  claimedByEmail: null,
+  claimedAt: null,
+  createdAt: data.created_at,
+  updatedAt: data.updated_at,
+  entry_type: data.entry_type,
+  bet_data: data.bet_data,
+  viability_score: data.viability_score,
+  relevance_score: data.relevance_score,
+  overall_score: data.overall_score,
+  scoring_rationale: data.scoring_rationale
+}
 
     setIdeas(prev => [newIdea, ...prev])
     return { data: newIdea, error: null }
