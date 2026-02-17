@@ -32,7 +32,7 @@ export default function BetConfirmation({ extractedData, onContinue, onBack }) {
     <div className="bet-confirmation-container">
       <h2>Set Your Bet Parameters</h2>
       <p className="confirmation-intro">
-        Review the AI's suggestions and set your confidence level before scoring.
+        Confirm a few params before scoring.
       </p>
 
       {/* Confidence Slider */}
@@ -210,31 +210,21 @@ export default function BetConfirmation({ extractedData, onContinue, onBack }) {
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="confirmation-actions">
-        <button 
-          onClick={onBack} 
-          className="btn-back"
-          disabled={isScoring}
-          style={{
-            opacity: isScoring ? 0.5 : 1,
-            cursor: isScoring ? 'not-allowed' : 'pointer'
-          }}
-        >
-          ← Back to Review
-        </button>
-        <button 
-          onClick={handleSubmit} 
-          className="btn-continue"
-          disabled={isScoring}
-          style={{
-            opacity: isScoring ? 0.7 : 1,
-            cursor: isScoring ? 'wait' : 'pointer'
-          }}
-        >
-          {isScoring ? 'Scoring... ⏳' : 'Score Bet →'}
-        </button>
-      </div>
+{/* Actions */}
+<div className="confirmation-actions" style={{ display: 'flex', justifyContent: 'flex-end' }}>
+  <button 
+    onClick={handleSubmit} 
+    className="btn-continue"
+    disabled={isScoring}
+    style={{
+      padding: '12px 24px',
+      opacity: isScoring ? 0.7 : 1,
+      cursor: isScoring ? 'wait' : 'pointer'
+    }}
+  >
+    {isScoring ? 'Scoring... ⏳' : 'Score Bet →'}
+  </button>
+</div>
     </div>
   );
 }
