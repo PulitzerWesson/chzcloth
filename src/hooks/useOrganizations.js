@@ -95,57 +95,59 @@ export function useOrganizations() {
     }
   }, [user, authLoading, fetchOrganizations])
 
-  const createOrganization = async (orgData, userOrgData) => {
-    if (!user) return { error: { message: 'Not authenticated' } }
+const createOrganization = async (orgData, userOrgData) => {
+  if (!user) return { error: { message: 'Not authenticated' } }
 
-    try {
-      const { data: org, error: orgError } = await supabase
-        .from('organizations')
-        .insert({
-          name: orgData.name,
-          website: orgData.website,
-          stage: orgData.stage,
-          team_size: orgData.teamSize,
-          industry: orgData.industry,
-          current_mode: orgData.currentMode
-        })
-        .select()
-        .single()
+  try {
+    const { data: org, error: orgError } = await supabase
+      .from('organizations')
+      .insert({
+        name: orgData.name,
+        website: orgData.website,
+        stage: orgData.stage,
+        team_size: orgData.teamSize,
+        current_mode: orgData.currentMode,
+        user_context: orgData.userContext,
+        ai_context: orgData.aiContext,
+        combined_context: orgData.combinedContext
+      })
+      .select()
+      .single()
 
-      if (orgError) throw orgError
+    if (orgError) throw orgError
 
-      if (userOrgData.isCurrent !== false) {
-        await supabase
-          .from('user_organizations')
-          .update({ is_current: false })
-          .eq('user_id', user.id)
-          .eq('is_current', true)
-      }
-
-      const { data: userOrg, error: userOrgError } = await supabase
+    if (userOrgData.isCurrent !== false) {
+      await supabase
         .from('user_organizations')
-        .insert({
-          user_id: user.id,
-          org_id: org.id,
-          role: userOrgData.role,
-          seniority: userOrgData.seniority,
-          started_at: userOrgData.startedAt,
-          is_current: userOrgData.isCurrent !== false
-        })
-        .select()
-        .single()
-
-      if (userOrgError) throw userOrgError
-
-      fetchingRef.current = false
-      await fetchOrganizations()
-
-      return { data: { org, userOrg }, error: null }
-    } catch (err) {
-      console.error('Error creating organization:', err)
-      return { data: null, error: err }
+        .update({ is_current: false })
+        .eq('user_id', user.id)
+        .eq('is_current', true)
     }
+
+    const { data: userOrg, error: userOrgError } = await supabase
+      .from('user_organizations')
+      .insert({
+        user_id: user.id,
+        org_id: org.id,
+        role: userOrgData.role,
+        seniority: userOrgData.seniority,
+        started_at: userOrgData.startedAt,
+        is_current: userOrgData.isCurrent !== false
+      })
+      .select()
+      .single()
+
+    if (userOrgError) throw userOrgError
+
+    fetchingRef.current = false
+    await fetchOrganizations()
+
+    return { data: { org, userOrg }, error: null }
+  } catch (err) {
+    console.error('Error creating organization:', err)
+    return { data: null, error: err }
   }
+}
 
   const updateOrganization = async (orgId, updates) => {
     if (!user) return { error: { message: 'Not authenticated' } }
