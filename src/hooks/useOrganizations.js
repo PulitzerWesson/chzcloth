@@ -35,16 +35,18 @@ export function useOrganizations() {
           started_at,
           ended_at,
           is_current,
-          organizations (
-            id,
-            name,
-            website,
-            stage,
-            team_size,
-            industry,
-            current_mode
-          )
-        `)
+  organizations (
+    id,
+    name,
+    website,
+    stage,
+    team_size,
+    current_mode,
+    user_context,
+    ai_context,
+    combined_context
+  )
+`)
         .eq('user_id', user.id)
         .order('is_current', { ascending: false })
 
@@ -61,6 +63,9 @@ export function useOrganizations() {
           teamSize: uo.organizations.team_size,
           industry: uo.organizations.industry,
           currentMode: uo.organizations.current_mode,
+          userContext: uo.organizations.user_context,      // ← Add
+          aiContext: uo.organizations.ai_context,          // ← Add  
+          combinedContext: uo.organizations.combined_context
           role: uo.role,
           seniority: uo.seniority,
           startedAt: uo.started_at,
