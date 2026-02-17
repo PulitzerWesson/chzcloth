@@ -219,10 +219,10 @@ export default function BetConfirmation({ extractedData, onContinue, onBack }) {
     style={{
       padding: '12px 24px',
       opacity: isScoring ? 0.7 : 1,
-      cursor: isScoring ? 'wait' : 'pointer'
+     cursor: isScoring ? 'not-allowed' : 'pointer'
     }}
   >
-    {isScoring ? 'Scoring... ⏳' : 'Score Bet →'}
+    {isScoring ? 'Scoring...' : 'Score Bet →'}
   </button>
 </div>
     </div>
