@@ -14,7 +14,7 @@ import SignalSubmission from './components/SignalSubmission';
 import SuggestionCard from './components/SuggestionCard';
 import { getOrgLearnings } from './utils/orgLearnings';
 import { supabase } from './lib/supabase';
-import BetConfirmation from './components/BetConfirmation';
+import BetConfirmation from './components/BetConfirmation'
 
 // ============================================
 // CHZCLOTH Free - Where Bets Get Smarter
