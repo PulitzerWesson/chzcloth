@@ -3666,7 +3666,7 @@ const handleClaimAndStructure = async (idea) => {
       .eq('id', betData.id);
     
     if (error) throw error;
-    await refetchBets();
+    await refreshBets();
     
     alert('Bet approved and added to Priority Queue!');
     setScreen('priority_queue');
