@@ -124,36 +124,30 @@ function IdeasQueue({
     flexShrink: 0,
     alignItems: 'center'
   }}>
-{/* CHZCLOTH Score - Compact version */}
+
+    {/* CHZCLOTH Score - No box, just glow */}
 {isAIEnhanced && aiScore ? (
-  <div style={{
+  <div style={{ 
     textAlign: 'center',
-    background: 'rgba(45, 212, 191, 0.1)',
-    border: '2px solid rgba(45, 212, 191, 0.4)',
-    borderRadius: 8,
-    padding: '8px 10px',
-    minWidth: 65
+    minWidth: 50
   }}>
     <div style={{ 
-      fontSize: '0.5rem', 
+      fontSize: '0.6rem', 
       color: '#2dd4bf', 
       marginBottom: 2,
       fontWeight: 700,
-      letterSpacing: '0.05em'
+      letterSpacing: '0.05em',
+      textShadow: '0 0 10px rgba(45, 212, 191, 0.6)'
     }}>
-      CHZCLOTH
-    </div>
-    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#2dd4bf', margin: '2px 0' }}>
-      {aiScore}
+      CHZ
     </div>
     <div style={{ 
-      fontSize: '0.5rem', 
-      color: '#2dd4bf', 
-      marginTop: 2,
-      fontWeight: 700,
-      letterSpacing: '0.05em'
+      fontSize: '0.95rem', 
+      fontWeight: 600, 
+      color: '#2dd4bf',
+      textShadow: '0 0 15px rgba(45, 212, 191, 0.8)'
     }}>
-      ENHANCED
+      {aiScore}
     </div>
   </div>
 ) : null}
