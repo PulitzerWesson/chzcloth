@@ -2075,16 +2075,7 @@ const hasSuggestion = aiScores?.suggestion; // TESTING: Always show if suggestio
               </h3>
               <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
-                  <span style={{
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    color: bet.isOwnIdea ? '#2dd4bf' : '#fbbf24',
-                    background: bet.isOwnIdea ? 'rgba(45, 212, 191, 0.15)' : 'rgba(251, 191, 36, 0.15)',
-                    padding: '4px 10px',
-                    borderRadius: 4
-                  }}>
-                    {bet.isOwnIdea ? 'Your idea' : `Tracking: ${bet.ideaSource || "someone else's bet"}`}
-                  </span>
+
                   {bet.strategicAlignment && (
                     <span style={{
                       fontSize: '0.75rem',
