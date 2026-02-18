@@ -3031,7 +3031,6 @@ const avgScore = betsWithScores.length > 0
                 gap: 8
               }}>
                 {bet.hypothesis}
-                {bet.aiEnhanced && <CHZCLOTHBadge />}
               </div>
         
 {/* Right side: Approval + Scores */}
