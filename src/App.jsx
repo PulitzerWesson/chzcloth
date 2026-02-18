@@ -2664,15 +2664,7 @@ function RecordOutcome({ bet, onComplete, onCancel }) {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <span style={{ color: '#64748b', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: 1 }}>Your Bet</span>
-            <span style={{
-              fontSize: '0.7rem',
-              color: bet.isOwnIdea !== false ? '#2dd4bf' : '#fbbf24',
-              background: bet.isOwnIdea !== false ? 'rgba(45, 212, 191, 0.15)' : 'rgba(251, 191, 36, 0.15)',
-              padding: '2px 8px',
-              borderRadius: 4
-            }}>
-              {bet.isOwnIdea !== false ? 'your idea' : `tracking: ${bet.ideaSource || 'other'}`}
-            </span>
+
           </div>
           <div style={{ color: '#f1f5f9', lineHeight: 1.6, marginBottom: 16 }}>{bet.hypothesis}</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
