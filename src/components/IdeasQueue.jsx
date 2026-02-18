@@ -132,7 +132,7 @@ function IdeasQueue({
     paddingRight: 8  // ← ADD THIS - matches the paddingLeft on APR side
   }}>
     <div style={{ 
-      fontSize: '0.6rem', 
+      fontSize: '0.7rem', 
       color: '#2dd4bf', 
       marginBottom: 2,
       fontWeight: 700,
@@ -142,7 +142,7 @@ function IdeasQueue({
       CHZ
     </div>
     <div style={{ 
-      fontSize: '0.95rem', 
+      fontSize: '1.2rem', 
       fontWeight: 600, 
       color: '#2dd4bf',
       textShadow: '0 0 15px rgba(45, 212, 191, 0.8)'
