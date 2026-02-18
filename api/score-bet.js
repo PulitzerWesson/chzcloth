@@ -261,6 +261,7 @@ Return ONLY valid JSON (no markdown, no preamble):
 }
 if (scores.summary) {
   scores.summary = stripCitations(scores.summary);
+}
     if (scores.approach?.rationale) {
       scores.approach.rationale = stripCitations(scores.approach.rationale);
     }
