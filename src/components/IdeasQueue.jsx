@@ -120,7 +120,7 @@ function IdeasQueue({
   {/* Scores section - CHZCLOTH score first, then dimensions */}
   <div style={{ 
     display: 'flex', 
-    gap: 12, 
+    gap: 0, 
     flexShrink: 0,
     alignItems: 'center'
   }}>
