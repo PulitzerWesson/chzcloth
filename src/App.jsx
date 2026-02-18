@@ -1929,7 +1929,7 @@ const hasSuggestion = aiScores?.suggestion; // TESTING: Always show if suggestio
               }}>
                 {suggestionType === 'alternative'
                   ? 'Your bet scored below 60. Here\'s a different approach to achieve your goal:'
-                  : 'Your bet scored 60-69. Here are improvements to strengthen it:'}
+                  : 'Here are suggestions to consider:'}
               </p>
               
               <div style={{ color: '#cbd5e1', marginBottom: 16 }}>
