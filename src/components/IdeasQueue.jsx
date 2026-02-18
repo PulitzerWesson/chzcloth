@@ -129,7 +129,6 @@ function IdeasQueue({
 {isAIEnhanced && aiScore ? (
   <div style={{ 
     textAlign: 'center',
-    minWidth: 50,
     paddingRight: 8  // ← ADD THIS - matches the paddingLeft on APR side
   }}>
     <div style={{ 
