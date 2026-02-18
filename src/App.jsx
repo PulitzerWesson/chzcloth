@@ -4053,10 +4053,6 @@ const handleRejectBet = async (betId, reason) => {
                 </div>
               </div>
               
-              <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: bet.scoringRationale ? 16 : 0 }}>
-                Metric: <span style={{ color: '#2dd4bf' }}>{bet.metric}</span> • 
-                Prediction: <span style={{ color: '#94a3b8' }}>{bet.prediction}</span>
-              </div>
               
               {/* Expandable rationale */}
               {bet.scoringRationale && (
@@ -4066,7 +4062,7 @@ const handleRejectBet = async (betId, reason) => {
                     style={{
                       background: 'transparent',
                       border: 'none',
-                      color: '#64748b',
+                      color: '#2dd4bf',
                       fontSize: '0.8rem',
                       cursor: 'pointer',
                       padding: 0,
