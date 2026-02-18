@@ -149,7 +149,16 @@ For example:
 - Bad: "Aligns with growth stage focus on conversion optimization"
 - Good: "For Further's senior living platform serving 5,500 communities, tour conversion is the critical bottleneck in their buyer journey from prospect to move-in"
 
-` : ''}SCORING CRITERIA:
+` : ''}
+
+TITLE & SUMMARY GENERATION:
+Generate a professional title and summary for this bet:
+- Title: 8-12 words capturing the core action and expected outcome
+- Summary: 15-20 words explaining the value proposition
+${orgContext ? 'Reference company specifics when relevant (e.g., "Further" vs "the company").' : ''}
+
+
+SCORING CRITERIA:
 
 1. APPROACH (0-100):
 - Is the hypothesis structured properly (if/then/because)?
@@ -184,6 +193,8 @@ SUGGESTION RULES:
 
 Return ONLY valid JSON (no markdown, no preamble):
 {
+  "title": "Concise professional title (8-12 words)",
+  "summary": "One-sentence value proposition (15-20 words)",
   "approach": {
     "score": 0-100,
     "rationale": "Brief explanation${needsSearch ? ' citing any relevant web findings' : ''}${orgContext ? ' citing specific company details' : ''}"
@@ -244,6 +255,12 @@ Return ONLY valid JSON (no markdown, no preamble):
     };
     
     // Clean up all rationale fields
+
+    if (scores.title) {
+  scores.title = stripCitations(scores.title);
+}
+if (scores.summary) {
+  scores.summary = stripCitations(scores.summary);
     if (scores.approach?.rationale) {
       scores.approach.rationale = stripCitations(scores.approach.rationale);
     }
