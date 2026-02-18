@@ -222,11 +222,11 @@ function IdeasQueue({
                   </div>
 
                   {/* Summary line */}
-                  {betData?.hypothesis && (
-                    <div style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.5, marginBottom: 12 }}>
-                      {betData.hypothesis.split('.')[0]}.
-                    </div>
-                  )}
+{(idea.summary || betData?.summary) && (
+  <div style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.5, marginBottom: 12 }}>
+    {idea.summary || betData?.summary}
+  </div>
+)}
 
                   {/* Meta info with mode badge */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: '0.8rem', color: '#64748b', marginBottom: 16 }}>
