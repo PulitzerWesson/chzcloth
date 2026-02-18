@@ -327,6 +327,8 @@ function IdeasQueue({
     </div>
   </div>
 )}
+                        </div>
+                )}
 
 
 
