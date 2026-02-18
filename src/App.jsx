@@ -2056,8 +2056,7 @@ const hasSuggestion = aiScores?.suggestion; // TESTING: Always show if suggestio
                   {bet.aiPredictedScore}
                 </div>
                 <div style={{ color: '#64748b', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                  AI-Enhanced Score
-                  <CHZCLOTHBadge />
+                  CHZCLOTH Enhanced Score
                 </div>
               </div>
             )}
@@ -2073,7 +2072,6 @@ const hasSuggestion = aiScores?.suggestion; // TESTING: Always show if suggestio
                 gap: 8
               }}>
                 Your Bet
-                {bet.aiEnhanced && <CHZCLOTHBadge />}
               </h3>
               <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
