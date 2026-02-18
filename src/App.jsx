@@ -74,7 +74,7 @@ function AppHeader({ isLoggedIn, onDashboardClick, onLogoClick, onNewBet, showTe
           gap: 12
         }}>
           <span style={{ color: '#cbd5e1', fontSize: '0.85rem' }}>
-            🚀 <strong style={{ color: '#2dd4bf' }}>Welcome Project Visitors</strong> — Glad you're here, it's a work in progress.
+            <strong style={{ color: '#2dd4bf' }}>Welcome Project Vizitorz</strong> — We're tryin to make some CHZ.
           </span>
           <button
             onClick={() => setBannerDismissed(true)}
