@@ -3087,7 +3087,7 @@ const avgScore = betsWithScores.length > 0
             {expandedBets[bet.id] ? '▼ Hide details' : '▶ Show details'}
           </button>
           
-          {expandedBets[bet.id] && (
+{expandedBets[bet.id] && (
             <div style={{
               background: 'rgba(0,0,0,0.2)',
               borderRadius: 8,
@@ -3096,41 +3096,114 @@ const avgScore = betsWithScores.length > 0
               fontSize: '0.85rem',
               lineHeight: 1.6
             }}>
-              {/* Source */}
-              <div style={{ marginBottom: 12 }}>
-                <span style={{ color: '#64748b' }}>Source: </span>
-                <span style={{ color: '#94a3b8' }}>
-                  {bet.isOwnIdea !== false ? 'Your idea' : `${bet.ideaSource || "Other"}`}
-                </span>
+              {/* BET DETAILS */}
+              <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ 
+                  color: '#94a3b8', 
+                  fontSize: '0.75rem', 
+                  fontWeight: 600, 
+                  marginBottom: 12, 
+                  textTransform: 'uppercase', 
+                  letterSpacing: '0.05em'
+                }}>
+                  BET DETAILS
+                </div>
+                
+                {/* Source - Contributors specific */}
+                <div style={{ marginBottom: 12 }}>
+                  <span style={{ color: '#64748b' }}>Source: </span>
+                  <span style={{ color: '#94a3b8' }}>
+                    {bet.isOwnIdea !== false ? 'Your idea' : `${bet.ideaSource || "Other"}`}
+                  </span>
+                </div>
+                
+                {/* 2-column grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                  <div>
+                    <span style={{ color: '#64748b' }}>Metric: </span>
+                    <span style={{ color: '#2dd4bf' }}>{bet.metric}</span>
+                  </div>
+                  <div>
+                    <span style={{ color: '#64748b' }}>Prediction: </span>
+                    <span style={{ color: '#94a3b8' }}>{bet.prediction}</span>
+                  </div>
+                  {bet.baseline && (
+                    <div>
+                      <span style={{ color: '#64748b' }}>Baseline: </span>
+                      <span style={{ color: '#94a3b8' }}>{bet.baseline}</span>
+                    </div>
+                  )}
+                  {bet.timeframe && (
+                    <div>
+                      <span style={{ color: '#64748b' }}>Timeframe: </span>
+                      <span style={{ color: '#94a3b8' }}>{bet.timeframe} days</span>
+                    </div>
+                  )}
+                  {bet.confidence && (
+                    <div>
+                      <span style={{ color: '#64748b' }}>Confidence: </span>
+                      <span style={{ color: '#fbbf24' }}>{bet.confidence}%</span>
+                    </div>
+                  )}
+                  {bet.strategicAlignment && (
+                    <div>
+                      <span style={{ color: '#64748b' }}>Strategic Alignment: </span>
+                      <span style={{ color: '#94a3b8' }}>
+                        {bet.strategicAlignment === 'bullseye' ? 'Bullseye' : 
+                         bet.strategicAlignment === 'inner' ? 'Inner Ring' :
+                         bet.strategicAlignment === 'outer' ? 'Outer Ring' : 'Edge'}
+                      </span>
+                    </div>
+                  )}
+                  {bet.estimatedEffort && (
+                    <div>
+                      <span style={{ color: '#64748b' }}>Estimated Effort: </span>
+                      <span style={{ color: '#94a3b8' }}>{bet.estimatedEffort}</span>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Assumptions - full width */}
+                {bet.assumptions && (
+                  <div>
+                    <div style={{ color: '#64748b', marginBottom: 4 }}>Assumptions:</div>
+                    <div style={{ color: '#94a3b8' }}>{bet.assumptions}</div>
+                  </div>
+                )}
               </div>
               
-              {/* Metric & Timeframe */}
-              <div style={{ marginBottom: 12 }}>
-                <span style={{ color: '#64748b' }}>Metric: </span>
-                <span style={{ color: '#2dd4bf' }}>{bet.metric}</span>
-                <span style={{ color: '#64748b', marginLeft: 8 }}>
-                  (measure in {bet.timeframe} days)
-                </span>
-              </div>
-              
-              {/* Rationale */}
-              <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-  AI Scoring Rationale
-</div>
-                <div style={{ marginBottom: 8 }}>
-                  <span style={{ color: '#2dd4bf', fontWeight: 600 }}>Approach:</span>
-                  <span style={{ color: '#94a3b8', marginLeft: 8 }}>{bet.scoringRationale?.approach?.rationale}</span>
+              {/* CHZCLOTH SCORING RATIONALE */}
+              {bet.scoringRationale && (
+                <div style={{ paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div style={{ 
+                    color: '#94a3b8', 
+                    fontSize: '0.75rem', 
+                    fontWeight: 600, 
+                    marginBottom: 12, 
+                    textTransform: 'uppercase', 
+                    letterSpacing: '0.05em',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6
+                  }}>
+                    CHZCLOTH SCORING RATIONALE
+                    {bet.aiEnhanced && <span style={{ color: '#2dd4bf', fontWeight: 700 }}>• ENHANCED</span>}
+                  </div>
+                  
+                  <div style={{ marginBottom: 8 }}>
+                    <span style={{ color: '#2dd4bf', fontWeight: 600 }}>Approach:</span>
+                    <span style={{ color: '#94a3b8', marginLeft: 8 }}>{bet.scoringRationale?.approach?.rationale}</span>
+                  </div>
+                  <div style={{ marginBottom: 8 }}>
+                    <span style={{ color: '#fbbf24', fontWeight: 600 }}>Potential:</span>
+                    <span style={{ color: '#94a3b8', marginLeft: 8 }}>{bet.scoringRationale?.potential?.rationale}</span>
+                  </div>
+                  <div>
+                    <span style={{ color: '#7dd3fc', fontWeight: 600 }}>Fit:</span>
+                    <span style={{ color: '#94a3b8', marginLeft: 8 }}>{bet.scoringRationale?.fit?.rationale}</span>
+                  </div>
                 </div>
-                <div style={{ marginBottom: 8 }}>
-                  <span style={{ color: '#fbbf24', fontWeight: 600 }}>Potential:</span>
-                  <span style={{ color: '#94a3b8', marginLeft: 8 }}>{bet.scoringRationale?.potential?.rationale}</span>
-                </div>
-                <div>
-                  <span style={{ color: '#7dd3fc', fontWeight: 600 }}>Fit:</span>
-                  <span style={{ color: '#94a3b8', marginLeft: 8 }}>{bet.scoringRationale?.fit?.rationale}</span>
-                </div>
-              </div>
+              )}
             </div>
           )}
         </>
