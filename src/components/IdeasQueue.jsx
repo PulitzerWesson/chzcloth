@@ -162,20 +162,20 @@ function IdeasQueue({
     borderLeft: '1px solid rgba(255,255,255,0.1)'
   }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '0.6rem', color: '#64748b', marginBottom: 2 }}>APR</div>
-          <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#2dd4bf' }}>
+          <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: 2 }}>APR</div>
+          <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#2dd4bf' }}>
             {idea.viability_score || '-'}
           </div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '0.6rem', color: '#64748b', marginBottom: 2 }}>POT</div>
-          <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#fbbf24' }}>
+          <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: 2 }}>POT</div>
+          <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#fbbf24' }}>
             {betData?.potentialScore || '-'}
           </div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '0.6rem', color: '#64748b', marginBottom: 2 }}>FIT</div>
-          <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#7dd3fc' }}>
+          <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: 2 }}>FIT</div>
+          <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#7dd3fc' }}>
             {idea.relevance_score || '-'}
           </div>
         </div>
