@@ -2920,7 +2920,7 @@ const avgScore = betsWithScores.length > 0
     
   return (
     <div style={{ padding: '40px 24px' }}>
-      <div style={{ maxWidth: 800, margin: '0 auto' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto' }}>
         {/* v2: Organization switcher */}
         <div style={{ marginBottom: 24 }}>
           <OrgSwitcher
