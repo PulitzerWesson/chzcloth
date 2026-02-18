@@ -3035,10 +3035,10 @@ const avgScore = betsWithScores.length > 0
               {/* CHZ Score */}
               {bet.aiEnhanced && bet.aiPredictedScore && (
                 <div style={{ textAlign: 'center', paddingRight: 8 }}>
-                  <div style={{ fontSize: '0.6rem', color: '#2dd4bf', marginBottom: 2, fontWeight: 700, letterSpacing: '0.05em', textShadow: '0 0 10px rgba(45, 212, 191, 0.6)' }}>
+                  <div style={{ fontSize: '0.7rem', color: '#2dd4bf', marginBottom: 2, fontWeight: 700, letterSpacing: '0.05em', textShadow: '0 0 10px rgba(45, 212, 191, 0.6)' }}>
                     CHZ
                   </div>
-                  <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#2dd4bf', textShadow: '0 0 15px rgba(45, 212, 191, 0.8)' }}>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#2dd4bf', textShadow: '0 0 15px rgba(45, 212, 191, 0.8)' }}>
                     {bet.aiPredictedScore}
                   </div>
                 </div>
