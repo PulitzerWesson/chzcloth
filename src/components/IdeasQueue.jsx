@@ -24,8 +24,11 @@ const CHZCLOTHBadge = () => (
 
 // Strategic Alignment Icon component
 const StrategicAlignmentIcon = ({ alignment }) => {
-if (alignment?.toLowerCase() === 'inner_ring' || alignment?.toLowerCase() === 'inner ring') {
-  return (
+  const normalized = alignment?.toLowerCase();
+  
+  // Accept 'inner', 'inner_ring', or 'Inner Ring'
+  if (normalized === 'inner' || normalized === 'inner_ring' || normalized === 'inner ring') {
+    return (
       <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
         <circle cx="14" cy="14" r="12" stroke="url(#tealGradient)" strokeWidth="2.5" fill="none"/>
         <circle cx="14" cy="14" r="6" fill="url(#redGradient)"/>
@@ -43,8 +46,9 @@ if (alignment?.toLowerCase() === 'inner_ring' || alignment?.toLowerCase() === 'i
     );
   }
   
-if (alignment?.toLowerCase() === 'outer_ring' || alignment?.toLowerCase() === 'outer ring') {
-  return (
+  // Accept 'outer', 'outer_ring', or 'Outer Ring'
+  if (normalized === 'outer' || normalized === 'outer_ring' || normalized === 'outer ring') {
+    return (
       <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
         <circle cx="14" cy="14" r="12" stroke="url(#tealGradient2)" strokeWidth="3" fill="none"/>
         <circle cx="14" cy="14" r="6" fill="#1e293b"/>
@@ -58,8 +62,8 @@ if (alignment?.toLowerCase() === 'outer_ring' || alignment?.toLowerCase() === 'o
     );
   }
   
-if (alignment?.toLowerCase() === 'experimental') {
-  return (
+  if (normalized === 'experimental') {
+    return (
       <svg width="24" height="28" viewBox="0 0 24 28" fill="none">
         <path d="M8 2 L8 10 L4 22 C3.5 24 4.5 26 7 26 L17 26 C19.5 26 20.5 24 20 22 L16 10 L16 2" 
               stroke="url(#beakerGradient)" 
@@ -78,6 +82,9 @@ if (alignment?.toLowerCase() === 'experimental') {
       </svg>
     );
   }
+  
+  return null;
+};
   
   return null;
 };
