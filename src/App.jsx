@@ -3075,7 +3075,6 @@ const avgScore = betsWithScores.length > 0
         }}>
           {bet.aiPredictedScore}
         </div>
-      </div>
     )}
     
     {/* AI Scores - dimensions */}
