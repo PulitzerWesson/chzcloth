@@ -192,7 +192,7 @@ function IdeasQueue({
                       style={{
                         background: 'transparent',
                         border: 'none',
-                        color: '#64748b',
+                        color: '#2dd4bf',
                         fontSize: '0.8rem',
                         cursor: 'pointer',
                         padding: 0,
