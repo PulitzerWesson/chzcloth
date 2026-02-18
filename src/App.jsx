@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './hooks/useAuth';
 import { useIdeas } from './hooks/useIdeas';
@@ -2918,8 +2919,9 @@ const avgScore = betsWithScores.length > 0
   ? Math.round(betsWithScores.reduce((sum, b) => sum + (b.approachScore + b.potentialScore + b.fitScore) / 3, 0) / betsWithScores.length)
   : null;
     
-return (
-  <>
+  return (
+    <div style={{ padding: '40px 24px' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto' }}>
         {/* v2: Organization switcher */}
         <div style={{ marginBottom: 24 }}>
           <OrgSwitcher
@@ -3127,9 +3129,12 @@ return (
                 <div>
                   <span style={{ color: '#7dd3fc', fontWeight: 600 }}>Fit:</span>
                   <span style={{ color: '#94a3b8', marginLeft: 8 }}>{bet.scoringRationale?.fit?.rationale}</span>
-    </>
-);
-}
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
       
 {/* Record Outcome Button */}
 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
