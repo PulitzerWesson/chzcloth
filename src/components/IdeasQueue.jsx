@@ -24,8 +24,8 @@ const CHZCLOTHBadge = () => (
 
 // Strategic Alignment Icon component
 const StrategicAlignmentIcon = ({ alignment }) => {
-  if (alignment === 'inner_ring') {
-    return (
+if (alignment?.toLowerCase() === 'inner_ring' || alignment?.toLowerCase() === 'inner ring') {
+  return (
       <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
         <circle cx="14" cy="14" r="12" stroke="url(#tealGradient)" strokeWidth="2.5" fill="none"/>
         <circle cx="14" cy="14" r="6" fill="url(#redGradient)"/>
@@ -43,8 +43,8 @@ const StrategicAlignmentIcon = ({ alignment }) => {
     );
   }
   
-  if (alignment === 'outer_ring') {
-    return (
+if (alignment?.toLowerCase() === 'outer_ring' || alignment?.toLowerCase() === 'outer ring') {
+  return (
       <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
         <circle cx="14" cy="14" r="12" stroke="url(#tealGradient2)" strokeWidth="3" fill="none"/>
         <circle cx="14" cy="14" r="6" fill="#1e293b"/>
@@ -58,8 +58,8 @@ const StrategicAlignmentIcon = ({ alignment }) => {
     );
   }
   
-  if (alignment === 'experimental') {
-    return (
+if (alignment?.toLowerCase() === 'experimental') {
+  return (
       <svg width="24" height="28" viewBox="0 0 24 28" fill="none">
         <path d="M8 2 L8 10 L4 22 C3.5 24 4.5 26 7 26 L17 26 C19.5 26 20.5 24 20 22 L16 10 L16 2" 
               stroke="url(#beakerGradient)" 
