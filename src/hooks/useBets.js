@@ -12,30 +12,30 @@ export function useBets(orgId, orgMode) {
   const fetchingRef = useRef(false)
 
   // AI scoring function
-const scoreBet = async (betData, orgContext) => {
+  const scoreBet = async (betData, orgContext) => {
     console.log('SCOREBET RECEIVED:', orgContext);
-  console.log('CONTEXT VALUE:', orgContext?.context?.substring(0, 100));
-  try {
-    const response = await fetch('/api/score-bet', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        bet: betData, 
-        orgMode: orgMode || 'growth',
-        orgName: orgContext?.name,
-        orgContext: orgContext?.context,
-        orgLearnings: orgContext?.learnings
-      })
-    });
-    
-    if (!response.ok) throw new Error('Scoring failed');
-    
-    return await response.json();
-  } catch (err) {
-    console.error('Scoring error:', err);
-    return null;
-  }
-};
+    console.log('CONTEXT VALUE:', orgContext?.context?.substring(0, 100));
+    try {
+      const response = await fetch('/api/score-bet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          bet: betData, 
+          orgMode: orgMode || 'growth',
+          orgName: orgContext?.name,
+          orgContext: orgContext?.context,
+          orgLearnings: orgContext?.learnings
+        })
+      });
+      
+      if (!response.ok) throw new Error('Scoring failed');
+      
+      return await response.json();
+    } catch (err) {
+      console.error('Scoring error:', err);
+      return null;
+    }
+  };
 
   const fetchBets = useCallback(async () => {
     if (!user) {
@@ -55,7 +55,7 @@ const scoreBet = async (betData, orgContext) => {
           *,
           outcomes (*)
         `)
-      .or(`user_id.eq.${user.id},sponsored_by.eq.${user.id}`)
+        .or(`user_id.eq.${user.id},sponsored_by.eq.${user.id}`)
         .order('created_at', { ascending: false })
 
       if (orgId) {
@@ -66,17 +66,17 @@ const scoreBet = async (betData, orgContext) => {
 
       if (betsError) throw betsError
 
-const transformedBets = (betsData || []).map(bet => {
-  // Handle outcomes as either array or object
-  const outcome = Array.isArray(bet.outcomes) 
-    ? bet.outcomes[0] 
-    : bet.outcomes;
+      const transformedBets = (betsData || []).map(bet => {
+        // Handle outcomes as either array or object
+        const outcome = Array.isArray(bet.outcomes) 
+          ? bet.outcomes[0] 
+          : bet.outcomes;
 
-  const resolvedStatus = bet.is_past_bet
-    ? bet.past_bet_outcome
-    : (outcome?.status || null)
+        const resolvedStatus = bet.is_past_bet
+          ? bet.past_bet_outcome
+          : (outcome?.status || null)
 
-  return {
+        return {
           id: bet.id,
           orgId: bet.org_id,
           hypothesis: bet.hypothesis,
@@ -105,22 +105,25 @@ const transformedBets = (betsData || []).map(bet => {
             : (outcome?.learned|| null),
           wouldDoAgain: outcome?.would_do_again ?? null,
           completedAt: outcome?.recorded_at || null,
-          // New score fields
+          // Score fields
           approachScore: bet.approach_score,
           potentialScore: bet.potential_score,
           fitScore: bet.fit_score,
           scoringRationale: bet.scoring_rationale,
-              aiEnhanced: bet.ai_enhanced,
+          // Title and summary
+          title: bet.title,
+          summary: bet.summary,
+          aiEnhanced: bet.ai_enhanced,
           aiPredictedScore: bet.ai_predicted_score,
           originalHypothesis: bet.original_hypothesis,
-        approvalStatus: bet.approval_status,
-        rejectionReason: bet.rejection_reason,
-        approvedAt: bet.approved_at,
-        approvedBy: bet.approved_by,
-        rejectedAt: bet.rejected_at,
-        rejectedBy: bet.rejected_by,
-        ideaId: bet.idea_id,
-        structuredBy: bet.structured_by
+          approvalStatus: bet.approval_status,
+          rejectionReason: bet.rejection_reason,
+          approvedAt: bet.approved_at,
+          approvedBy: bet.approved_by,
+          rejectedAt: bet.rejected_at,
+          rejectedBy: bet.rejected_by,
+          ideaId: bet.idea_id,
+          structuredBy: bet.structured_by
         }
       })
 
@@ -140,24 +143,25 @@ const transformedBets = (betsData || []).map(bet => {
     fetchBets()
   }, [fetchBets])
 
-const createBet = async (betData, ideaId = null, precomputedScores = null, orgContext = null) => {
-  if (!user) return { error: { message: 'Not authenticated' } }
+  const createBet = async (betData, ideaId = null, precomputedScores = null, orgContext = null) => {
+    if (!user) return { error: { message: 'Not authenticated' } }
 
-// Use precomputed scores if provided, otherwise fetch them
-let scores = precomputedScores;
-if (!scores) {
-  const orgLearnings = await getOrgLearnings(orgId, user.id, 'bet');
-  
-scores = await scoreBet(betData, { 
-  name: orgContext?.name || orgId, 
-  context: orgContext?.combinedContext || orgContext?.userContext,
-  learnings: orgLearnings?.learnings || []
-});
-}
-try {
-    const { data, error } = await supabase
-      .from('bets')
-      .insert({
+    // Use precomputed scores if provided, otherwise fetch them
+    let scores = precomputedScores;
+    if (!scores) {
+      const orgLearnings = await getOrgLearnings(orgId, user.id, 'bet');
+      
+      scores = await scoreBet(betData, { 
+        name: orgContext?.name || orgId, 
+        context: orgContext?.combinedContext || orgContext?.userContext,
+        learnings: orgLearnings?.learnings || []
+      });
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('bets')
+        .insert({
           user_id: user.id,
           org_id: orgId || null,
           hypothesis: betData.hypothesis,
@@ -175,11 +179,14 @@ try {
           idea_source: betData.ideaSource,
           measurement_tool: betData.measurementTool,
           is_past_bet: false,
-          // New score fields
+          // Score fields
           approach_score: scores?.approach?.score ?? null,
           potential_score: scores?.potential?.score ?? null,
           fit_score: scores?.fit?.score ?? null,
           scoring_rationale: scores || null,
+          // Title and summary from AI scoring
+          title: scores?.title ?? betData.hypothesis?.substring(0, 100) ?? null,
+          summary: scores?.summary ?? null,
           strategic_alignment: betData.strategicAlignment || null,
           estimated_effort: betData.estimatedEffort || null,
           inaction_impact: betData.inactionImpact || null,
@@ -194,55 +201,60 @@ try {
         .single()
 
       if (error) throw error
+      
       if (ideaId && data) {
-  const { error: updateError } = await supabase
-    .from('ideas')
-    .update({ status: 'structured' })
-    .eq('id', ideaId);
-  
-  if (updateError) {
-    console.error('Error updating idea status:', updateError);
-  }
-}
+        const { error: updateError } = await supabase
+          .from('ideas')
+          .update({ status: 'structured' })
+          .eq('id', ideaId);
+        
+        if (updateError) {
+          console.error('Error updating idea status:', updateError);
+        }
+      }
 
-// Transform to match what App.jsx expects
-const newBet = {
-  id: data.id,
-  orgId: data.org_id,
-  hypothesis: betData.hypothesis,
-  metricDomain: betData.metricDomain,
-  metric: betData.metric,
-  customMetric: betData.customMetric,
-  betType: betData.betType,
-  baseline: betData.baseline,
-  prediction: betData.prediction,
-  confidence: betData.confidence,
-  timeframe: betData.timeframe,
-  assumptions: betData.assumptions,
-  cheapTest: betData.cheapTest,
-  isOwnIdea: betData.isOwnIdea !== false,
-  ideaSource: betData.ideaSource,
-  measurementTool: betData.measurementTool,
-  strategicAlignment: betData.strategicAlignment,
-  estimatedEffort: betData.estimatedEffort,
-  inactionImpact: betData.inactionImpact,
-  isPastBet: false,
-  outcome: null,
-  status: null,
-  createdAt: data.created_at,
-  // AI scores - CRITICAL for ScoreResult component
-  approachScore: scores?.approach?.score ?? null,
-  potentialScore: scores?.potential?.score ?? null,
-  fitScore: scores?.fit?.score ?? null,
-  scoringRationale: scores,
-  // Approval workflow
-  approvalStatus: data.approval_status,
-  ideaId: data.idea_id,
-  structuredBy: data.structured_by,
-  // AI enhancement tracking
-  aiEnhanced: betData.aiEnhanced || false,
-  originalHypothesis: betData.originalHypothesis
-}
+      // Transform to match what App.jsx expects
+      const newBet = {
+        id: data.id,
+        orgId: data.org_id,
+        hypothesis: betData.hypothesis,
+        metricDomain: betData.metricDomain,
+        metric: betData.metric,
+        customMetric: betData.customMetric,
+        betType: betData.betType,
+        baseline: betData.baseline,
+        prediction: betData.prediction,
+        confidence: betData.confidence,
+        timeframe: betData.timeframe,
+        assumptions: betData.assumptions,
+        cheapTest: betData.cheapTest,
+        isOwnIdea: betData.isOwnIdea !== false,
+        ideaSource: betData.ideaSource,
+        measurementTool: betData.measurementTool,
+        strategicAlignment: betData.strategicAlignment,
+        estimatedEffort: betData.estimatedEffort,
+        inactionImpact: betData.inactionImpact,
+        isPastBet: false,
+        outcome: null,
+        status: null,
+        createdAt: data.created_at,
+        // AI scores - CRITICAL for ScoreResult component
+        approachScore: scores?.approach?.score ?? null,
+        potentialScore: scores?.potential?.score ?? null,
+        fitScore: scores?.fit?.score ?? null,
+        scoringRationale: scores,
+        // Title and summary
+        title: data.title,
+        summary: data.summary,
+        // Approval workflow
+        approvalStatus: data.approval_status,
+        ideaId: data.idea_id,
+        structuredBy: data.structured_by,
+        // AI enhancement tracking
+        aiEnhanced: betData.aiEnhanced || false,
+        originalHypothesis: betData.originalHypothesis
+      }
+      
       setBets(prev => [newBet, ...prev])
 
       return { data: newBet, error: null, scores }
@@ -336,102 +348,102 @@ const newBet = {
   }
 
   const approveBet = async (betId) => {
-  if (!user) return { error: { message: 'Not authenticated' } }
+    if (!user) return { error: { message: 'Not authenticated' } }
 
-  try {
-    // Update bet approval status
-    const { data: betData, error: betError } = await supabase
-      .from('bets')
-      .update({ 
-        approval_status: 'approved',
-        approved_at: new Date().toISOString(),
-        approved_by: user.id
-      })
-      .eq('id', betId)
-      .select()
-      .single()
-
-    if (betError) throw betError
-
-    // If bet was linked to an idea, update idea status too
-    if (betData.idea_id) {
-      const { error: ideaError } = await supabase
-        .from('ideas')
+    try {
+      // Update bet approval status
+      const { data: betData, error: betError } = await supabase
+        .from('bets')
         .update({ 
-          status: 'approved',
+          approval_status: 'approved',
           approved_at: new Date().toISOString(),
           approved_by: user.id
         })
-        .eq('id', betData.idea_id)
+        .eq('id', betId)
+        .select()
+        .single()
 
-      if (ideaError) {
-        console.error('Error updating idea status:', ideaError)
+      if (betError) throw betError
+
+      // If bet was linked to an idea, update idea status too
+      if (betData.idea_id) {
+        const { error: ideaError } = await supabase
+          .from('ideas')
+          .update({ 
+            status: 'approved',
+            approved_at: new Date().toISOString(),
+            approved_by: user.id
+          })
+          .eq('id', betData.idea_id)
+
+        if (ideaError) {
+          console.error('Error updating idea status:', ideaError)
+        }
       }
+
+      // Update local state
+      setBets(prev => prev.map(bet => 
+        bet.id === betId 
+          ? { ...bet, approvalStatus: 'approved' }
+          : bet
+      ))
+
+      return { data: betData, error: null }
+    } catch (err) {
+      console.error('Error approving bet:', err)
+      return { data: null, error: err }
     }
-
-    // Update local state
-    setBets(prev => prev.map(bet => 
-      bet.id === betId 
-        ? { ...bet, approvalStatus: 'approved' }
-        : bet
-    ))
-
-    return { data: betData, error: null }
-  } catch (err) {
-    console.error('Error approving bet:', err)
-    return { data: null, error: err }
   }
-}
 
   const rejectBet = async (betId, reason) => {
-  if (!user) return { error: { message: 'Not authenticated' } }
+    if (!user) return { error: { message: 'Not authenticated' } }
 
-  try {
-    // Update bet approval status
-    const { data: betData, error: betError } = await supabase
-      .from('bets')
-      .update({ 
-        approval_status: 'rejected',
-        rejection_reason: reason,
-        rejected_at: new Date().toISOString(),
-        rejected_by: user.id
-      })
-      .eq('id', betId)
-      .select()
-      .single()
-
-    if (betError) throw betError
-
-    // If bet was linked to an idea, update idea status too
-    if (betData.idea_id) {
-      const { error: ideaError } = await supabase
-        .from('ideas')
+    try {
+      // Update bet approval status
+      const { data: betData, error: betError } = await supabase
+        .from('bets')
         .update({ 
-          status: 'rejected',
+          approval_status: 'rejected',
           rejection_reason: reason,
           rejected_at: new Date().toISOString(),
           rejected_by: user.id
         })
-        .eq('id', betData.idea_id)
+        .eq('id', betId)
+        .select()
+        .single()
 
-      if (ideaError) {
-        console.error('Error updating idea status:', ideaError)
+      if (betError) throw betError
+
+      // If bet was linked to an idea, update idea status too
+      if (betData.idea_id) {
+        const { error: ideaError } = await supabase
+          .from('ideas')
+          .update({ 
+            status: 'rejected',
+            rejection_reason: reason,
+            rejected_at: new Date().toISOString(),
+            rejected_by: user.id
+          })
+          .eq('id', betData.idea_id)
+
+        if (ideaError) {
+          console.error('Error updating idea status:', ideaError)
+        }
       }
+
+      // Update local state
+      setBets(prev => prev.map(bet => 
+        bet.id === betId 
+          ? { ...bet, approvalStatus: 'rejected', rejectionReason: reason }
+          : bet
+      ))
+
+      return { data: betData, error: null }
+    } catch (err) {
+      console.error('Error rejecting bet:', err)
+      return { data: null, error: err }
     }
-
-    // Update local state
-    setBets(prev => prev.map(bet => 
-      bet.id === betId 
-        ? { ...bet, approvalStatus: 'rejected', rejectionReason: reason }
-        : bet
-    ))
-
-    return { data: betData, error: null }
-  } catch (err) {
-    console.error('Error rejecting bet:', err)
-    return { data: null, error: err }
   }
-}
   
   const deleteBet = async (betId) => {
     if (!user) return { error: { message: 'Not authenticated' } }
@@ -495,7 +507,7 @@ const newBet = {
     refreshBets: fetchBets,
     getStats,
     scoreBet,
-     approveBet,
-  rejectBet
+    approveBet,
+    rejectBet
   }
 }
