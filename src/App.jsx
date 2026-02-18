@@ -3077,7 +3077,7 @@ const avgScore = betsWithScores.length > 0
             style={{
               background: 'none',
               border: 'none',
-              color: '#64748b',
+              color: '#2dd4bf',
               fontSize: '0.8rem',
               cursor: 'pointer',
               padding: '4px 0',
@@ -4037,16 +4037,16 @@ const handleRejectBet = async (betId, reason) => {
                       borderLeft: isAIEnhanced && aiScore ? '1px solid rgba(255,255,255,0.1)' : 'none'
                     }}>
                       <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '0.6rem', color: '#64748b', marginBottom: 2 }}>APR</div>
-                        <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#2dd4bf' }}>{bet.approachScore}</div>
+                        <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: 2 }}>APR</div>
+                        <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#2dd4bf' }}>{bet.approachScore}</div>
                       </div>
                       <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '0.6rem', color: '#64748b', marginBottom: 2 }}>POT</div>
-                        <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#fbbf24' }}>{bet.potentialScore}</div>
+                        <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: 2 }}>POT</div>
+                        <div style={{ fontSize: '01.2rem', fontWeight: 600, color: '#fbbf24' }}>{bet.potentialScore}</div>
                       </div>
                       <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '0.6rem', color: '#64748b', marginBottom: 2 }}>FIT</div>
-                        <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#7dd3fc' }}>{bet.fitScore}</div>
+                        <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: 2 }}>FIT</div>
+                        <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#7dd3fc' }}>{bet.fitScore}</div>
                       </div>
                     </div>
                   )}
