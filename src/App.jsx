@@ -2920,8 +2920,7 @@ const avgScore = betsWithScores.length > 0
   : null;
     
   return (
-    <div style={{ padding: '40px 24px' }}>
-      <div style={{ maxWidth: 900, margin: '0 auto' }}>
+        <>
         {/* v2: Organization switcher */}
         <div style={{ marginBottom: 24 }}>
           <OrgSwitcher
@@ -3255,9 +3254,8 @@ const avgScore = betsWithScores.length > 0
             </button>
           </div>
         )}
-      </div>
-    </div>
-  );
+  </>
+);
 }
 
 // ============================================
