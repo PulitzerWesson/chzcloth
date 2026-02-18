@@ -328,22 +328,7 @@ function IdeasQueue({
   </div>
 )}
 
-                {/* Metrics & Prediction - using bet_data */}
-                {betData && (betData.metric || betData.prediction) && (
-                  <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: 16 }}>
-                    {betData.metric && (
-                      <>
-                        Metric: <span style={{ color: '#2dd4bf' }}>{betData.metric}</span>
-                        {betData.prediction && ' • '}
-                      </>
-                    )}
-                    {betData.prediction && (
-                      <>
-                        Prediction: <span style={{ color: '#94a3b8' }}>{betData.prediction}</span>
-                      </>
-                    )}
-                  </div>
-                )}
+
 
                 {/* Actions */}
                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
