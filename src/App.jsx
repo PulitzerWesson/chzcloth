@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './hooks/useAuth';
 import { useIdeas } from './hooks/useIdeas';
@@ -3033,74 +3034,40 @@ const avgScore = betsWithScores.length > 0
                 {bet.aiEnhanced && <CHZCLOTHBadge />}
               </div>
         
-{/* Right side: Approval + Scores */}
-<div style={{ display: 'flex', gap: 12, alignItems: 'center', flexShrink: 0 }}>
-  {/* Approval badge */}
-  <span style={{
-    fontSize: '0.75rem',
-    fontWeight: 600,
-    padding: '6px 12px',
-    borderRadius: 6,
-    color: bet.approvalStatus === 'approved' ? '#86efac' : '#fbbf24',
-    background: bet.approvalStatus === 'approved' ? 'rgba(134, 239, 172, 0.15)' : 'rgba(251, 191, 36, 0.15)',
-    border: bet.approvalStatus === 'approved' ? '1px solid rgba(134, 239, 172, 0.3)' : '1px solid rgba(251, 191, 36, 0.3)'
-  }}>
-    {bet.approvalStatus === 'approved' ? '✓ Approved' : 'Pending'}
-  </span>
-  
-  {/* Scores container - gap: 0 for symmetric spacing */}
-  <div style={{ display: 'flex', gap: 0, alignItems: 'center' }}>
-    {/* CHZ Score - matches Marketplace */}
-    {bet.aiEnhanced && bet.aiPredictedScore && (
-      <div style={{ 
-        textAlign: 'center',
-        paddingRight: 8
-      }}>
-        <div style={{ 
-          fontSize: '0.6rem', 
-          color: '#2dd4bf', 
-          marginBottom: 2,
-          fontWeight: 700,
-          letterSpacing: '0.05em',
-          textShadow: '0 0 10px rgba(45, 212, 191, 0.6)'
-        }}>
-          CHZ
-        </div>
-        <div style={{ 
-          fontSize: '0.95rem', 
-          fontWeight: 600, 
-          color: '#2dd4bf',
-          textShadow: '0 0 15px rgba(45, 212, 191, 0.8)'
-        }}>
-          {bet.aiPredictedScore}
+        {/* Right side: Approval + Scores */}
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexShrink: 0 }}>
+          {/* Approval badge */}
+          <span style={{
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            padding: '6px 12px',
+            borderRadius: 6,
+            color: bet.approvalStatus === 'approved' ? '#86efac' : '#fbbf24',
+            background: bet.approvalStatus === 'approved' ? 'rgba(134, 239, 172, 0.15)' : 'rgba(251, 191, 36, 0.15)',
+            border: bet.approvalStatus === 'approved' ? '1px solid rgba(134, 239, 172, 0.3)' : '1px solid rgba(251, 191, 36, 0.3)'
+          }}>
+            {bet.approvalStatus === 'approved' ? '✓ Approved' : 'Pending'}
+          </span>
+          
+          {/* AI Scores */}
+          {hasAIScores && (
+            <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '0.65rem', color: '#64748b', marginBottom: 2 }}>APR</div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#2dd4bf' }}>{bet.approachScore}</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '0.65rem', color: '#64748b', marginBottom: 2 }}>POT</div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#fbbf24' }}>{bet.potentialScore}</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '0.65rem', color: '#64748b', marginBottom: 2 }}>FIT</div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#7dd3fc' }}>{bet.fitScore}</div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
-    )}
-    
-    {/* AI Scores - dimensions */}
-    {hasAIScores && (
-      <div style={{ 
-        display: 'flex', 
-        gap: 8,
-        paddingLeft: bet.aiEnhanced && bet.aiPredictedScore ? 8 : 0,
-        borderLeft: bet.aiEnhanced && bet.aiPredictedScore ? '1px solid rgba(255,255,255,0.1)' : 'none'
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '0.65rem', color: '#64748b', marginBottom: 2 }}>APR</div>
-          <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#2dd4bf' }}>{bet.approachScore}</div>
-        </div>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '0.65rem', color: '#64748b', marginBottom: 2 }}>POT</div>
-          <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#fbbf24' }}>{bet.potentialScore}</div>
-        </div>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '0.65rem', color: '#64748b', marginBottom: 2 }}>FIT</div>
-          <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#7dd3fc' }}>{bet.fitScore}</div>
-        </div>
-      </div>
-    )}
-  </div>
-</div>
       
       {/* EXPANDABLE DETAILS */}
       {hasAIScores && bet.scoringRationale && (
