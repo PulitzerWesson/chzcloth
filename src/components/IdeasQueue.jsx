@@ -85,9 +85,7 @@ const StrategicAlignmentIcon = ({ alignment }) => {
   
   return null;
 };
-  
-  return null;
-};
+
 
 function IdeasQueue({ 
   ideas = [], 
