@@ -2918,9 +2918,8 @@ const avgScore = betsWithScores.length > 0
   ? Math.round(betsWithScores.reduce((sum, b) => sum + (b.approachScore + b.potentialScore + b.fitScore) / 3, 0) / betsWithScores.length)
   : null;
     
-  return (
-    <div style={{ padding: '40px 24px' }}>
-      <div style={{ maxWidth: 900, margin: '0 auto' }}>
+return (
+  <>
         {/* v2: Organization switcher */}
         <div style={{ marginBottom: 24 }}>
           <OrgSwitcher
@@ -3128,12 +3127,9 @@ const avgScore = betsWithScores.length > 0
                 <div>
                   <span style={{ color: '#7dd3fc', fontWeight: 600 }}>Fit:</span>
                   <span style={{ color: '#94a3b8', marginLeft: 8 }}>{bet.scoringRationale?.fit?.rationale}</span>
-                </div>
-              </div>
-            </div>
-          )}
-        </>
-      )}
+    </>
+);
+}
       
 {/* Record Outcome Button */}
 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
