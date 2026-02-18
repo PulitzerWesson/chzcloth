@@ -125,11 +125,12 @@ function IdeasQueue({
     alignItems: 'center'
   }}>
 
-    {/* CHZCLOTH Score - No box, just glow */}
+{/* CHZCLOTH Score - No box, just glow, symmetric spacing */}
 {isAIEnhanced && aiScore ? (
   <div style={{ 
     textAlign: 'center',
-    minWidth: 50
+    minWidth: 50,
+    paddingRight: 8  // ← ADD THIS - matches the paddingLeft on APR side
   }}>
     <div style={{ 
       fontSize: '0.6rem', 
