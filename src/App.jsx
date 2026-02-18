@@ -2936,21 +2936,29 @@ const avgScore = betsWithScores.length > 0
         </div>
         
 
-        {/* Stats cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 16, marginBottom: 24 }}>
-          <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
-          <div style={{ color: '#2dd4bf', fontSize: '2.5rem', fontWeight: 800 }}>{completedBets.length}</div>
-            <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Completed</div>
-          </div>
-          <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
-            <div style={{ color: '#f1f5f9', fontSize: '2.5rem', fontWeight: 800 }}>{safeBets.length}</div>
-            <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Total Bets</div>
-          </div>
-          <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
-            <div style={{ color: '#fbbf24', fontSize: '2.5rem', fontWeight: 800 }}>{avgScore || '—'}</div>
-            <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Avg Score</div>
-          </div>
-        </div>
+{/* Stats cards - Full width 4-column */}
+<div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+  <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
+    <div style={{ color: '#f1f5f9', fontSize: '2.5rem', fontWeight: 800 }}>{safeBets.length}</div>
+    <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Total Bets</div>
+  </div>
+  <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
+    <div style={{ color: '#22c55e', fontSize: '2.5rem', fontWeight: 800 }}>
+      {safeBets.filter(b => b.approvalStatus === 'approved').length}
+    </div>
+    <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Approved</div>
+  </div>
+  <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
+    <div style={{ color: '#fbbf24', fontSize: '2.5rem', fontWeight: 800 }}>
+      {safeBets.filter(b => b.approvalStatus === 'approved' && !b.outcome && !b.status).length}
+    </div>
+    <div style={{ color: '#64748b', fontSize: '0.85rem' }}>In Progress</div>
+  </div>
+  <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
+    <div style={{ color: '#2dd4bf', fontSize: '2.5rem', fontWeight: 800 }}>{completedBets.length}</div>
+    <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Completed</div>
+  </div>
+</div>
         
         {/* Ownership split stats */}
         {(ownAccuracy !== null || othersAccuracy !== null) && (
