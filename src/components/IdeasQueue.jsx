@@ -21,6 +21,7 @@ const CHZCLOTHBadge = () => (
     C
   </span>
 );
+
 // Strategic Alignment Icon component
 const StrategicAlignmentIcon = ({ alignment }) => {
   if (alignment === 'inner_ring') {
@@ -80,6 +81,7 @@ const StrategicAlignmentIcon = ({ alignment }) => {
   
   return null;
 };
+
 function IdeasQueue({ 
   ideas = [], 
   loading = false,
@@ -137,7 +139,7 @@ function IdeasQueue({
             const aiScore = betData?.aiPredictedScore || null;
             
             return (
-<div
+              <div
                 key={idea.id}
                 style={{
                   background: 'rgba(255,255,255,0.03)',
@@ -251,7 +253,7 @@ function IdeasQueue({
                     <span>{new Date(idea.createdAt).toLocaleDateString()}</span>
                   </div>
 
-                  {/* Expandable details & Actions remain the same */}
+                  {/* Expandable details */}
                   {betData?.scoringRationale && (
                     <div style={{ marginBottom: 16 }}>
                       <button
@@ -272,9 +274,126 @@ function IdeasQueue({
                         {isExpanded ? 'Hide details' : 'Show details'}
                       </button>
 
-                      {/* Keep existing expandable content exactly as-is */}
                       {isExpanded && (
-                        /* ... existing expandable div ... */
+                        <div style={{
+                          marginTop: 12,
+                          padding: 16,
+                          background: 'rgba(255,255,255,0.02)',
+                          border: '1px solid rgba(255,255,255,0.05)',
+                          borderRadius: 8
+                        }}>
+                          {/* BET DETAILS */}
+                          <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                            <div style={{ 
+                              color: '#94a3b8', 
+                              fontSize: '0.75rem', 
+                              fontWeight: 600, 
+                              marginBottom: 12, 
+                              textTransform: 'uppercase', 
+                              letterSpacing: '0.05em'
+                            }}>
+                              BET DETAILS
+                            </div>
+                            
+                            {/* 2-column grid */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                              <div>
+                                <span style={{ color: '#64748b' }}>Metric: </span>
+                                <span style={{ color: '#2dd4bf' }}>{betData?.metric || idea.metric}</span>
+                              </div>
+                              <div>
+                                <span style={{ color: '#64748b' }}>Prediction: </span>
+                                <span style={{ color: '#94a3b8' }}>{betData?.prediction}</span>
+                              </div>
+                              {betData?.baseline && (
+                                <div>
+                                  <span style={{ color: '#64748b' }}>Baseline: </span>
+                                  <span style={{ color: '#94a3b8' }}>{betData.baseline}</span>
+                                </div>
+                              )}
+                              {betData?.timeframe && (
+                                <div>
+                                  <span style={{ color: '#64748b' }}>Timeframe: </span>
+                                  <span style={{ color: '#94a3b8' }}>{betData.timeframe} days</span>
+                                </div>
+                              )}
+                              {betData?.confidence && (
+                                <div>
+                                  <span style={{ color: '#64748b' }}>Confidence: </span>
+                                  <span style={{ color: '#fbbf24' }}>{betData.confidence}%</span>
+                                </div>
+                              )}
+                              {betData?.strategicAlignment && (
+                                <div>
+                                  <span style={{ color: '#64748b' }}>Strategic Alignment: </span>
+                                  <span style={{ color: '#94a3b8' }}>
+                                    {betData.strategicAlignment === 'inner_ring' ? 'Inner Ring' : 
+                                     betData.strategicAlignment === 'outer_ring' ? 'Outer Ring' : 'Experimental'}
+                                  </span>
+                                </div>
+                              )}
+                              {betData?.estimatedEffort && (
+                                <div>
+                                  <span style={{ color: '#64748b' }}>Estimated Effort: </span>
+                                  <span style={{ color: '#94a3b8' }}>{betData.estimatedEffort}</span>
+                                </div>
+                              )}
+                            </div>
+                            
+                            {/* Assumptions - full width */}
+                            {betData?.assumptions && (
+                              <div>
+                                <div style={{ color: '#64748b', marginBottom: 4 }}>Assumptions:</div>
+                                <div style={{ color: '#94a3b8' }}>{betData.assumptions}</div>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* CHZCLOTH SCORING RATIONALE */}
+                          <div>
+                            <div style={{ 
+                              color: '#94a3b8', 
+                              fontSize: '0.75rem', 
+                              fontWeight: 600, 
+                              marginBottom: 12, 
+                              textTransform: 'uppercase', 
+                              letterSpacing: '0.05em',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 6
+                            }}>
+                              CHZCLOTH SCORING RATIONALE
+                              {isAIEnhanced && <span style={{ color: '#2dd4bf', fontWeight: 700 }}>• ENHANCED</span>}
+                            </div>
+                            
+                            <div style={{ marginBottom: 12 }}>
+                              <div style={{ color: '#2dd4bf', fontWeight: 600, fontSize: '0.85rem', marginBottom: 4 }}>
+                                Approach:
+                              </div>
+                              <div style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                                {betData?.scoringRationale?.approach?.rationale}
+                              </div>
+                            </div>
+
+                            <div style={{ marginBottom: 12 }}>
+                              <div style={{ color: '#fbbf24', fontWeight: 600, fontSize: '0.85rem', marginBottom: 4 }}>
+                                Potential:
+                              </div>
+                              <div style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                                {betData?.scoringRationale?.potential?.rationale}
+                              </div>
+                            </div>
+
+                            <div>
+                              <div style={{ color: '#7dd3fc', fontWeight: 600, fontSize: '0.85rem', marginBottom: 4 }}>
+                                Fit:
+                              </div>
+                              <div style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                                {betData?.scoringRationale?.fit?.rationale}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       )}
                     </div>
                   )}
