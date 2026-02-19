@@ -157,6 +157,26 @@ function IdeasQueue({
 
                 {/* Card Content */}
                 <div style={{ flex: 1 }}>
+
+                  {/* Product label */}
+                    {(idea.product || betData?.product) && (
+                      <div style={{
+                        color: '#fbbf24',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        marginBottom: 6
+                      }}>
+                        {idea.product || betData?.product}
+                      </div>
+                    )}
+                    
+                    <h3 style={{ 
+                      color: '#f1f5f9', 
+                      fontSize: '1.05rem', 
+                      fontWeight: 600,
+                
                   {/* Title + Scores Row */}
                   <div style={{ 
                     display: 'flex', 
