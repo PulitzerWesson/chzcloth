@@ -88,51 +88,50 @@ const StrategicAlignmentIcon = ({ alignment }) => {
     );
   }
   
-  // Experimental - removed liquid, brighter bigger bubbles
-  if (normalized === 'experimental') {
-    return (
-      <svg width="20" height="20" viewBox="0 0 24 28" fill="none">
-        <style>{`
-          @keyframes bubble1 {
-            0% { cy: 20; opacity: 0; }
-            20% { opacity: 1; }
-            100% { cy: 8; opacity: 0; }
-          }
-          @keyframes bubble2 {
-            0% { cy: 20; opacity: 0; }
-            20% { opacity: 1; }
-            100% { cy: 10; opacity: 0; }
-          }
-          @keyframes bubble3 {
-            0% { cy: 20; opacity: 0; }
-            20% { opacity: 1; }
-            100% { cy: 9; opacity: 0; }
-          }
-          .bubble1 { animation: bubble1 2.5s ease-in infinite; }
-          .bubble2 { animation: bubble2 2.5s ease-in infinite 0.5s; }
-          .bubble3 { animation: bubble3 2.5s ease-in infinite 1s; }
-        `}</style>
-        <path 
-          d="M8 2 L8 10 L4 22 C3.5 24 4.5 26 7 26 L17 26 C19.5 26 20.5 24 20 22 L16 10 L16 2" 
-          stroke="url(#beakerGradient)" 
-          strokeWidth="2" 
-          fill="none"
-        />
-        <line x1="8" y1="2" x2="16" y2="2" stroke="url(#beakerGradient)" strokeWidth="2"/>
-        {/* Removed the liquid fill, just bubbles */}
-        {/* Bigger, brighter bubbles */}
-        <circle className="bubble1" cx="9" cy="20" r="2" fill="#2dd4bf" opacity="0"/>
-        <circle className="bubble2" cx="12" cy="20" r="1.8" fill="#22d3ee" opacity="0"/>
-        <circle className="bubble3" cx="15" cy="20" r="2" fill="#2dd4bf" opacity="0"/>
-        <defs>
-          <linearGradient id="beakerGradient" x1="4" y1="2" x2="20" y2="26">
-            <stop offset="0%" stopColor="#2dd4bf"/>
-            <stop offset="100%" stopColor="#22d3ee"/>
-          </linearGradient>
-        </defs>
-      </svg>
-    );
-  }
+// Experimental - spread out bubbles, rise to top
+if (normalized === 'experimental') {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 28" fill="none">
+      <style>{`
+        @keyframes bubble1 {
+          0% { cy: 20; opacity: 0; }
+          20% { opacity: 1; }
+          100% { cy: 3; opacity: 0; }
+        }
+        @keyframes bubble2 {
+          0% { cy: 20; opacity: 0; }
+          20% { opacity: 1; }
+          100% { cy: 3.5; opacity: 0; }
+        }
+        @keyframes bubble3 {
+          0% { cy: 20; opacity: 0; }
+          20% { opacity: 1; }
+          100% { cy: 3; opacity: 0; }
+        }
+        .bubble1 { animation: bubble1 2.5s ease-in infinite; }
+        .bubble2 { animation: bubble2 2.5s ease-in infinite 0.8s; }
+        .bubble3 { animation: bubble3 2.5s ease-in infinite 1.6s; }
+      `}</style>
+      <path 
+        d="M8 2 L8 10 L4 22 C3.5 24 4.5 26 7 26 L17 26 C19.5 26 20.5 24 20 22 L16 10 L16 2" 
+        stroke="url(#beakerGradient)" 
+        strokeWidth="2" 
+        fill="none"
+      />
+      <line x1="8" y1="2" x2="16" y2="2" stroke="url(#beakerGradient)" strokeWidth="2"/>
+      {/* Spread out timing, rise to top */}
+      <circle className="bubble1" cx="9" cy="20" r="2" fill="#2dd4bf" opacity="0"/>
+      <circle className="bubble2" cx="12" cy="20" r="1.8" fill="#22d3ee" opacity="0"/>
+      <circle className="bubble3" cx="15" cy="20" r="2" fill="#2dd4bf" opacity="0"/>
+      <defs>
+        <linearGradient id="beakerGradient" x1="4" y1="2" x2="20" y2="26">
+          <stop offset="0%" stopColor="#2dd4bf"/>
+          <stop offset="100%" stopColor="#22d3ee"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
   
   return null;
 };
