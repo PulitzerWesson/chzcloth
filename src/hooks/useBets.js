@@ -113,7 +113,7 @@ export function useBets(orgId, orgMode) {
           // Title and summary
           title: bet.title,
           summary: bet.summary,
-          product: data.product,
+          product: bet.product,
           aiEnhanced: bet.ai_enhanced,
           aiPredictedScore: bet.ai_predicted_score,
           originalHypothesis: bet.original_hypothesis,
