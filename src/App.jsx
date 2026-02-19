@@ -505,9 +505,106 @@ function Landing({ onStart }) {
         </div>
         {/* Hero content */}
         <div style={{ position: 'relative', zIndex: 1, maxWidth: 900, margin: '0 auto', padding: '80px 24px 60px', minHeight: 'calc(100vh - 140px)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-        <div style={{ color: '#fbbf24', fontSize: '1.1rem', fontWeight: 600, marginBottom: 16, letterSpacing: '0.5px' }}>
-          More Cheese. Less Waste.
-        </div>
+{/* Animated icons */}
+<div style={{ display: 'flex', gap: 24, justifyContent: 'center', marginBottom: 32 }}>
+  {/* Experimental beaker */}
+  <svg width="48" height="48" viewBox="0 0 24 28" fill="none">
+    <style>{`
+      @keyframes landingBubble1 {
+        0% { cy: 20; opacity: 0; }
+        20% { opacity: 1; }
+        100% { cy: 3; opacity: 0; }
+      }
+      @keyframes landingBubble2 {
+        0% { cy: 20; opacity: 0; }
+        20% { opacity: 1; }
+        100% { cy: 3.5; opacity: 0; }
+      }
+      @keyframes landingBubble3 {
+        0% { cy: 20; opacity: 0; }
+        20% { opacity: 1; }
+        100% { cy: 3; opacity: 0; }
+      }
+      .landing-bubble1 { animation: landingBubble1 2.5s ease-in infinite; }
+      .landing-bubble2 { animation: landingBubble2 2.5s ease-in infinite 0.8s; }
+      .landing-bubble3 { animation: landingBubble3 2.5s ease-in infinite 1.6s; }
+    `}</style>
+    <path 
+      d="M8 2 L8 10 L4 22 C3.5 24 4.5 26 7 26 L17 26 C19.5 26 20.5 24 20 22 L16 10 L16 2" 
+      stroke="url(#landingBeakerGradient)" 
+      strokeWidth="2" 
+      fill="none"
+    />
+    <line x1="8" y1="2" x2="16" y2="2" stroke="url(#landingBeakerGradient)" strokeWidth="2"/>
+    <circle className="landing-bubble1" cx="9" cy="20" r="2" fill="#2dd4bf" opacity="0"/>
+    <circle className="landing-bubble2" cx="12" cy="20" r="1.8" fill="#22d3ee" opacity="0"/>
+    <circle className="landing-bubble3" cx="15" cy="20" r="2" fill="#2dd4bf" opacity="0"/>
+    <defs>
+      <linearGradient id="landingBeakerGradient" x1="4" y1="2" x2="20" y2="26">
+        <stop offset="0%" stopColor="#2dd4bf"/>
+        <stop offset="100%" stopColor="#22d3ee"/>
+      </linearGradient>
+    </defs>
+  </svg>
+
+  {/* Outer ring */}
+  <svg width="48" height="48" viewBox="0 0 28 28" fill="none">
+    <style>{`
+      @keyframes landingDraw {
+        0% { stroke-dashoffset: 75.4; }
+        30% { stroke-dashoffset: 0; }
+        100% { stroke-dashoffset: 0; }
+      }
+      .landing-draw-circle { 
+        stroke-dasharray: 75.4;
+        animation: landingDraw 10s linear infinite;
+      }
+    `}</style>
+    <circle 
+      className="landing-draw-circle"
+      cx="14" 
+      cy="14" 
+      r="12" 
+      stroke="url(#landingTealGradient2)" 
+      strokeWidth="3" 
+      fill="none"
+    />
+    <circle cx="14" cy="14" r="6" fill="#1e293b"/>
+    <defs>
+      <linearGradient id="landingTealGradient2" x1="2" y1="2" x2="26" y2="26">
+        <stop offset="0%" stopColor="#2dd4bf"/>
+        <stop offset="100%" stopColor="#22d3ee"/>
+      </linearGradient>
+    </defs>
+  </svg>
+
+  {/* Inner ring */}
+  <svg width="48" height="48" viewBox="0 0 28 28" fill="none">
+    <style>{`
+      @keyframes landingGrowFromDot {
+        0% { transform: scale(0); opacity: 0; }
+        22% { transform: scale(1); opacity: 1; }
+        100% { transform: scale(1); opacity: 1; }
+      }
+      .landing-grow-circle { 
+        animation: landingGrowFromDot 9s ease-out infinite;
+        transform-origin: center;
+      }
+    `}</style>
+    <circle cx="14" cy="14" r="12" stroke="url(#landingTealGradient)" strokeWidth="2.5" fill="none"/>
+    <circle className="landing-grow-circle" cx="14" cy="14" r="6" fill="url(#landingTealGradient)"/>
+    <defs>
+      <linearGradient id="landingTealGradient" x1="2" y1="2" x2="26" y2="26">
+        <stop offset="0%" stopColor="#2dd4bf"/>
+        <stop offset="100%" stopColor="#22d3ee"/>
+      </linearGradient>
+    </defs>
+  </svg>
+</div>
+
+<div style={{ color: '#fbbf24', fontSize: '1.1rem', fontWeight: 600, marginBottom: 16, letterSpacing: '0.5px' }}>
+  More Cheese. Less Waste.
+</div>
         <h1 style={{ 
           fontSize: '3rem', 
           fontWeight: 800, 
