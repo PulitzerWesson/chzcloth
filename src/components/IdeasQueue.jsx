@@ -27,29 +27,24 @@ const StrategicAlignmentIcon = ({ alignment }) => {
   const normalized = alignment?.toLowerCase();
   
   // Accept 'inner', 'inner_ring', or 'Inner Ring'
-  if (normalized === 'inner' || normalized === 'inner_ring' || normalized === 'inner ring') {
-    return (
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-        <circle cx="14" cy="14" r="12" stroke="url(#tealGradient)" strokeWidth="2.5" fill="none"/>
-        <circle cx="14" cy="14" r="6" fill="url(#redGradient)"/>
-        <defs>
-          <linearGradient id="tealGradient" x1="2" y1="2" x2="26" y2="26">
-            <stop offset="0%" stopColor="#2dd4bf"/>
-            <stop offset="100%" stopColor="#22d3ee"/>
-          </linearGradient>
-          <radialGradient id="redGradient" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#ef4444"/>
-            <stop offset="100%" stopColor="#dc2626"/>
-          </radialGradient>
-        </defs>
-      </svg>
-    );
-  }
-  
+if (normalized === 'inner' || normalized === 'inner_ring' || normalized === 'inner ring') {
+  return (
+    <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
+      <circle cx="14" cy="14" r="12" stroke="url(#tealGradient)" strokeWidth="2.5" fill="none"/>
+      <circle cx="14" cy="14" r="6" fill="url(#tealGradient)"/>
+      <defs>
+        <linearGradient id="tealGradient" x1="2" y1="2" x2="26" y2="26">
+          <stop offset="0%" stopColor="#2dd4bf"/>
+          <stop offset="100%" stopColor="#22d3ee"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
   // Accept 'outer', 'outer_ring', or 'Outer Ring'
   if (normalized === 'outer' || normalized === 'outer_ring' || normalized === 'outer ring') {
     return (
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+      <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
         <circle cx="14" cy="14" r="12" stroke="url(#tealGradient2)" strokeWidth="3" fill="none"/>
         <circle cx="14" cy="14" r="6" fill="#1e293b"/>
         <defs>
@@ -64,7 +59,7 @@ const StrategicAlignmentIcon = ({ alignment }) => {
   
   if (normalized === 'experimental') {
     return (
-      <svg width="24" height="28" viewBox="0 0 24 28" fill="none">
+      <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
         <path d="M8 2 L8 10 L4 22 C3.5 24 4.5 26 7 26 L17 26 C19.5 26 20.5 24 20 22 L16 10 L16 2" 
               stroke="url(#beakerGradient)" 
               strokeWidth="2" 
