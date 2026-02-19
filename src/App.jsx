@@ -62,36 +62,7 @@ function AppHeader({ isLoggedIn, onDashboardClick, onLogoClick, onNewBet, showTe
   
   return (
     <>
-      {/* Teams upsell banner */}
-      {showTeamsBanner && !bannerDismissed && (
-        <div style={{
-          background: 'linear-gradient(90deg, rgba(45, 212, 191, 0.15) 0%, rgba(251, 191, 36, 0.15) 100%)',
-          borderBottom: '1px solid rgba(255,255,255,0.05)',
-          padding: '10px 24px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 12
-        }}>
-          <span style={{ color: '#cbd5e1', fontSize: '0.85rem' }}>
-            <strong style={{ color: '#2dd4bf' }}>Welcome Project Vizitorz</strong> — We're tryin to make some CHZ.
-          </span>
-          <button
-            onClick={() => setBannerDismissed(true)}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#64748b',
-              cursor: 'pointer',
-              padding: '4px 8px',
-              fontSize: '1rem',
-              marginLeft: 8
-            }}
-          >
-            ×
-          </button>
-        </div>
-      )}
+
       
       {/* Main header */}
       <div style={{
@@ -613,7 +584,7 @@ function Landing({ onStart }) {
           lineHeight: 1.2, 
           marginBottom: 24 
         }}>
-          Build Smarter With CHZCLOTH
+          Product Bets Get Smarter With CHZCLOTH
         </h1>
         <p style={{ fontSize: '1.25rem', color: '#94a3b8', lineHeight: 1.6, maxWidth: 650, marginBottom: 40 }}>
         AI-powered product bet scoring tool helping leaders evaluate bets before committing resources        </p>
