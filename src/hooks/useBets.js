@@ -204,9 +204,13 @@ export function useBets(orgId, orgMode) {
       
       if (ideaId && data) {
         const { error: updateError } = await supabase
-          .from('ideas')
-          .update({ status: 'structured' })
-          .eq('id', ideaId);
+              .from('ideas')
+    .update({ 
+      status: 'structured',
+      title: data.title,        // Copy from bet
+      summary: data.summary      // Copy from bet
+    })
+    .eq('id', ideaId);
         
         if (updateError) {
           console.error('Error updating idea status:', updateError);
