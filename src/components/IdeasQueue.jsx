@@ -155,54 +155,49 @@ function IdeasQueue({
                   <StrategicAlignmentIcon alignment={betData?.strategicAlignment} />
                 </div>
 
-                {/* Card Content */}
-                <div style={{ flex: 1 }}>
+{/* Card Content */}
+<div style={{ flex: 1 }}>
+  {/* Title + Scores Row */}
+  <div style={{ 
+    display: 'flex', 
+    justifyContent: 'space-between', 
+    alignItems: 'flex-start',
+    marginBottom: 8 
+  }}>
+    {/* Title section with product label */}
+    <div style={{ flex: 1, paddingRight: 16 }}>
+      {/* Product label */}
+      {(idea.product || betData?.product) && (
+        <div style={{
+          color: '#fbbf24',
+          fontSize: '0.75rem',
+          fontWeight: 600,
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          marginBottom: 6
+        }}>
+          {idea.product || betData?.product}
+        </div>
+      )}
+      
+      <h3 style={{ 
+        color: '#f1f5f9', 
+        fontSize: '1.05rem', 
+        fontWeight: 600,
+        margin: 0,
+        lineHeight: 1.4
+      }}>
+        {idea.title}
+      </h3>
+    </div>
 
-                  {/* Product label */}
-                    {(idea.product || betData?.product) && (
-                      <div style={{
-                        color: '#fbbf24',
-                        fontSize: '0.75rem',
-                        fontWeight: 600,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        marginBottom: 6
-                      }}>
-                        {idea.product || betData?.product}
-                      </div>
-                    )}
-                    
-                    <h3 style={{ 
-                      color: '#f1f5f9', 
-                      fontSize: '1.05rem', 
-                      fontWeight: 600,
-                
-                  {/* Title + Scores Row */}
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'flex-start',
-                    marginBottom: 8 
-                  }}>
-                    <h3 style={{ 
-                      color: '#f1f5f9', 
-                      fontSize: '1.05rem', 
-                      fontWeight: 600,
-                      margin: 0,
-                      lineHeight: 1.4,
-                      flex: 1,
-                      paddingRight: 16
-                    }}>
-                      {idea.title}
-                    </h3>
-
-                    {/* Scores */}
-                    <div style={{ 
-                      display: 'flex', 
-                      gap: 0, 
-                      flexShrink: 0,
-                      alignItems: 'center'
-                    }}>
+    {/* Scores */}
+    <div style={{ 
+      display: 'flex', 
+      gap: 0, 
+      flexShrink: 0,
+      alignItems: 'center'
+    }}>
                       {/* CHZ Score */}
                       {isAIEnhanced && aiScore ? (
                         <div style={{ textAlign: 'center', paddingRight: 8 }}>
