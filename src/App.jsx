@@ -584,7 +584,7 @@ function Landing({ onStart }) {
           lineHeight: 1.2, 
           marginBottom: 24 
         }}>
-          Make Smarter Product Bets
+          The Smartest Bets In The Room
         </h1>
         <p style={{ fontSize: '1.25rem', color: '#94a3b8', lineHeight: 1.6, maxWidth: 650, marginBottom: 40 }}>
         Context-aware scoring that improves with every outcome        </p>
