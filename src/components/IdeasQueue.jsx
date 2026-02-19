@@ -230,7 +230,7 @@ function IdeasQueue({
 
                   {/* Meta info with mode badge */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: '0.8rem', color: '#64748b', marginBottom: 16 }}>
-                    {currentOrg?.mode && (
+                    {currentOrg?.current_mode && (
                       <span style={{
                         display: 'inline-flex',
                         alignItems: 'center',
@@ -244,7 +244,7 @@ function IdeasQueue({
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em'
                       }}>
-                        {currentOrg.mode}
+                        {currentOrg.current_mode}
                       </span>
                     )}
                     <span>•</span>
