@@ -260,6 +260,14 @@ function GoalCard({ goal, index, onUpdate, onRemove }) {
 // Department Goal Card Component
 function DepartmentGoalCard({ goal, index, companyGoals, onUpdate, onRemove }) {
   const [isExpanded, setIsExpanded] = useState(true)
+  
+  const priorityColors = {
+    0: { bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.4)', text: '#ef4444' }, // P1 red
+    1: { bg: 'rgba(251, 191, 36, 0.15)', border: 'rgba(251, 191, 36, 0.4)', text: '#fbbf24' }, // P2 yellow
+    2: { bg: 'rgba(59, 130, 246, 0.15)', border: 'rgba(59, 130, 246, 0.4)', text: '#3b82f6' }  // P3 blue
+  }
+  
+  const priority = priorityColors[index] || priorityColors[2]
 
   return (
     <div style={{
@@ -269,10 +277,23 @@ function DepartmentGoalCard({ goal, index, companyGoals, onUpdate, onRemove }) {
       border: '1px solid rgba(255,255,255,0.08)',
       borderRadius: 12
     }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-        <div style={{ color: '#fbbf24', fontSize: '0.85rem', fontWeight: 600 }}>
-          DEPARTMENT GOAL {index + 1}
+      {/* Header with P badge */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{
+            padding: '4px 10px',
+            background: priority.bg,
+            border: `1px solid ${priority.border}`,
+            borderRadius: 6,
+            color: priority.text,
+            fontSize: '0.75rem',
+            fontWeight: 700
+          }}>
+            P{index + 1}
+          </div>
+          <div style={{ color: '#fbbf24', fontSize: '0.85rem', fontWeight: 600 }}>
+            DEPARTMENT GOAL
+          </div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button
@@ -356,7 +377,7 @@ function DepartmentGoalCard({ goal, index, companyGoals, onUpdate, onRemove }) {
                       style={{ cursor: 'pointer' }}
                     />
                     <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>
-                      Goal {idx + 1}: {cGoal.title.substring(0, 40)}{cGoal.title.length > 40 ? '...' : ''}
+                      P{idx + 1}: {cGoal.title.substring(0, 40)}{cGoal.title.length > 40 ? '...' : ''}
                     </span>
                   </label>
                 ))}
@@ -364,7 +385,7 @@ function DepartmentGoalCard({ goal, index, companyGoals, onUpdate, onRemove }) {
             </div>
           )}
 
-          {/* KPIs (same as before) */}
+          {/* KPIs */}
           <div>
             <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: 8 }}>
               Key Metrics ({goal.kpis.length}/3)
@@ -473,6 +494,100 @@ function DepartmentGoalCard({ goal, index, companyGoals, onUpdate, onRemove }) {
           </div>
         </>
       )}
+    </div>
+  )
+}
+
+// Company Goal Summary Component (for Step 6 reference)
+function CompanyGoalSummary({ goal, index }) {
+  const [showDetails, setShowDetails] = useState(false)
+  
+  const priorityColors = {
+    0: { bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.4)', text: '#ef4444' }, // P1 red
+    1: { bg: 'rgba(251, 191, 36, 0.15)', border: 'rgba(251, 191, 36, 0.4)', text: '#fbbf24' }, // P2 yellow
+    2: { bg: 'rgba(59, 130, 246, 0.15)', border: 'rgba(59, 130, 246, 0.4)', text: '#3b82f6' }  // P3 blue
+  }
+  
+  const priority = priorityColors[index] || priorityColors[2]
+
+  return (
+    <div style={{ 
+      marginBottom: 12,
+      padding: 12,
+      background: 'rgba(255,255,255,0.02)',
+      border: '1px solid rgba(255,255,255,0.05)',
+      borderRadius: 8
+    }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+        {/* Priority badge */}
+        <div style={{
+          padding: '4px 10px',
+          background: priority.bg,
+          border: `1px solid ${priority.border}`,
+          borderRadius: 6,
+          color: priority.text,
+          fontSize: '0.75rem',
+          fontWeight: 700,
+          flexShrink: 0
+        }}>
+          P{index + 1}
+        </div>
+        
+        {/* Goal title and button */}
+        <div style={{ flex: 1 }}>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            marginBottom: showDetails ? 8 : 0
+          }}>
+            <div style={{ color: '#f1f5f9', fontSize: '0.9rem', fontWeight: 500, flex: 1 }}>
+              {goal.title}
+            </div>
+            {goal.kpis.length > 0 && (
+              <button
+                onClick={() => setShowDetails(!showDetails)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#2dd4bf',
+                  fontSize: '0.75rem',
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  marginLeft: 8
+                }}
+              >
+                {showDetails ? '▼' : '▶'} KPIs
+              </button>
+            )}
+          </div>
+          
+          {/* KPI details */}
+          {showDetails && goal.kpis.length > 0 && (
+            <div style={{ 
+              marginTop: 8,
+              paddingTop: 8,
+              borderTop: '1px solid rgba(255,255,255,0.05)'
+            }}>
+              {goal.kpis.map((kpi, kpiIdx) => (
+                <div key={kpiIdx} style={{ 
+                  color: '#64748b', 
+                  fontSize: '0.8rem', 
+                  marginBottom: 4,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8
+                }}>
+                  <span style={{ color: '#94a3b8', fontWeight: 500 }}>{kpi.metric}:</span>
+                  <span>{kpi.baseline}</span>
+                  <span style={{ color: '#2dd4bf' }}>→</span>
+                  <span style={{ color: '#2dd4bf', fontWeight: 500 }}>{kpi.target}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
@@ -1170,30 +1285,28 @@ const handleSubmit = async () => {
               If you manage a specific team, create department-level goals. Otherwise, skip this step.
             </p>
 
-            {/* Company Goals Reference - Simple numbered list */}
-            {companyGoals.length > 0 && (
-              <div style={{ 
-                marginBottom: 24,
-                padding: 16,
-                background: 'rgba(45, 212, 191, 0.05)',
-                border: '1px solid rgba(45, 212, 191, 0.2)',
-                borderRadius: 12
-              }}>
-                <div style={{ 
-                  color: '#2dd4bf', 
-                  fontSize: '0.85rem', 
-                  fontWeight: 600,
-                  marginBottom: 12
-                }}>
-                  COMPANY GOALS
-                </div>
-                <ol style={{ margin: 0, paddingLeft: 20, color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.8 }}>
-                  {companyGoals.map((goal, idx) => (
-                    <li key={idx}>{goal.title}</li>
-                  ))}
-                </ol>
-              </div>
-            )}
+{/* Company Goals Reference - with P badges and expandable KPIs */}
+{companyGoals.length > 0 && (
+  <div style={{ 
+    marginBottom: 24,
+    padding: 16,
+    background: 'rgba(45, 212, 191, 0.05)',
+    border: '1px solid rgba(45, 212, 191, 0.2)',
+    borderRadius: 12
+  }}>
+    <div style={{ 
+      color: '#2dd4bf', 
+      fontSize: '0.85rem', 
+      fontWeight: 600,
+      marginBottom: 12
+    }}>
+      COMPANY GOALS FOR CONTEXT
+    </div>
+    {companyGoals.map((goal, idx) => (
+      <CompanyGoalSummary key={idx} goal={goal} index={idx} />
+    ))}
+  </div>
+)}
 
             {/* Department Name */}
             <div style={{ marginBottom: 24 }}>
