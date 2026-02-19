@@ -363,6 +363,14 @@ function IdeasQueue({
                             }}>
                               BET DETAILS
                             </div>
+
+                              {/* Full hypothesis - ADD THIS */}
+  {betData?.hypothesis && (
+    <div style={{ marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+      <div style={{ color: '#64748b', marginBottom: 6, fontSize: '0.85rem' }}>Full Hypothesis:</div>
+      <div style={{ color: '#f1f5f9', lineHeight: 1.6, fontSize: '0.95rem' }}>{betData.hypothesis}</div>
+    </div>
+  )}
                             
                             {/* 2-column grid */}
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
