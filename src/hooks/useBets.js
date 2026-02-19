@@ -113,6 +113,7 @@ export function useBets(orgId, orgMode) {
           // Title and summary
           title: bet.title,
           summary: bet.summary,
+          product: data.product,
           aiEnhanced: bet.ai_enhanced,
           aiPredictedScore: bet.ai_predicted_score,
           originalHypothesis: bet.original_hypothesis,
@@ -187,6 +188,7 @@ export function useBets(orgId, orgMode) {
           // Title and summary from AI scoring
           title: scores?.title ?? betData.hypothesis?.substring(0, 100) ?? null,
           summary: scores?.summary ?? null,
+          product: scores?.product ?? null,
           strategic_alignment: betData.strategicAlignment || null,
           estimated_effort: betData.estimatedEffort || null,
           inaction_impact: betData.inactionImpact || null,
@@ -257,6 +259,7 @@ if (ideaId && data) {
         // Title and summary
         title: data.title,
         summary: data.summary,
+        product: data.product,
         // Approval workflow
         approvalStatus: data.approval_status,
         ideaId: data.idea_id,
