@@ -1,5 +1,7 @@
 import React, { useState } from 'react'
 
+
+
 // Company mode options
 const COMPANY_MODES = [
   { 
@@ -53,7 +55,447 @@ const SENIORITY = [
   { value: 'manager', label: 'Manager / Director' },
   { value: 'exec', label: 'VP / C-level' }
 ]
+// Goal Card Component
+function GoalCard({ goal, index, onUpdate, onRemove }) {
+  const [isExpanded, setIsExpanded] = useState(true)
 
+  return (
+    <div style={{
+      marginBottom: 16,
+      padding: 16,
+      background: 'rgba(255,255,255,0.03)',
+      border: '1px solid rgba(255,255,255,0.08)',
+      borderRadius: 12
+    }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+        <div style={{ color: '#2dd4bf', fontSize: '0.85rem', fontWeight: 600 }}>
+          GOAL {index + 1}
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#64748b',
+              cursor: 'pointer',
+              fontSize: '0.85rem'
+            }}
+          >
+            {isExpanded ? '▼' : '▶'}
+          </button>
+          <button
+            onClick={onRemove}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#ef4444',
+              cursor: 'pointer',
+              fontSize: '0.85rem'
+            }}
+          >
+            Remove
+          </button>
+        </div>
+      </div>
+
+      {isExpanded && (
+        <>
+          {/* Title */}
+          <input
+            type="text"
+            value={goal.title}
+            onChange={(e) => onUpdate({ ...goal, title: e.target.value })}
+            placeholder="e.g., Reach $2M ARR by end of Q1"
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              marginBottom: 12,
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: 8,
+              color: '#f1f5f9',
+              fontSize: '0.95rem',
+              outline: 'none',
+              boxSizing: 'border-box'
+            }}
+          />
+
+          {/* Description */}
+          <textarea
+            value={goal.description}
+            onChange={(e) => onUpdate({ ...goal, description: e.target.value })}
+            placeholder="Optional: Why this matters, key context..."
+            rows={2}
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              marginBottom: 12,
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: 8,
+              color: '#f1f5f9',
+              fontSize: '0.9rem',
+              outline: 'none',
+              boxSizing: 'border-box',
+              fontFamily: 'inherit',
+              resize: 'vertical'
+            }}
+          />
+
+          {/* KPIs */}
+          <div>
+            <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: 8 }}>
+              Key Metrics ({goal.kpis.length}/3)
+            </div>
+            {goal.kpis.map((kpi, kpiIdx) => (
+              <div key={kpiIdx} style={{ 
+                display: 'grid', 
+                gridTemplateColumns: '2fr 1fr 1fr auto', 
+                gap: 8, 
+                marginBottom: 8 
+              }}>
+                <input
+                  type="text"
+                  value={kpi.metric}
+                  onChange={(e) => {
+                    const newKpis = [...goal.kpis]
+                    newKpis[kpiIdx].metric = e.target.value
+                    onUpdate({ ...goal, kpis: newKpis })
+                  }}
+                  placeholder="Metric (e.g., MRR)"
+                  style={{
+                    padding: '10px 12px',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 6,
+                    color: '#f1f5f9',
+                    fontSize: '0.85rem',
+                    outline: 'none'
+                  }}
+                />
+                <input
+                  type="text"
+                  value={kpi.baseline}
+                  onChange={(e) => {
+                    const newKpis = [...goal.kpis]
+                    newKpis[kpiIdx].baseline = e.target.value
+                    onUpdate({ ...goal, kpis: newKpis })
+                  }}
+                  placeholder="Baseline"
+                  style={{
+                    padding: '10px 12px',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 6,
+                    color: '#f1f5f9',
+                    fontSize: '0.85rem',
+                    outline: 'none'
+                  }}
+                />
+                <input
+                  type="text"
+                  value={kpi.target}
+                  onChange={(e) => {
+                    const newKpis = [...goal.kpis]
+                    newKpis[kpiIdx].target = e.target.value
+                    onUpdate({ ...goal, kpis: newKpis })
+                  }}
+                  placeholder="Target"
+                  style={{
+                    padding: '10px 12px',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 6,
+                    color: '#f1f5f9',
+                    fontSize: '0.85rem',
+                    outline: 'none'
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    const newKpis = goal.kpis.filter((_, i) => i !== kpiIdx)
+                    onUpdate({ ...goal, kpis: newKpis })
+                  }}
+                  style={{
+                    padding: '10px',
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#ef4444',
+                    cursor: 'pointer',
+                    fontSize: '0.85rem'
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+            {goal.kpis.length < 3 && (
+              <button
+                onClick={() => onUpdate({ 
+                  ...goal, 
+                  kpis: [...goal.kpis, { metric: '', baseline: '', target: '' }] 
+                })}
+                style={{
+                  padding: '8px 12px',
+                  background: 'rgba(45, 212, 191, 0.1)',
+                  border: '1px dashed rgba(45, 212, 191, 0.3)',
+                  borderRadius: 6,
+                  color: '#2dd4bf',
+                  fontSize: '0.8rem',
+                  cursor: 'pointer'
+                }}
+              >
+                + Add KPI
+              </button>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+// Department Goal Card Component
+function DepartmentGoalCard({ goal, index, companyGoals, onUpdate, onRemove }) {
+  const [isExpanded, setIsExpanded] = useState(true)
+
+  return (
+    <div style={{
+      marginBottom: 16,
+      padding: 16,
+      background: 'rgba(255,255,255,0.03)',
+      border: '1px solid rgba(255,255,255,0.08)',
+      borderRadius: 12
+    }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+        <div style={{ color: '#fbbf24', fontSize: '0.85rem', fontWeight: 600 }}>
+          DEPARTMENT GOAL {index + 1}
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#64748b',
+              cursor: 'pointer',
+              fontSize: '0.85rem'
+            }}
+          >
+            {isExpanded ? '▼' : '▶'}
+          </button>
+          <button
+            onClick={onRemove}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#ef4444',
+              cursor: 'pointer',
+              fontSize: '0.85rem'
+            }}
+          >
+            Remove
+          </button>
+        </div>
+      </div>
+
+      {isExpanded && (
+        <>
+          {/* Align to Company Goal */}
+          {companyGoals.length > 0 && (
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ 
+                display: 'block', 
+                color: '#94a3b8', 
+                fontSize: '0.85rem', 
+                marginBottom: 6
+              }}>
+                Aligns with company goal:
+              </label>
+              <select
+                value={goal.alignedToCompanyGoalIndex ?? ''}
+                onChange={(e) => onUpdate({ 
+                  ...goal, 
+                  alignedToCompanyGoalIndex: e.target.value === '' ? null : parseInt(e.target.value)
+                })}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 8,
+                  color: '#f1f5f9',
+                  fontSize: '0.9rem',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="">No specific alignment</option>
+                {companyGoals.map((cGoal, idx) => (
+                  <option key={idx} value={idx}>
+                    Goal {idx + 1}: {cGoal.title.substring(0, 50)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Title */}
+          <input
+            type="text"
+            value={goal.title}
+            onChange={(e) => onUpdate({ ...goal, title: e.target.value })}
+            placeholder="e.g., Ship enterprise-ready features"
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              marginBottom: 12,
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: 8,
+              color: '#f1f5f9',
+              fontSize: '0.95rem',
+              outline: 'none',
+              boxSizing: 'border-box'
+            }}
+          />
+
+          {/* Description */}
+          <textarea
+            value={goal.description}
+            onChange={(e) => onUpdate({ ...goal, description: e.target.value })}
+            placeholder="Optional: How this supports the company goal..."
+            rows={2}
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              marginBottom: 12,
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: 8,
+              color: '#f1f5f9',
+              fontSize: '0.9rem',
+              outline: 'none',
+              boxSizing: 'border-box',
+              fontFamily: 'inherit',
+              resize: 'vertical'
+            }}
+          />
+
+          {/* KPIs (same as company goals) */}
+          <div>
+            <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: 8 }}>
+              Key Metrics ({goal.kpis.length}/3)
+            </div>
+            {goal.kpis.map((kpi, kpiIdx) => (
+              <div key={kpiIdx} style={{ 
+                display: 'grid', 
+                gridTemplateColumns: '2fr 1fr 1fr auto', 
+                gap: 8, 
+                marginBottom: 8 
+              }}>
+                <input
+                  type="text"
+                  value={kpi.metric}
+                  onChange={(e) => {
+                    const newKpis = [...goal.kpis]
+                    newKpis[kpiIdx].metric = e.target.value
+                    onUpdate({ ...goal, kpis: newKpis })
+                  }}
+                  placeholder="Metric"
+                  style={{
+                    padding: '10px 12px',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 6,
+                    color: '#f1f5f9',
+                    fontSize: '0.85rem',
+                    outline: 'none'
+                  }}
+                />
+                <input
+                  type="text"
+                  value={kpi.baseline}
+                  onChange={(e) => {
+                    const newKpis = [...goal.kpis]
+                    newKpis[kpiIdx].baseline = e.target.value
+                    onUpdate({ ...goal, kpis: newKpis })
+                  }}
+                  placeholder="Baseline"
+                  style={{
+                    padding: '10px 12px',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 6,
+                    color: '#f1f5f9',
+                    fontSize: '0.85rem',
+                    outline: 'none'
+                  }}
+                />
+                <input
+                  type="text"
+                  value={kpi.target}
+                  onChange={(e) => {
+                    const newKpis = [...goal.kpis]
+                    newKpis[kpiIdx].target = e.target.value
+                    onUpdate({ ...goal, kpis: newKpis })
+                  }}
+                  placeholder="Target"
+                  style={{
+                    padding: '10px 12px',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 6,
+                    color: '#f1f5f9',
+                    fontSize: '0.85rem',
+                    outline: 'none'
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    const newKpis = goal.kpis.filter((_, i) => i !== kpiIdx)
+                    onUpdate({ ...goal, kpis: newKpis })
+                  }}
+                  style={{
+                    padding: '10px',
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#ef4444',
+                    cursor: 'pointer',
+                    fontSize: '0.85rem'
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+            {goal.kpis.length < 3 && (
+              <button
+                onClick={() => onUpdate({ 
+                  ...goal, 
+                  kpis: [...goal.kpis, { metric: '', baseline: '', target: '' }] 
+                })}
+                style={{
+                  padding: '8px 12px',
+                  background: 'rgba(251, 191, 36, 0.1)',
+                  border: '1px dashed rgba(251, 191, 36, 0.3)',
+                  borderRadius: 6,
+                  color: '#fbbf24',
+                  fontSize: '0.8rem',
+                  cursor: 'pointer'
+                }}
+              >
+                + Add KPI
+              </button>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
 export function OrganizationSetup({ onComplete, initialData = {} }) {
   const [step, setStep] = useState(1)
   const [formData, setFormData] = useState({
@@ -66,10 +508,16 @@ export function OrganizationSetup({ onComplete, initialData = {} }) {
     role: initialData.role || '',
     seniority: initialData.seniority || ''
   })
+
+  // ADD THESE NEW STATES:
+const [companyGoals, setCompanyGoals] = useState([])
+const [goalTimePeriod, setGoalTimePeriod] = useState({ year: 2026, period: 'q1' })
+const [departmentName, setDepartmentName] = useState('')
+const [departmentGoals, setDepartmentGoals] = useState([])
   const [analyzing, setAnalyzing] = useState(false)
   const [saving, setSaving] = useState(false)
 
-  const totalSteps = 4
+  const totalSteps = 6
 
   const updateField = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -101,15 +549,17 @@ export function OrganizationSetup({ onComplete, initialData = {} }) {
     }
   }
 
-  const canProceed = () => {
-    switch (step) {
-      case 1: return formData.companyName.trim().length >= 2 && formData.website.trim().length >= 3
-      case 2: return formData.userContext.trim().length >= 20
-      case 3: return formData.stage && formData.currentMode
-      case 4: return formData.role && formData.seniority
-      default: return false
-    }
+const canProceed = () => {
+  switch (step) {
+    case 1: return formData.companyName.trim().length >= 2 && formData.website.trim().length >= 3
+    case 2: return formData.userContext.trim().length >= 20
+    case 3: return formData.stage && formData.currentMode
+    case 4: return formData.role && formData.seniority
+    case 5: return companyGoals.length > 0  // At least 1 company goal
+    case 6: return departmentName.trim().length >= 2 && departmentGoals.length > 0  // Department + at least 1 goal
+    default: return false
   }
+}
 
   const handleNext = () => {
     if (step < totalSteps) {
@@ -125,36 +575,49 @@ export function OrganizationSetup({ onComplete, initialData = {} }) {
     }
   }
 
-  const handleSubmit = async () => {
-    setSaving(true)
-    try {
-      // Combine contexts
-      const combinedContext = formData.aiContext
-        ? `${formData.userContext}\n\nWebsite Analysis:\n${formData.aiContext}`
-        : formData.userContext
+const handleSubmit = async () => {
+  setSaving(true)
+  try {
+    // Combine contexts
+    const combinedContext = formData.aiContext
+      ? `${formData.userContext}\n\nWebsite Analysis:\n${formData.aiContext}`
+      : formData.userContext
 
-      await onComplete({
-        organization: {
-          name: formData.companyName,
-          website: formData.website,
-          stage: formData.stage,
-          currentMode: formData.currentMode,
-          userContext: formData.userContext,
-          aiContext: formData.aiContext || null,
-          combinedContext: combinedContext
-        },
-        userOrg: {
-          role: formData.role,
-          seniority: formData.seniority,
-          isCurrent: true
-        }
-      })
-    } catch (err) {
-      console.error('Error saving organization:', err)
-    } finally {
-      setSaving(false)
-    }
+    await onComplete({
+      organization: {
+        name: formData.companyName,
+        website: formData.website,
+        stage: formData.stage,
+        currentMode: formData.currentMode,
+        userContext: formData.userContext,
+        aiContext: formData.aiContext || null,
+        combinedContext: combinedContext
+      },
+      userOrg: {
+        role: formData.role,
+        seniority: formData.seniority,
+        isCurrent: true
+      },
+      companyGoals: companyGoals.map(g => ({
+        ...g,
+        year: goalTimePeriod.year,
+        timePeriod: goalTimePeriod.period
+      })),
+      department: {
+        name: departmentName
+      },
+      departmentGoals: departmentGoals.map(g => ({
+        ...g,
+        year: goalTimePeriod.year,
+        timePeriod: goalTimePeriod.period
+      }))
+    })
+  } catch (err) {
+    console.error('Error saving organization:', err)
+  } finally {
+    setSaving(false)
   }
+}
 
   return (
     <div style={{ 
@@ -586,6 +1049,258 @@ export function OrganizationSetup({ onComplete, initialData = {} }) {
                   </button>
                 ))}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Step 5: Company Goals */}
+        {step === 5 && (
+          <div>
+            <h2 style={{ 
+              fontSize: '1.5rem', 
+              fontWeight: 600, 
+              color: '#f1f5f9', 
+              marginBottom: 12 
+            }}>
+              Set strategic goals for {formData.companyName}
+            </h2>
+            <p style={{ color: '#64748b', marginBottom: 32, lineHeight: 1.6 }}>
+              Define 1-3 measurable goals with KPIs. This helps AI evaluate if bets align with company priorities.
+            </p>
+
+            {/* Time Period Selector */}
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ 
+                display: 'block', 
+                color: '#94a3b8', 
+                fontSize: '0.9rem', 
+                marginBottom: 10,
+                fontWeight: 500
+              }}>
+                Time Period
+              </label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <select
+                  value={goalTimePeriod.year}
+                  onChange={(e) => setGoalTimePeriod(prev => ({ ...prev, year: parseInt(e.target.value) }))}
+                  style={{
+                    padding: '12px 16px',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 8,
+                    color: '#f1f5f9',
+                    fontSize: '0.95rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="2026">2026</option>
+                  <option value="2027">2027</option>
+                </select>
+                <select
+                  value={goalTimePeriod.period}
+                  onChange={(e) => setGoalTimePeriod(prev => ({ ...prev, period: e.target.value }))}
+                  style={{
+                    flex: 1,
+                    padding: '12px 16px',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 8,
+                    color: '#f1f5f9',
+                    fontSize: '0.95rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="year">Full Year</option>
+                  <option value="h1">H1 (Jan-Jun)</option>
+                  <option value="h2">H2 (Jul-Dec)</option>
+                  <option value="q1">Q1 (Jan-Mar)</option>
+                  <option value="q2">Q2 (Apr-Jun)</option>
+                  <option value="q3">Q3 (Jul-Sep)</option>
+                  <option value="q4">Q4 (Oct-Dec)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Goals List */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ 
+                display: 'block', 
+                color: '#94a3b8', 
+                fontSize: '0.9rem', 
+                marginBottom: 10,
+                fontWeight: 500
+              }}>
+                Company Goals ({companyGoals.length}/3)
+              </label>
+              
+              {companyGoals.map((goal, idx) => (
+                <GoalCard
+                  key={idx}
+                  goal={goal}
+                  index={idx}
+                  onUpdate={(updated) => {
+                    const newGoals = [...companyGoals]
+                    newGoals[idx] = updated
+                    setCompanyGoals(newGoals)
+                  }}
+                  onRemove={() => {
+                    setCompanyGoals(companyGoals.filter((_, i) => i !== idx))
+                  }}
+                />
+              ))}
+
+              {companyGoals.length < 3 && (
+                <button
+                  onClick={() => setCompanyGoals([...companyGoals, { 
+                    title: '', 
+                    description: '', 
+                    kpis: [] 
+                  }])}
+                  style={{
+                    width: '100%',
+                    padding: '16px',
+                    background: 'rgba(45, 212, 191, 0.1)',
+                    border: '1px dashed rgba(45, 212, 191, 0.3)',
+                    borderRadius: 12,
+                    color: '#2dd4bf',
+                    fontSize: '0.95rem',
+                    cursor: 'pointer',
+                    fontWeight: 500
+                  }}
+                >
+                  + Add Goal
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Step 6: Department Setup */}
+        {step === 6 && (
+          <div>
+            <h2 style={{ 
+              fontSize: '1.5rem', 
+              fontWeight: 600, 
+              color: '#f1f5f9', 
+              marginBottom: 12 
+            }}>
+              Set up your department
+            </h2>
+            <p style={{ color: '#64748b', marginBottom: 32, lineHeight: 1.6 }}>
+              Create department-level goals that align with company goals. AI will use this to evaluate bet alignment.
+            </p>
+
+            {/* Department Name */}
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ 
+                display: 'block', 
+                color: '#94a3b8', 
+                fontSize: '0.9rem', 
+                marginBottom: 10,
+                fontWeight: 500
+              }}>
+                Department Name
+              </label>
+              <input
+                type="text"
+                value={departmentName}
+                onChange={(e) => setDepartmentName(e.target.value)}
+                placeholder="e.g., Product, Engineering, Marketing"
+                style={{
+                  width: '100%',
+                  padding: '16px 20px',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 12,
+                  color: '#f1f5f9',
+                  fontSize: '1rem',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            {/* Company Goals Reference */}
+            {companyGoals.length > 0 && (
+              <div style={{ 
+                marginBottom: 24,
+                padding: 16,
+                background: 'rgba(45, 212, 191, 0.05)',
+                border: '1px solid rgba(45, 212, 191, 0.2)',
+                borderRadius: 12
+              }}>
+                <div style={{ 
+                  color: '#2dd4bf', 
+                  fontSize: '0.85rem', 
+                  fontWeight: 600,
+                  marginBottom: 12
+                }}>
+                  COMPANY GOALS FOR CONTEXT
+                </div>
+                {companyGoals.map((goal, idx) => (
+                  <div key={idx} style={{ 
+                    color: '#94a3b8', 
+                    fontSize: '0.9rem',
+                    marginBottom: 6
+                  }}>
+                    {idx + 1}. {goal.title}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Department Goals */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ 
+                display: 'block', 
+                color: '#94a3b8', 
+                fontSize: '0.9rem', 
+                marginBottom: 10,
+                fontWeight: 500
+              }}>
+                Department Goals ({departmentGoals.length}/3)
+              </label>
+
+              {departmentGoals.map((goal, idx) => (
+                <DepartmentGoalCard
+                  key={idx}
+                  goal={goal}
+                  index={idx}
+                  companyGoals={companyGoals}
+                  onUpdate={(updated) => {
+                    const newGoals = [...departmentGoals]
+                    newGoals[idx] = updated
+                    setDepartmentGoals(newGoals)
+                  }}
+                  onRemove={() => {
+                    setDepartmentGoals(departmentGoals.filter((_, i) => i !== idx))
+                  }}
+                />
+              ))}
+
+              {departmentGoals.length < 3 && (
+                <button
+                  onClick={() => setDepartmentGoals([...departmentGoals, { 
+                    title: '', 
+                    description: '', 
+                    kpis: [],
+                    alignedToCompanyGoalIndex: null
+                  }])}
+                  style={{
+                    width: '100%',
+                    padding: '16px',
+                    background: 'rgba(45, 212, 191, 0.1)',
+                    border: '1px dashed rgba(45, 212, 191, 0.3)',
+                    borderRadius: 12,
+                    color: '#2dd4bf',
+                    fontSize: '0.95rem',
+                    cursor: 'pointer',
+                    fontWeight: 500
+                  }}
+                >
+                  + Add Department Goal
+                </button>
+              )}
             </div>
           </div>
         )}
