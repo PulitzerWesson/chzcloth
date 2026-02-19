@@ -202,20 +202,27 @@ export function useBets(orgId, orgMode) {
 
       if (error) throw error
       
-      if (ideaId && data) {
-        const { error: updateError } = await supabase
-              .from('ideas')
+if (ideaId && data) {
+  console.log('🔍 About to update idea:', ideaId);
+  console.log('🔍 data object:', data);
+  console.log('🔍 data.title:', data.title);
+  console.log('🔍 data.summary:', data.summary);
+  
+  const { data: updateResult, error: updateError } = await supabase
+    .from('ideas')
     .update({ 
       status: 'structured',
-      title: data.title,        // Copy from bet
-      summary: data.summary      // Copy from bet
+      title: data.title,
+      summary: data.summary
     })
-    .eq('id', ideaId);
-        
-        if (updateError) {
-          console.error('Error updating idea status:', updateError);
-        }
-      }
+    .eq('id', ideaId)
+    .select(); // ← CRITICAL: see what was actually updated
+  
+  console.log('🔍 Update result:', updateResult);
+  if (updateError) {
+    console.error('❌ Error:', updateError);
+  }
+}
 
       // Transform to match what App.jsx expects
       const newBet = {
