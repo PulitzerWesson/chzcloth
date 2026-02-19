@@ -505,10 +505,10 @@ function Landing({ onStart }) {
         </div>
         {/* Hero content */}
         <div style={{ position: 'relative', zIndex: 1, maxWidth: 900, margin: '0 auto', padding: '80px 24px 60px', minHeight: 'calc(100vh - 140px)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-{/* Animated icons */}
-<div style={{ display: 'flex', gap: 24, justifyContent: 'center', marginBottom: 32 }}>
+{/* Animated icons - left-aligned, proportionate to text */}
+<div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
   {/* Experimental beaker */}
-  <svg width="48" height="48" viewBox="0 0 24 28" fill="none">
+  <svg width="24" height="24" viewBox="0 0 24 28" fill="none">
     <style>{`
       @keyframes landingBubble1 {
         0% { cy: 20; opacity: 0; }
@@ -548,7 +548,7 @@ function Landing({ onStart }) {
   </svg>
 
   {/* Outer ring */}
-  <svg width="48" height="48" viewBox="0 0 28 28" fill="none">
+  <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
     <style>{`
       @keyframes landingDraw {
         0% { stroke-dashoffset: 75.4; }
@@ -579,7 +579,7 @@ function Landing({ onStart }) {
   </svg>
 
   {/* Inner ring */}
-  <svg width="48" height="48" viewBox="0 0 28 28" fill="none">
+  <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
     <style>{`
       @keyframes landingGrowFromDot {
         0% { transform: scale(0); opacity: 0; }
@@ -600,6 +600,10 @@ function Landing({ onStart }) {
       </linearGradient>
     </defs>
   </svg>
+</div>
+
+<div style={{ color: '#fbbf24', fontSize: '1.1rem', fontWeight: 600, marginBottom: 16, letterSpacing: '0.5px' }}>
+  More Cheese. Less Waste.
 </div>
 
 <div style={{ color: '#fbbf24', fontSize: '1.1rem', fontWeight: 600, marginBottom: 16, letterSpacing: '0.5px' }}>
