@@ -157,6 +157,19 @@ Generate a professional title and summary for this bet:
 - Summary: 15-20 words explaining the value proposition
 ${orgContext ? 'Reference company specifics when relevant (e.g., "Further" vs "the company").' : ''}
 
+PRODUCT IDENTIFICATION:
+Identify which product/surface this bet modifies. Common products:
+- Website / Landing Page
+- Mobile App (iOS/Android)
+- Sales Funnel / Checkout
+- Chat Agent / Chatbot / Conversational AI
+- Customer Portal / Login / Dashboard
+- Admin Dashboard / Internal Tool
+- API / Platform / Developer Tools
+- Email System / Notifications
+- Marketing Site
+${orgContext ? 'Use company context to determine their product ecosystem.' : ''}
+
 
 SCORING CRITERIA:
 
@@ -195,6 +208,7 @@ Return ONLY valid JSON (no markdown, no preamble):
 {
   "title": "Concise professional title (8-12 words)",
   "summary": "One-sentence value proposition (15-20 words)",
+  "product": "Which product/surface this bet modifies",
   "approach": {
     "score": 0-100,
     "rationale": "Brief explanation${needsSearch ? ' citing any relevant web findings' : ''}${orgContext ? ' citing specific company details' : ''}"
@@ -261,6 +275,9 @@ Return ONLY valid JSON (no markdown, no preamble):
 }
 if (scores.summary) {
   scores.summary = stripCitations(scores.summary);
+}
+    if (scores.product) {
+  scores.product = stripCitations(scores.product);
 }
     if (scores.approach?.rationale) {
       scores.approach.rationale = stripCitations(scores.approach.rationale);
