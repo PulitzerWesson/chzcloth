@@ -143,7 +143,8 @@ const createOrganization = async (orgData, userOrgData) => {
             year: g.year,
             title: g.title,
             description: g.description || null,
-            kpis: g.kpis || []
+            kpis: g.kpis || [],
+            priority: index + 1
           }))
         )
         .select()
@@ -181,7 +182,8 @@ const createOrganization = async (orgData, userOrgData) => {
               year: g.year,
               title: g.title,
               description: g.description || null,
-              kpis: g.kpis || []
+              kpis: g.kpis || [],
+              priority: index + 1
             }))
           )
 
