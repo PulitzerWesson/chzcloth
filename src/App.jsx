@@ -587,7 +587,7 @@ function Landing({ onStart }) {
           Product Bets Get Smarter With CHZCLOTH
         </h1>
         <p style={{ fontSize: '1.25rem', color: '#94a3b8', lineHeight: 1.6, maxWidth: 650, marginBottom: 40 }}>
-        AI-powered product bet scoring tool helping leaders evaluate bets before committing resources        </p>
+        Context-aware scoring that improves with every outcome        </p>
         <button
           onClick={onStart}
           style={{
