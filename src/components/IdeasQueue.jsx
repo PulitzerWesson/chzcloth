@@ -25,22 +25,24 @@ const CHZCLOTHBadge = () => (
 const StrategicAlignmentIcon = ({ alignment }) => {
   const normalized = alignment?.toLowerCase();
   
-  // Inner Ring - pulsing bullseye
+  
+  // Inner Ring - grows from dot to full, then pauses
   if (normalized === 'inner' || normalized === 'inner_ring' || normalized === 'inner ring') {
     return (
       <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
         <style>{`
-          @keyframes pulse {
-            0%, 100% { transform: scale(0.85); opacity: 0.8; }
-            50% { transform: scale(1); opacity: 1; }
+          @keyframes growFromDot {
+            0% { transform: scale(0); opacity: 0; }
+            22% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
           }
-          .pulse-circle { 
-            animation: pulse 2s ease-in-out infinite;
+          .grow-circle { 
+            animation: growFromDot 9s ease-out infinite;
             transform-origin: center;
           }
         `}</style>
         <circle cx="14" cy="14" r="12" stroke="url(#tealGradient)" strokeWidth="2.5" fill="none"/>
-        <circle className="pulse-circle" cx="14" cy="14" r="6" fill="url(#tealGradient)"/>
+        <circle className="grow-circle" cx="14" cy="14" r="6" fill="url(#tealGradient)"/>
         <defs>
           <linearGradient id="tealGradient" x1="2" y1="2" x2="26" y2="26">
             <stop offset="0%" stopColor="#2dd4bf"/>
@@ -51,18 +53,19 @@ const StrategicAlignmentIcon = ({ alignment }) => {
     );
   }
   
-  // Outer Ring - drawing stroke around circle
+  // Outer Ring - draws stroke, then pauses
   if (normalized === 'outer' || normalized === 'outer_ring' || normalized === 'outer ring') {
     return (
       <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
         <style>{`
           @keyframes draw {
             0% { stroke-dashoffset: 75.4; }
+            30% { stroke-dashoffset: 0; }
             100% { stroke-dashoffset: 0; }
           }
           .draw-circle { 
             stroke-dasharray: 75.4;
-            animation: draw 3s linear infinite;
+            animation: draw 10s linear infinite;
           }
         `}</style>
         <circle 
@@ -85,24 +88,24 @@ const StrategicAlignmentIcon = ({ alignment }) => {
     );
   }
   
-  // Experimental - bubbles rising
+  // Experimental - removed liquid, brighter bigger bubbles
   if (normalized === 'experimental') {
     return (
       <svg width="20" height="20" viewBox="0 0 24 28" fill="none">
         <style>{`
           @keyframes bubble1 {
             0% { cy: 20; opacity: 0; }
-            20% { opacity: 0.6; }
+            20% { opacity: 1; }
             100% { cy: 8; opacity: 0; }
           }
           @keyframes bubble2 {
             0% { cy: 20; opacity: 0; }
-            20% { opacity: 0.6; }
+            20% { opacity: 1; }
             100% { cy: 10; opacity: 0; }
           }
           @keyframes bubble3 {
             0% { cy: 20; opacity: 0; }
-            20% { opacity: 0.6; }
+            20% { opacity: 1; }
             100% { cy: 9; opacity: 0; }
           }
           .bubble1 { animation: bubble1 2.5s ease-in infinite; }
@@ -113,18 +116,14 @@ const StrategicAlignmentIcon = ({ alignment }) => {
           d="M8 2 L8 10 L4 22 C3.5 24 4.5 26 7 26 L17 26 C19.5 26 20.5 24 20 22 L16 10 L16 2" 
           stroke="url(#beakerGradient)" 
           strokeWidth="2" 
-          fill="rgba(45, 212, 191, 0.1)"
+          fill="none"
         />
         <line x1="8" y1="2" x2="16" y2="2" stroke="url(#beakerGradient)" strokeWidth="2"/>
-        <path 
-          d="M6 18 C6 18 7 20 9 21 L15 21 C17 20 18 18 18 18 L15 12 L9 12 Z" 
-          fill="url(#beakerGradient)" 
-          opacity="0.6"
-        />
-        {/* Animated bubbles */}
-        <circle className="bubble1" cx="10" cy="20" r="1.5" fill="#2dd4bf" opacity="0"/>
-        <circle className="bubble2" cx="12" cy="20" r="1.2" fill="#22d3ee" opacity="0"/>
-        <circle className="bubble3" cx="14" cy="20" r="1.3" fill="#2dd4bf" opacity="0"/>
+        {/* Removed the liquid fill, just bubbles */}
+        {/* Bigger, brighter bubbles */}
+        <circle className="bubble1" cx="9" cy="20" r="2" fill="#2dd4bf" opacity="0"/>
+        <circle className="bubble2" cx="12" cy="20" r="1.8" fill="#22d3ee" opacity="0"/>
+        <circle className="bubble3" cx="15" cy="20" r="2" fill="#2dd4bf" opacity="0"/>
         <defs>
           <linearGradient id="beakerGradient" x1="4" y1="2" x2="20" y2="26">
             <stop offset="0%" stopColor="#2dd4bf"/>
@@ -137,7 +136,6 @@ const StrategicAlignmentIcon = ({ alignment }) => {
   
   return null;
 };
-
 
 function IdeasQueue({ 
   ideas = [], 
