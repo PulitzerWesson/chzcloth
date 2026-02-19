@@ -304,44 +304,6 @@ function DepartmentGoalCard({ goal, index, companyGoals, onUpdate, onRemove }) {
 
       {isExpanded && (
         <>
-          {/* Align to Company Goal */}
-          {companyGoals.length > 0 && (
-            <div style={{ marginBottom: 12 }}>
-              <label style={{ 
-                display: 'block', 
-                color: '#94a3b8', 
-                fontSize: '0.85rem', 
-                marginBottom: 6
-              }}>
-                Aligns with company goal:
-              </label>
-              <select
-                value={goal.alignedToCompanyGoalIndex ?? ''}
-                onChange={(e) => onUpdate({ 
-                  ...goal, 
-                  alignedToCompanyGoalIndex: e.target.value === '' ? null : parseInt(e.target.value)
-                })}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 8,
-                  color: '#f1f5f9',
-                  fontSize: '0.9rem',
-                  cursor: 'pointer'
-                }}
-              >
-                <option value="">No specific alignment</option>
-                {companyGoals.map((cGoal, idx) => (
-                  <option key={idx} value={idx}>
-                    Goal {idx + 1}: {cGoal.title.substring(0, 50)}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
           {/* Title */}
           <input
             type="text"
@@ -362,29 +324,47 @@ function DepartmentGoalCard({ goal, index, companyGoals, onUpdate, onRemove }) {
             }}
           />
 
-          {/* Description */}
-          <textarea
-            value={goal.description}
-            onChange={(e) => onUpdate({ ...goal, description: e.target.value })}
-            placeholder="Optional: How this supports the company goal..."
-            rows={2}
-            style={{
-              width: '100%',
-              padding: '12px 16px',
-              marginBottom: 12,
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 8,
-              color: '#f1f5f9',
-              fontSize: '0.9rem',
-              outline: 'none',
-              boxSizing: 'border-box',
-              fontFamily: 'inherit',
-              resize: 'vertical'
-            }}
-          />
+          {/* Align to Company Goal - Radio buttons */}
+          {companyGoals.length > 0 && (
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ 
+                display: 'block', 
+                color: '#94a3b8', 
+                fontSize: '0.85rem', 
+                marginBottom: 8
+              }}>
+                Supports company goal (optional):
+              </label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name={`goal-${index}-alignment`}
+                    checked={goal.alignedToCompanyGoalIndex === null}
+                    onChange={() => onUpdate({ ...goal, alignedToCompanyGoalIndex: null })}
+                    style={{ cursor: 'pointer' }}
+                  />
+                  <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>No specific alignment</span>
+                </label>
+                {companyGoals.map((cGoal, idx) => (
+                  <label key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name={`goal-${index}-alignment`}
+                      checked={goal.alignedToCompanyGoalIndex === idx}
+                      onChange={() => onUpdate({ ...goal, alignedToCompanyGoalIndex: idx })}
+                      style={{ cursor: 'pointer' }}
+                    />
+                    <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>
+                      Goal {idx + 1}: {cGoal.title.substring(0, 40)}{cGoal.title.length > 40 ? '...' : ''}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
 
-          {/* KPIs (same as company goals) */}
+          {/* KPIs (same as before) */}
           <div>
             <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: 8 }}>
               Key Metrics ({goal.kpis.length}/3)
@@ -555,8 +535,8 @@ const canProceed = () => {
     case 2: return formData.userContext.trim().length >= 20
     case 3: return formData.stage && formData.currentMode
     case 4: return formData.role && formData.seniority
-    case 5: return companyGoals.length > 0  // At least 1 company goal
-    case 6: return departmentName.trim().length >= 2 && departmentGoals.length > 0  // Department + at least 1 goal
+    case 5: return companyGoals.length > 0
+    case 6: return true  // Always allow proceeding (department is optional)
     default: return false
   }
 }
@@ -1175,7 +1155,7 @@ const handleSubmit = async () => {
           </div>
         )}
 
-        {/* Step 6: Department Setup */}
+{/* Step 6: Department Setup */}
         {step === 6 && (
           <div>
             <h2 style={{ 
@@ -1184,11 +1164,36 @@ const handleSubmit = async () => {
               color: '#f1f5f9', 
               marginBottom: 12 
             }}>
-              Set up your department
+              Set up your department (optional)
             </h2>
             <p style={{ color: '#64748b', marginBottom: 32, lineHeight: 1.6 }}>
-              Create department-level goals that align with company goals. AI will use this to evaluate bet alignment.
+              If you manage a specific team, create department-level goals. Otherwise, skip this step.
             </p>
+
+            {/* Company Goals Reference - Simple numbered list */}
+            {companyGoals.length > 0 && (
+              <div style={{ 
+                marginBottom: 24,
+                padding: 16,
+                background: 'rgba(45, 212, 191, 0.05)',
+                border: '1px solid rgba(45, 212, 191, 0.2)',
+                borderRadius: 12
+              }}>
+                <div style={{ 
+                  color: '#2dd4bf', 
+                  fontSize: '0.85rem', 
+                  fontWeight: 600,
+                  marginBottom: 12
+                }}>
+                  COMPANY GOALS
+                </div>
+                <ol style={{ margin: 0, paddingLeft: 20, color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.8 }}>
+                  {companyGoals.map((goal, idx) => (
+                    <li key={idx}>{goal.title}</li>
+                  ))}
+                </ol>
+              </div>
+            )}
 
             {/* Department Name */}
             <div style={{ marginBottom: 24 }}>
@@ -1219,35 +1224,6 @@ const handleSubmit = async () => {
                 }}
               />
             </div>
-
-            {/* Company Goals Reference */}
-            {companyGoals.length > 0 && (
-              <div style={{ 
-                marginBottom: 24,
-                padding: 16,
-                background: 'rgba(45, 212, 191, 0.05)',
-                border: '1px solid rgba(45, 212, 191, 0.2)',
-                borderRadius: 12
-              }}>
-                <div style={{ 
-                  color: '#2dd4bf', 
-                  fontSize: '0.85rem', 
-                  fontWeight: 600,
-                  marginBottom: 12
-                }}>
-                  COMPANY GOALS FOR CONTEXT
-                </div>
-                {companyGoals.map((goal, idx) => (
-                  <div key={idx} style={{ 
-                    color: '#94a3b8', 
-                    fontSize: '0.9rem',
-                    marginBottom: 6
-                  }}>
-                    {idx + 1}. {goal.title}
-                  </div>
-                ))}
-              </div>
-            )}
 
             {/* Department Goals */}
             <div style={{ marginBottom: 20 }}>
@@ -1304,7 +1280,6 @@ const handleSubmit = async () => {
             </div>
           </div>
         )}
-
         {/* Navigation */}
         <div style={{ 
           display: 'flex', 
