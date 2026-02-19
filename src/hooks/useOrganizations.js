@@ -104,6 +104,7 @@ const createOrganization = async (orgData, userOrgData) => {
   if (!user) return { error: { message: 'Not authenticated' } }
 
   try {
+    // 1. Create organization
     const { data: org, error: orgError } = await supabase
       .from('organizations')
       .insert({
@@ -121,6 +122,7 @@ const createOrganization = async (orgData, userOrgData) => {
 
     if (orgError) throw orgError
 
+    // 2. Mark other orgs as not current
     if (userOrgData.isCurrent !== false) {
       await supabase
         .from('user_organizations')
@@ -129,6 +131,65 @@ const createOrganization = async (orgData, userOrgData) => {
         .eq('is_current', true)
     }
 
+    // 3. Create company goals (if provided)
+    let companyGoalIds = []
+    if (orgData.companyGoals && orgData.companyGoals.length > 0) {
+      const { data: goals, error: goalsError } = await supabase
+        .from('company_goals')
+        .insert(
+          orgData.companyGoals.map(g => ({
+            org_id: org.id,
+            time_period: g.timePeriod,
+            year: g.year,
+            title: g.title,
+            description: g.description || null,
+            kpis: g.kpis || []
+          }))
+        )
+        .select()
+
+      if (goalsError) throw goalsError
+      companyGoalIds = goals.map(g => g.id)
+    }
+
+    // 4. Create department (if provided)
+    let departmentId = null
+    if (orgData.department && orgData.department.name) {
+      const { data: dept, error: deptError } = await supabase
+        .from('departments')
+        .insert({
+          org_id: org.id,
+          name: orgData.department.name
+        })
+        .select()
+        .single()
+
+      if (deptError) throw deptError
+      departmentId = dept.id
+
+      // 5. Create department goals (if provided)
+      if (orgData.departmentGoals && orgData.departmentGoals.length > 0) {
+        const { error: deptGoalsError } = await supabase
+          .from('department_goals')
+          .insert(
+            orgData.departmentGoals.map(g => ({
+              department_id: departmentId,
+              company_goal_id: g.alignedToCompanyGoalIndex !== null && g.alignedToCompanyGoalIndex !== undefined
+                ? companyGoalIds[g.alignedToCompanyGoalIndex]
+                : null,
+              time_period: g.timePeriod,
+              year: g.year,
+              title: g.title,
+              description: g.description || null,
+              kpis: g.kpis || []
+            }))
+          )
+
+        if (deptGoalsError) throw deptGoalsError
+      }
+    }
+
+    // 6. Create user_organization link with department
     const { data: userOrg, error: userOrgError } = await supabase
       .from('user_organizations')
       .insert({
@@ -137,7 +198,8 @@ const createOrganization = async (orgData, userOrgData) => {
         role: userOrgData.role,
         seniority: userOrgData.seniority,
         started_at: userOrgData.startedAt,
-        is_current: userOrgData.isCurrent !== false
+        is_current: userOrgData.isCurrent !== false,
+        department_id: departmentId
       })
       .select()
       .single()
