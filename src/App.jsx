@@ -3538,9 +3538,10 @@ const handleAddToMarketplace = async () => {
     : Math.round((currentBet.approachScore + currentBet.potentialScore + currentBet.fitScore) / 3);
   
   // Convert bet to marketplace Idea
-  const ideaEntry = {
-    title: currentBet.hypothesis || 'Untitled Bet',
-    description: `Hypothesis: ${currentBet.hypothesis}\n\nMetrics: ${currentBet.prediction}\n\nEffort: ${currentBet.estimatedEffort}`,
+const ideaEntry = {
+  title: currentBet.title || currentBet.hypothesis?.substring(0, 100) || 'Untitled Bet',
+  summary: currentBet.summary,  // ← Also add this
+  description: `Hypothesis: ${currentBet.hypothesis}...`,
     entry_type: 'bet',
     bet_data: {
       ...currentBet,
