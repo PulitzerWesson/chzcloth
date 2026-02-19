@@ -602,9 +602,6 @@ function Landing({ onStart }) {
   </svg>
 </div>
 
-<div style={{ color: '#fbbf24', fontSize: '1.1rem', fontWeight: 600, marginBottom: 16, letterSpacing: '0.5px' }}>
-  More Cheese. Less Waste.
-</div>
 
 <div style={{ color: '#fbbf24', fontSize: '1.1rem', fontWeight: 600, marginBottom: 16, letterSpacing: '0.5px' }}>
   More Cheese. Less Waste.
