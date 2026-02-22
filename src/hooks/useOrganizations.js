@@ -110,9 +110,6 @@ const createOrganization = async (orgData, userOrgData) => {
       .insert({
         name: orgData.name,
         website: orgData.website,
-        stage: orgData.stage,
-        team_size: orgData.teamSize,
-        current_mode: orgData.currentMode,
         user_context: orgData.userContext,
         ai_context: orgData.aiContext,
         combined_context: orgData.combinedContext
