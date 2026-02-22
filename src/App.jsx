@@ -588,7 +588,8 @@ function Landing({ onStart }) {
 
         </h1>
         <p style={{ fontSize: '1.25rem', color: '#94a3b8', lineHeight: 1.6, maxWidth: 650, marginBottom: 40 }}>
-        Make smarter product bets with a context-aware scoring platform that learns from every outcome.        </p>
+        Improve your odds with a context-aware scoring platform that learns from every outcome.
+        </p>
         <button
           onClick={onStart}
           style={{
