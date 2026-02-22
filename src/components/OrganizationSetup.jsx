@@ -1,45 +1,5 @@
 import React, { useState } from 'react'
 
-
-
-// Company mode options
-const COMPANY_MODES = [
-  { 
-    value: 'pmf', 
-    label: 'Find product-market fit',
-    description: 'Early stage, still validating the core offering'
-  },
-  { 
-    value: 'growth', 
-    label: 'Grow as fast as possible',
-    description: 'PMF achieved, now scaling acquisition & usage'
-  },
-  { 
-    value: 'efficiency', 
-    label: 'Improve efficiency & margins',
-    description: 'Optimize unit economics, reduce burn'
-  },
-  { 
-    value: 'expansion', 
-    label: 'Expand into new markets or products',
-    description: 'Proven core, seeking new growth vectors'
-  },
-  { 
-    value: 'unsure', 
-    label: "Not sure / It's complicated",
-    description: 'Mixed priorities or unclear direction'
-  }
-]
-
-const COMPANY_STAGES = [
-  { value: 'preseed', label: 'Pre-seed / Bootstrapped' },
-  { value: 'seed', label: 'Seed ($1M–$5M raised)' },
-  { value: 'seriesA', label: 'Series A ($5M–$20M)' },
-  { value: 'seriesB', label: 'Series B ($20M–$50M)' },
-  { value: 'seriesC', label: 'Series C+ / Growth' },
-  { value: 'enterprise', label: 'Enterprise / Public' }
-]
-
 const ROLES = [
   { value: 'pm', label: 'Product Manager / Product Owner' },
   { value: 'founder', label: 'Founder / CEO' },
@@ -598,8 +558,6 @@ export function OrganizationSetup({ onComplete, initialData = {} }) {
     website: initialData.website || '',
     userContext: initialData.userContext || '',
     aiContext: initialData.aiContext || '',
-    stage: initialData.stage || '',
-    currentMode: initialData.currentMode || '',
     role: initialData.role || '',
     seniority: initialData.seniority || ''
   })
@@ -612,7 +570,7 @@ const [departmentGoals, setDepartmentGoals] = useState([])
   const [analyzing, setAnalyzing] = useState(false)
   const [saving, setSaving] = useState(false)
 
-  const totalSteps = 6
+  const totalSteps = 5
 
   const updateField = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -682,8 +640,6 @@ const handleSubmit = async () => {
       organization: {
         name: formData.companyName,
         website: formData.website,
-        stage: formData.stage,
-        currentMode: formData.currentMode,
         userContext: formData.userContext,
         aiContext: formData.aiContext || null,
         combinedContext: combinedContext
@@ -693,18 +649,20 @@ const handleSubmit = async () => {
         seniority: formData.seniority,
         isCurrent: true
       },
-      companyGoals: companyGoals.map(g => ({
+      companyGoals: companyGoals.map((g, index) => ({
         ...g,
         year: goalTimePeriod.year,
-        timePeriod: goalTimePeriod.period
+        timePeriod: goalTimePeriod.period,
+        priority: index + 1
       })),
       department: {
         name: departmentName
       },
-      departmentGoals: departmentGoals.map(g => ({
+      departmentGoals: departmentGoals.map((g, index) => ({
         ...g,
         year: goalTimePeriod.year,
-        timePeriod: goalTimePeriod.period
+        timePeriod: goalTimePeriod.period,
+        priority: index + 1
       }))
     })
   } catch (err) {
@@ -741,7 +699,7 @@ const handleSubmit = async () => {
             gap: 4, 
             marginBottom: 8 
           }}>
-            {[1, 2, 3, 4].map(s => (
+            {[1, 2, 3, 4, 5].map(s => (
               <div
                 key={s}
                 style={{
@@ -964,106 +922,9 @@ const handleSubmit = async () => {
           </div>
         )}
 
-        {/* Step 3: Stage + Current Mode */}
+
+        {/* Step 3: Your Role */}
         {step === 3 && (
-          <div>
-            <h2 style={{ 
-              fontSize: '1.5rem', 
-              fontWeight: 600, 
-              color: '#f1f5f9', 
-              marginBottom: 12 
-            }}>
-              Company stage and current priority
-            </h2>
-            <p style={{ color: '#64748b', marginBottom: 32, lineHeight: 1.6 }}>
-              This helps us evaluate if bets align with where your company is now.
-            </p>
-
-            <div style={{ marginBottom: 24 }}>
-              <label style={{ 
-                display: 'block', 
-                color: '#94a3b8', 
-                fontSize: '0.9rem', 
-                marginBottom: 10,
-                fontWeight: 500
-              }}>
-                Company Stage
-              </label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
-                {COMPANY_STAGES.map(s => (
-                  <button
-                    key={s.value}
-                    onClick={() => updateField('stage', s.value)}
-                    style={{
-                      padding: '14px 18px',
-                      background: formData.stage === s.value 
-                        ? 'rgba(45, 212, 191, 0.15)' 
-                        : 'rgba(255,255,255,0.03)',
-                      border: `1px solid ${formData.stage === s.value ? 'rgba(45, 212, 191, 0.5)' : 'rgba(255,255,255,0.08)'}`,
-                      borderRadius: 10,
-                      color: formData.stage === s.value ? '#2dd4bf' : '#cbd5e1',
-                      fontSize: '0.85rem',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s'
-                    }}
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label style={{ 
-                display: 'block', 
-                color: '#94a3b8', 
-                fontSize: '0.9rem', 
-                marginBottom: 10,
-                fontWeight: 500
-              }}>
-                Current Priority
-              </label>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {COMPANY_MODES.map(mode => (
-                  <button
-                    key={mode.value}
-                    onClick={() => updateField('currentMode', mode.value)}
-                    style={{
-                      padding: '18px 20px',
-                      background: formData.currentMode === mode.value 
-                        ? 'rgba(45, 212, 191, 0.15)' 
-                        : 'rgba(255,255,255,0.03)',
-                      border: `1px solid ${formData.currentMode === mode.value ? 'rgba(45, 212, 191, 0.5)' : 'rgba(255,255,255,0.08)'}`,
-                      borderRadius: 12,
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s'
-                    }}
-                  >
-                    <div style={{ 
-                      color: formData.currentMode === mode.value ? '#2dd4bf' : '#f1f5f9',
-                      fontSize: '1rem',
-                      fontWeight: 500,
-                      marginBottom: 4
-                    }}>
-                      {mode.label}
-                    </div>
-                    <div style={{ 
-                      color: formData.currentMode === mode.value ? '#5eead4' : '#64748b',
-                      fontSize: '0.85rem'
-                    }}>
-                      {mode.description}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Step 4: Your Role */}
-        {step === 4 && (
           <div>
             <h2 style={{ 
               fontSize: '1.5rem', 
@@ -1148,8 +1009,8 @@ const handleSubmit = async () => {
           </div>
         )}
 
-        {/* Step 5: Company Goals */}
-        {step === 5 && (
+        {/* Step 4: Company Goals */}
+        {step === 4 && (
           <div>
             <h2 style={{ 
               fontSize: '1.5rem', 
@@ -1270,8 +1131,8 @@ const handleSubmit = async () => {
           </div>
         )}
 
-{/* Step 6: Department Setup */}
-        {step === 6 && (
+{/* Step 5: Department Setup */}
+        {step === 5 && (
           <div>
             <h2 style={{ 
               fontSize: '1.5rem', 
