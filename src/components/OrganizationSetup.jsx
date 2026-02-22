@@ -606,10 +606,9 @@ const canProceed = () => {
   switch (step) {
     case 1: return formData.companyName.trim().length >= 2 && formData.website.trim().length >= 3
     case 2: return formData.userContext.trim().length >= 20
-    case 3: return formData.stage && formData.currentMode
-    case 4: return formData.role && formData.seniority
-    case 5: return companyGoals.length > 0
-    case 6: return true  // Always allow proceeding (department is optional)
+    case 3: return formData.role && formData.seniority
+    case 4: return companyGoals.length > 0
+    case 5: return true  // Department is optional
     default: return false
   }
 }
