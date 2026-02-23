@@ -62,6 +62,7 @@ export function useOrganizations() {
           combinedContext: uo.organizations.combined_context,
           role: uo.role,
           seniority: uo.seniority,
+              teamRole: uo.team_role,
           startedAt: uo.started_at,
           endedAt: uo.ended_at,
           isCurrent: uo.is_current
