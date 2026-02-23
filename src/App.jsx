@@ -2974,19 +2974,7 @@ const avgScore = betsWithScores.length > 0
     
   return (
         <>
-        {/* v2: Organization switcher */}
-        <div style={{ marginBottom: 24 }}>
-          <OrgSwitcher
-            organizations={organizations || []}
-            currentOrg={currentOrg}
-            onSwitch={onSwitchOrg}
-            onAddOrg={onAddOrg}
-            onEditMode={(orgId) => {
-              const newMode = prompt('Enter new mode (pmf, growth, efficiency, expansion, unsure):');
-              if (newMode) onEditMode(orgId, newMode);
-            }}
-          />
-        </div>
+
         
 
 {/* Stats cards - Full width 4-column */}
@@ -3410,16 +3398,16 @@ export default function App() {
   const { user, profile, loading: authLoading, signInWithEmail, updateProfile, isAuthenticated } = useAuth();
   
   // FIX: Destructure `initialized` (new) instead of relying on computed `loading`
-  const { 
-    organizations, 
-    currentOrg, 
-    loading: orgsLoading,
-    initialized: orgsInitialized,
-    createOrganization,
-    updateCompanyMode,
-    switchCurrentOrg,
-    getContextCheck
-  } = useOrganizations();
+const { 
+  organizations, 
+  currentOrg, 
+  loading: orgsLoading,
+  initialized: orgsInitialized,
+  createOrganization,
+  switchCurrentOrg,
+  isAdmin,
+  canInviteUsers
+} = useOrganizations();
   
 const { bets, loading: betsLoading, createBet, createPastBets, recordOutcome, scoreBet, approveBet, rejectBet, refreshBets} = useBets(currentOrg?.orgId, currentOrg?.mode);
 const { ideas, loading: ideasLoading, updateIdeaStatus, claimIdea, submitIdea, unclaimIdea } = useIdeas(currentOrg?.orgId);
@@ -3994,19 +3982,16 @@ const handleRejectBet = async (betId, reason) => {
   <div style={{ padding: '40px 24px' }}>
     <div style={{ maxWidth: 900, margin: '0 auto' }}>
       
-      {/* Organization switcher */}
-      <div style={{ marginBottom: 24 }}>
-        <OrgSwitcher
-          organizations={organizations || []}
-          currentOrg={currentOrg}
-          onSwitch={switchCurrentOrg}
-          onAddOrg={() => setScreen('orgsetup')}
-          onEditMode={(orgId) => {
-            const newMode = prompt('Enter new mode (pmf, growth, efficiency, expansion, unsure):');
-            if (newMode) updateCompanyMode(orgId, newMode);
-          }}
-        />
-      </div>
+{/* Organization switcher */}
+<div style={{ marginBottom: 24 }}>
+  <OrgSwitcher
+    organizations={organizations || []}
+    currentOrg={currentOrg}
+    onSwitch={switchCurrentOrg}
+    onAddOrg={() => setScreen('orgsetup')}
+    canInviteUsers={canInviteUsers}
+  />
+</div>
 
       {/* Tabs - always visible */}
       <div style={{
@@ -4087,7 +4072,6 @@ const handleRejectBet = async (betId, reason) => {
           currentOrg={currentOrg} 
           organizations={organizations} 
           onSwitchOrg={switchCurrentOrg} 
-          onEditMode={updateCompanyMode} 
           onAddOrg={() => setScreen('orgsetup')} 
           onNewBet={handleNewBet} 
           email={user?.email} 
