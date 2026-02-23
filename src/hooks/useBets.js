@@ -26,7 +26,6 @@ export function useBets(orgId, orgMode) {
           orgContext: orgContext?.context,
           orgLearnings: orgContext?.learnings,
           companyGoals: orgContext?.companyGoals || [],
-          departmentGoals: orgContext?.departmentGoals || []
         })
       });
       
@@ -156,8 +155,7 @@ export function useBets(orgId, orgMode) {
       
       // Fetch company goals and department goals
       let companyGoals = []
-      let departmentGoals = []
-      let userDepartmentId = null
+
       
       if (orgId) {
         // Get company goals for this org
@@ -169,26 +167,7 @@ export function useBets(orgId, orgMode) {
         
         companyGoals = goalsData || []
         
-        // Get user's department
-        const { data: userOrgData } = await supabase
-          .from('user_organizations')
-          .select('department_id')
-          .eq('user_id', user.id)
-          .eq('org_id', orgId)
-          .single()
-        
-        userDepartmentId = userOrgData?.department_id
-        
-        // Get department goals if user has a department
-        if (userDepartmentId) {
-          const { data: deptGoalsData } = await supabase
-            .from('department_goals')
-            .select('*')
-            .eq('department_id', userDepartmentId)
-            .order('priority', { ascending: true })
-          
-          departmentGoals = deptGoalsData || []
-        }
+
       }
       
       scores = await scoreBet(betData, { 
@@ -196,7 +175,6 @@ export function useBets(orgId, orgMode) {
         context: orgContext?.combinedContext || orgContext?.userContext,
         learnings: orgLearnings?.learnings || [],
         companyGoals: companyGoals,
-        departmentGoals: departmentGoals
       });
     }
 
