@@ -127,7 +127,6 @@ export function useOrganizations() {
           seniority: userOrgData.seniority,
           started_at: userOrgData.startedAt,
           is_current: userOrgData.isCurrent !== false,
-          department_id: null  // Will update later if department created
         })
         .select()
         .single()
@@ -156,49 +155,7 @@ export function useOrganizations() {
         companyGoalIds = goals.map(g => g.id)
       }
 
-      // 5. Create department (if provided)
-      let departmentId = null
-      if (orgData.department && orgData.department.name) {
-        const { data: dept, error: deptError } = await supabase
-          .from('departments')
-          .insert({
-            org_id: org.id,
-            name: orgData.department.name
-          })
-          .select()
-          .single()
-
-        if (deptError) throw deptError
-        departmentId = dept.id
-
-        // Update user_organizations with department_id
-        await supabase
-          .from('user_organizations')
-          .update({ department_id: departmentId })
-          .eq('id', userOrg.id)
-
-        // 6. Create department goals (if provided)
-        if (orgData.departmentGoals && orgData.departmentGoals.length > 0) {
-          const { error: deptGoalsError } = await supabase
-            .from('department_goals')
-            .insert(
-              orgData.departmentGoals.map((g, index) => ({
-                department_id: departmentId,
-                company_goal_id: g.alignedToCompanyGoalIndex !== null && g.alignedToCompanyGoalIndex !== undefined
-                  ? companyGoalIds[g.alignedToCompanyGoalIndex]
-                  : null,
-                time_period: g.timePeriod,
-                year: g.year,
-                title: g.title,
-                description: g.description || null,
-                kpis: g.kpis || [],
-                priority: index + 1
-              }))
-            )
-
-          if (deptGoalsError) throw deptGoalsError
-        }
-      }
+ 
 
       fetchingRef.current = false
       await fetchOrganizations()
