@@ -24,7 +24,9 @@ export function useBets(orgId, orgMode) {
           orgMode: orgMode || 'growth',
           orgName: orgContext?.name,
           orgContext: orgContext?.context,
-          orgLearnings: orgContext?.learnings
+          orgLearnings: orgContext?.learnings,
+          companyGoals: orgContext?.companyGoals || [],
+          departmentGoals: orgContext?.departmentGoals || []
         })
       });
       
@@ -152,10 +154,49 @@ export function useBets(orgId, orgMode) {
     if (!scores) {
       const orgLearnings = await getOrgLearnings(orgId, user.id, 'bet');
       
+      // Fetch company goals and department goals
+      let companyGoals = []
+      let departmentGoals = []
+      let userDepartmentId = null
+      
+      if (orgId) {
+        // Get company goals for this org
+        const { data: goalsData } = await supabase
+          .from('company_goals')
+          .select('*')
+          .eq('org_id', orgId)
+          .order('priority', { ascending: true })
+        
+        companyGoals = goalsData || []
+        
+        // Get user's department
+        const { data: userOrgData } = await supabase
+          .from('user_organizations')
+          .select('department_id')
+          .eq('user_id', user.id)
+          .eq('org_id', orgId)
+          .single()
+        
+        userDepartmentId = userOrgData?.department_id
+        
+        // Get department goals if user has a department
+        if (userDepartmentId) {
+          const { data: deptGoalsData } = await supabase
+            .from('department_goals')
+            .select('*')
+            .eq('department_id', userDepartmentId)
+            .order('priority', { ascending: true })
+          
+          departmentGoals = deptGoalsData || []
+        }
+      }
+      
       scores = await scoreBet(betData, { 
         name: orgContext?.name || orgId, 
         context: orgContext?.combinedContext || orgContext?.userContext,
-        learnings: orgLearnings?.learnings || []
+        learnings: orgLearnings?.learnings || [],
+        companyGoals: companyGoals,
+        departmentGoals: departmentGoals
       });
     }
 
@@ -204,27 +245,27 @@ export function useBets(orgId, orgMode) {
 
       if (error) throw error
       
-if (ideaId && data) {
-  console.log('🔍 About to update idea:', ideaId);
-  console.log('🔍 data object:', data);
-  console.log('🔍 data.title:', data.title);
-  console.log('🔍 data.summary:', data.summary);
-  
-  const { data: updateResult, error: updateError } = await supabase
-    .from('ideas')
-    .update({ 
-      status: 'structured',
-      title: data.title,
-      summary: data.summary
-    })
-    .eq('id', ideaId)
-    .select(); // ← CRITICAL: see what was actually updated
-  
-  console.log('🔍 Update result:', updateResult);
-  if (updateError) {
-    console.error('❌ Error:', updateError);
-  }
-}
+      if (ideaId && data) {
+        console.log('🔍 About to update idea:', ideaId);
+        console.log('🔍 data object:', data);
+        console.log('🔍 data.title:', data.title);
+        console.log('🔍 data.summary:', data.summary);
+        
+        const { data: updateResult, error: updateError } = await supabase
+          .from('ideas')
+          .update({ 
+            status: 'structured',
+            title: data.title,
+            summary: data.summary
+          })
+          .eq('id', ideaId)
+          .select();
+        
+        console.log('🔍 Update result:', updateResult);
+        if (updateError) {
+          console.error('❌ Error:', updateError);
+        }
+      }
 
       // Transform to match what App.jsx expects
       const newBet = {
