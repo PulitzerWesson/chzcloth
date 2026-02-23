@@ -171,9 +171,9 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
     };
 
     return (
-      <div style={{ width: '100%', boxSizing: 'border-box' }}>
+      <div>
         {/* Priority */}
-        <div style={{ marginBottom: 20, width: '100%', boxSizing: 'border-box' }}>
+        <div style={{ marginBottom: 20 }}>
           <label style={{ display: 'block', color: '#94a3b8', marginBottom: 8, fontSize: '0.9rem' }}>
             Priority
           </label>
@@ -199,7 +199,7 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
         </div>
 
         {/* Title */}
-        <div style={{ marginBottom: 20, width: '100%', boxSizing: 'border-box' }}>
+        <div style={{ marginBottom: 20 }}>
           <label style={{ display: 'block', color: '#94a3b8', marginBottom: 8, fontSize: '0.9rem' }}>
             Goal Title *
           </label>
@@ -223,7 +223,7 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
         </div>
 
         {/* Description */}
-        <div style={{ marginBottom: 20, width: '100%', boxSizing: 'border-box' }}>
+        <div style={{ marginBottom: 20 }}>
           <label style={{ display: 'block', color: '#94a3b8', marginBottom: 8, fontSize: '0.9rem' }}>
             Description (optional)
           </label>
@@ -248,84 +248,87 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
         </div>
 
         {/* KPIs */}
-        <div style={{ marginBottom: 24, width: '100%', boxSizing: 'border-box' }}>
+        <div style={{ marginBottom: 24 }}>
           <label style={{ display: 'block', color: '#94a3b8', marginBottom: 12, fontSize: '0.9rem' }}>
             Key Metrics (KPIs)
           </label>
-          <div style={{ width: '100%', boxSizing: 'border-box' }}>
-            {kpis.map((kpi, idx) => (
-              <div key={idx} style={{ 
-                display: 'grid', 
-                gridTemplateColumns: '2fr 1fr 1fr auto', 
-                gap: 8, 
-                marginBottom: 12,
-                alignItems: 'end',
-                width: '100%'
-              }}>
-              <input
-                type="text"
-                value={kpi.metric}
-                onChange={(e) => updateKPI(idx, 'metric', e.target.value)}
-                placeholder="Metric (e.g., MRR)"
-                style={{
-                  padding: '10px 12px',
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 8,
-                  color: '#f1f5f9',
-                  fontSize: '0.9rem',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-              />
-              <input
-                type="text"
-                value={kpi.baseline}
-                onChange={(e) => updateKPI(idx, 'baseline', e.target.value)}
-                placeholder="143k"
-                style={{
-                  padding: '10px 12px',
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 8,
-                  color: '#f1f5f9',
-                  fontSize: '0.9rem',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-              />
-              <input
-                type="text"
-                value={kpi.target}
-                onChange={(e) => updateKPI(idx, 'target', e.target.value)}
-                placeholder="200k"
-                style={{
-                  padding: '10px 12px',
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 8,
-                  color: '#f1f5f9',
-                  fontSize: '0.9rem',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-              />
-              <button
-                onClick={() => removeKPI(idx)}
-                disabled={kpis.length === 1}
-                style={{
-                  padding: '10px 12px',
-                  background: kpis.length === 1 ? 'rgba(255,255,255,0.02)' : 'rgba(239, 68, 68, 0.1)',
-                  border: kpis.length === 1 ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(239, 68, 68, 0.3)',
-                  borderRadius: 8,
-                  color: kpis.length === 1 ? '#475569' : '#ef4444',
-                  fontSize: '0.85rem',
-                  cursor: kpis.length === 1 ? 'not-allowed' : 'pointer',
-                  boxSizing: 'border-box'
-                }}
-              >
-                ✕
-              </button>
+          {kpis.map((kpi, idx) => (
+            <div key={idx} style={{ marginBottom: 12 }}>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                <input
+                  type="text"
+                  value={kpi.metric}
+                  onChange={(e) => updateKPI(idx, 'metric', e.target.value)}
+                  placeholder="Metric name (e.g., MRR)"
+                  style={{
+                    flex: 1,
+                    padding: '10px 12px',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 8,
+                    color: '#f1f5f9',
+                    fontSize: '0.9rem',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                    minWidth: 0
+                  }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input
+                  type="text"
+                  value={kpi.baseline}
+                  onChange={(e) => updateKPI(idx, 'baseline', e.target.value)}
+                  placeholder="Baseline"
+                  style={{
+                    flex: 1,
+                    padding: '10px 12px',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 8,
+                    color: '#f1f5f9',
+                    fontSize: '0.9rem',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                    minWidth: 0
+                  }}
+                />
+                <span style={{ color: '#64748b', fontSize: '1.2rem' }}>→</span>
+                <input
+                  type="text"
+                  value={kpi.target}
+                  onChange={(e) => updateKPI(idx, 'target', e.target.value)}
+                  placeholder="Target"
+                  style={{
+                    flex: 1,
+                    padding: '10px 12px',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 8,
+                    color: '#f1f5f9',
+                    fontSize: '0.9rem',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                    minWidth: 0
+                  }}
+                />
+                <button
+                  onClick={() => removeKPI(idx)}
+                  disabled={kpis.length === 1}
+                  style={{
+                    padding: '10px 14px',
+                    background: kpis.length === 1 ? 'rgba(255,255,255,0.02)' : 'rgba(239, 68, 68, 0.1)',
+                    border: kpis.length === 1 ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(239, 68, 68, 0.3)',
+                    borderRadius: 8,
+                    color: kpis.length === 1 ? '#475569' : '#ef4444',
+                    fontSize: '0.85rem',
+                    cursor: kpis.length === 1 ? 'not-allowed' : 'pointer',
+                    flexShrink: 0
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
             </div>
           ))}
           <button
@@ -344,10 +347,9 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
             + Add KPI
           </button>
         </div>
-      </div>
 
         {/* Buttons */}
-        <div style={{ display: 'flex', gap: 12, width: '100%', boxSizing: 'border-box' }}>
+        <div style={{ display: 'flex', gap: 12 }}>
           <button
             onClick={onCancel}
             disabled={saving}
@@ -359,8 +361,7 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
               borderRadius: 8,
               color: '#94a3b8',
               cursor: saving ? 'not-allowed' : 'pointer',
-              fontSize: '0.95rem',
-              boxSizing: 'border-box'
+              fontSize: '0.95rem'
             }}
           >
             Cancel
@@ -377,8 +378,7 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
               color: '#0f172a',
               fontWeight: 600,
               cursor: (!title.trim() || saving) ? 'not-allowed' : 'pointer',
-              fontSize: '0.95rem',
-              boxSizing: 'border-box'
+              fontSize: '0.95rem'
             }}
           >
             {saving ? 'Saving...' : goal ? 'Update Goal' : 'Create Goal'}
@@ -781,9 +781,9 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
           <div style={{
             background: '#1e293b',
             borderRadius: 16,
-            padding: 24,
-            maxWidth: 600,
-            width: '90%',
+            padding: '32px 24px',
+            maxWidth: 560,
+            width: 'calc(100% - 32px)',
             maxHeight: '90vh',
             overflowY: 'auto',
             overflowX: 'hidden',
