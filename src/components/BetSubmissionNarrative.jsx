@@ -5,13 +5,13 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import './BetSubmissionNarrative.css';
 
-export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg }) {
+export default function BetSubmissionNarrative({ onComplete, currentOrg }) {
   const { user } = useAuth();
   const [goalContext, setGoalContext] = useState('');
   const [companyGoals, setCompanyGoals] = useState([]);
-  const [departmentGoals, setDepartmentGoals] = useState([]);
-  const [selectedGoalType, setSelectedGoalType] = useState(''); // 'company-0', 'department-1', 'custom'
+  const [selectedGoalType, setSelectedGoalType] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
+  const [selectedKPI, setSelectedKPI] = useState(null);
   const [narrative, setNarrative] = useState('');
   const [story, setStory] = useState({
     validationMethod: '',
@@ -20,14 +20,16 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
   const [uploadedFile, setUploadedFile] = useState(null);
   const [uploadError, setUploadError] = useState(null);
   const [showExample, setShowExample] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [aiReview, setAiReview] = useState(null);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
-  // Fetch goals on mount
+  // Fetch company goals on mount
   useEffect(() => {
     const fetchGoals = async () => {
       if (!currentOrg?.orgId || !user) return;
 
       try {
-        // Fetch company goals
         const { data: companyGoalsData } = await supabase
           .from('company_goals')
           .select('*')
@@ -35,25 +37,6 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
           .order('priority', { ascending: true });
         
         setCompanyGoals(companyGoalsData || []);
-
-        // Fetch user's department
-        const { data: userOrgData } = await supabase
-          .from('user_organizations')
-          .select('department_id')
-          .eq('user_id', user.id)
-          .eq('org_id', currentOrg.orgId)
-          .single();
-        
-        // If user has department, fetch department goals
-        if (userOrgData?.department_id) {
-          const { data: deptGoalsData } = await supabase
-            .from('department_goals')
-            .select('*')
-            .eq('department_id', userOrgData.department_id)
-            .order('priority', { ascending: true });
-          
-          setDepartmentGoals(deptGoalsData || []);
-        }
       } catch (error) {
         console.error('Error fetching goals:', error);
       }
@@ -66,6 +49,7 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
   const handleGoalSelection = (e) => {
     const value = e.target.value;
     setSelectedGoalType(value);
+    setSelectedKPI(null); // Reset KPI when goal changes
     
     if (value === 'custom') {
       setShowCustomInput(true);
@@ -73,13 +57,11 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
     } else {
       setShowCustomInput(false);
       
-      // Parse selection (e.g., "department-0" or "company-1")
+      // Parse selection (e.g., "company-0")
       const [type, indexStr] = value.split('-');
       const index = parseInt(indexStr);
       
-      if (type === 'department' && departmentGoals[index]) {
-        setGoalContext(departmentGoals[index].title);
-      } else if (type === 'company' && companyGoals[index]) {
+      if (type === 'company' && companyGoals[index]) {
         setGoalContext(companyGoals[index].title);
       }
     }
@@ -90,16 +72,13 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => {
-        const base64 = reader.result.split(',')[1]; // Remove data:...;base64, prefix
+        const base64 = reader.result.split(',')[1];
         resolve(base64);
       };
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
   };
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [aiReview, setAiReview] = useState(null);
-  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   // Check if org has leadership goal
   const hasLeadershipGoal = currentOrg?.leadershipGoal;
@@ -127,16 +106,11 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
         body: JSON.stringify({
           narrative,
           goalContext: hasLeadershipGoal ? leadershipGoal : goalContext,
-          uploadedFile  // Include uploaded file if present
+          uploadedFile
         })
       });
 
       const review = await response.json();
-      console.log('AI EXTRACTED:', {
-        evidence: review.extracted?.evidence,
-        hasValidationIssue: review.issues?.some(i => i.field.toLowerCase().includes('validation') || i.field.toLowerCase().includes('evidence')),
-        allIssues: review.issues
-      });
 
       if (!response.ok) {
         throw new Error(review.error || 'Analysis failed');
@@ -183,12 +157,11 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
       isOwnIdea: true,
       betType: 'improve',
       goalContext: hasLeadershipGoal ? leadershipGoal : goalContext,
+      selectedKPI: selectedKPI,
       goalAlignment: aiReview.goalAlignment,
-      // Document metadata
       documentProvided: !!uploadedFile,
       documentName: uploadedFile?.name || null,
       documentType: uploadedFile?.type || null,
-      // Pass data for review screen
       change: extracted.change || '',
       baseline: extracted.baseline || '',
       magnitude: extracted.magnitude || '',
@@ -234,17 +207,11 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
   };
 
   const canSubmit = () => {
-    // Must have goal context (either selected or custom entered)
     if (!hasLeadershipGoal && goalContext.length < 10) return false;
-    
-    // Must have EITHER narrative OR uploaded file
     const hasNarrative = narrative.length >= 100;
     const hasDocument = !!uploadedFile;
     if (!hasNarrative && !hasDocument) return false;
-    
-    // Must have validation method
     if (!story.validationMethod || story.validationMethod.length < 5) return false;
-    
     return true;
   };
 
@@ -252,10 +219,9 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validate file type
     const allowedTypes = [
       'application/pdf',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'text/plain',
       'text/markdown'
     ];
@@ -265,7 +231,6 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
       return;
     }
 
-    // Validate file size (32MB limit)
     if (file.size > 32 * 1024 * 1024) {
       setUploadError('File size must be under 32MB');
       return;
@@ -290,13 +255,8 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
     setUploadError(null);
   };
 
-  // Determine which goals to show (department takes precedence)
-  const goalsToShow = departmentGoals.length > 0 ? departmentGoals : companyGoals;
-  const goalTypeLabel = departmentGoals.length > 0 ? 'Department' : 'Company';
-
   return (
     <div className="narrative-container">
-      {/* Header */}
       <div className="narrative-header">
         <h1>Make a Bet</h1>
         <p className="header-subtitle">
@@ -313,9 +273,9 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
           </div>
         ) : (
           <div className="goal-context-input">
-            <label>{goalTypeLabel} Goal</label>
+            <label>Company Goal</label>
             
-            {goalsToShow.length > 0 ? (
+            {companyGoals.length > 0 ? (
               <>
                 <select
                   value={selectedGoalType}
@@ -323,16 +283,121 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
                   className="goal-select"
                 >
                   <option value="">Select a goal...</option>
-                  {goalsToShow.map((goal, idx) => (
-                    <option 
-                      key={idx} 
-                      value={`${departmentGoals.length > 0 ? 'department' : 'company'}-${idx}`}
-                    >
+                  {companyGoals.map((goal, idx) => (
+                    <option key={idx} value={`company-${idx}`}>
                       P{idx + 1}: {goal.title}
                     </option>
                   ))}
                   <option value="custom">Custom / Other</option>
                 </select>
+                
+                {/* KPI Selection */}
+                {selectedGoalType && selectedGoalType !== 'custom' && selectedGoalType !== '' && (
+                  <div style={{ marginTop: 16 }}>
+                    <label style={{ 
+                      display: 'block', 
+                      color: '#94a3b8', 
+                      fontSize: '0.9rem', 
+                      marginBottom: 12,
+                      fontWeight: 500
+                    }}>
+                      Which KPI does this bet move?
+                    </label>
+                    
+                    <div style={{ 
+                      background: 'rgba(255,255,255,0.02)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: 12,
+                      padding: 16
+                    }}>
+                      {(() => {
+                        const [type, indexStr] = selectedGoalType.split('-');
+                        const index = parseInt(indexStr);
+                        const goal = companyGoals[index];
+                        const kpis = typeof goal.kpis === 'string' ? JSON.parse(goal.kpis) : (goal.kpis || []);
+                        
+                        return (
+                          <>
+                            {kpis.map((kpi, kpiIdx) => (
+                              <label 
+                                key={kpiIdx}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'flex-start',
+                                  gap: 12,
+                                  padding: '12px 0',
+                                  cursor: 'pointer',
+                                  borderBottom: kpiIdx < kpis.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none'
+                                }}
+                              >
+                                <input
+                                  type="radio"
+                                  name="kpi"
+                                  value={kpiIdx}
+                                  checked={selectedKPI?.index === kpiIdx}
+                                  onChange={() => setSelectedKPI({ index: kpiIdx, kpi })}
+                                  style={{
+                                    marginTop: 4,
+                                    accentColor: '#2dd4bf'
+                                  }}
+                                />
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ color: '#f1f5f9', fontWeight: 500, marginBottom: 4 }}>
+                                    {kpi.metric}
+                                  </div>
+                                  <div style={{ color: '#64748b', fontSize: '0.85rem' }}>
+                                    {kpi.baseline} → {kpi.target}
+                                  </div>
+                                </div>
+                              </label>
+                            ))}
+                            
+                            <label 
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 12,
+                                padding: '12px 0',
+                                cursor: 'pointer',
+                                borderTop: kpis.length > 0 ? '1px solid rgba(255,255,255,0.05)' : 'none'
+                              }}
+                            >
+                              <input
+                                type="radio"
+                                name="kpi"
+                                value="multiple"
+                                checked={selectedKPI?.index === 'multiple'}
+                                onChange={() => setSelectedKPI({ index: 'multiple', kpi: null })}
+                                style={{ accentColor: '#2dd4bf' }}
+                              />
+                              <span style={{ color: '#94a3b8' }}>Multiple KPIs (explain in bet description)</span>
+                            </label>
+                            
+                            <label 
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 12,
+                                padding: '12px 0',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <input
+                                type="radio"
+                                name="kpi"
+                                value="indirect"
+                                checked={selectedKPI?.index === 'indirect'}
+                                onChange={() => setSelectedKPI({ index: 'indirect', kpi: null })}
+                                style={{ accentColor: '#2dd4bf' }}
+                              />
+                              <span style={{ color: '#94a3b8' }}>Indirectly supports this goal</span>
+                            </label>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                )}
                 
                 {showCustomInput && (
                   <input
@@ -371,7 +436,7 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
           </button>
         </div>
 
-        {/* Example (collapsible) */}
+        {/* Example */}
         {showExample && (
           <div className="example-display">
             <div className="example-header">Example of a Strong Bet:</div>
@@ -400,7 +465,7 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
           </div>
         </div>
 
-        {/* File Upload (Optional) */}
+        {/* File Upload */}
         <div className="file-upload-section">
           <label>Upload Document (alternative to writing narrative)</label>
           <div className="file-upload-hint">
@@ -477,7 +542,6 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
           <div className="ai-review-section">
             <h3>CHZCLOTH Review</h3>
 
-            {/* Goal Alignment */}
             <div className={`alignment-check ${aiReview.goalAlignment.aligned ? 'aligned' : 'misaligned'}`}>
               <div className="alignment-header">
                 {aiReview.goalAlignment.aligned ? 'Goal Aligned' : 'Goal Misalignment Detected'}
@@ -485,7 +549,6 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
               <div className="alignment-text">{aiReview.goalAlignment.reasoning}</div>
             </div>
 
-            {/* Strengths */}
             {aiReview.strengths.length > 0 && (
               <div className="review-section strengths">
                 <div className="section-header">Strengths</div>
@@ -497,7 +560,6 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
               </div>
             )}
 
-            {/* Issues */}
             {aiReview.issues.length > 0 && (
               <div className="review-section issues">
                 <div className="section-header">Issues to Address</div>
