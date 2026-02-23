@@ -4,7 +4,7 @@ export default async function handler(req, res) {
   }
   
   try {
-    const { bet, orgMode, orgName, orgContext, orgLearnings, clarifyingAnswers, companyGoals,  } = req.body;    
+    const { bet, orgMode, orgName, orgContext, orgLearnings, clarifyingAnswers, companyGoals, selectedKPI } = req.body;    
     
     // Build clarifying answers section if provided
     let clarifyingSection = '';
@@ -44,7 +44,7 @@ ${companyGoals.map((goal, idx) => {
     ? kpis.map(k => `  - ${k.metric}: ${k.baseline} → ${k.target}`).join('\n')
     : '  (No KPIs defined)';
   
-  return `P${idx + 1} (Priority ${idx + 1}): ${goal.title}
+  return `P${goal.priority || idx + 1} (Priority ${goal.priority || idx + 1}): ${goal.title}
 ${kpiText}`;
 }).join('\n\n')}
 `;
@@ -79,6 +79,9 @@ Strategic Alignment: ${bet.strategicAlignment}
 Estimated Effort: ${bet.estimatedEffort}
 Cost of Inaction: ${bet.inactionImpact}
 Assumptions: ${bet.assumptions || 'Not specified'}
+${selectedKPI?.metric && selectedKPI?.baseline && selectedKPI?.target && selectedKPI?.goalTitle 
+  ? `Targeted KPI: ${selectedKPI.metric} (${selectedKPI.baseline} → ${selectedKPI.target}) from ${selectedKPI.goalTitle}` 
+  : ''}
 
 ORGANIZATIONAL CONTEXT:
 ${orgName ? `Company: ${orgName}` : 'Company: Unknown'}
@@ -154,6 +157,9 @@ Strategic Alignment: ${bet.strategicAlignment}
 Estimated Effort: ${bet.estimatedEffort}
 Cost of Inaction: ${bet.inactionImpact}
 Assumptions: ${bet.assumptions || 'Not specified'}
+${selectedKPI?.metric && selectedKPI?.baseline && selectedKPI?.target && selectedKPI?.goalTitle 
+  ? `\nTARGETED KPI: This bet specifically targets "${selectedKPI.metric}" (${selectedKPI.baseline} → ${selectedKPI.target}) from ${selectedKPI.goalTitle}` 
+  : ''}
 
 ORGANIZATIONAL CONTEXT:
 ${orgName ? `Company: ${orgName}` : 'Company: Unknown'}
@@ -170,6 +176,9 @@ Your rationale for EACH score MUST cite specific details from the context above.
 For FIT score specifically:
 - Evaluate alignment with P1/P2/P3 company goals
 - Consider if this bet moves the needle on stated KPIs
+${selectedKPI?.metric && selectedKPI?.baseline && selectedKPI?.target 
+  ? `- Pay special attention to the TARGETED KPI: ${selectedKPI.metric} (${selectedKPI.baseline} → ${selectedKPI.target}) - how directly does this bet impact this specific metric?` 
+  : ''}
 - Assess if effort matches goal priority (P1 goals deserve more effort than P3)
 - Reference specific metric targets (e.g., "helps move MRR from $143K toward $200K target")
 
@@ -217,11 +226,17 @@ ${needsSearch ? '- How does this compare to similar bets in the industry? (searc
 - Does the effort match the expected impact?
 ${orgContext ? '- Is this prediction realistic given their scale and market position?' : ''}
 ${goalsSection ? '- Does this prediction move the needle on stated KPI targets?' : ''}
+${selectedKPI?.metric && selectedKPI?.baseline && selectedKPI?.target 
+  ? `- How significantly does this impact the targeted KPI: ${selectedKPI.metric} (${selectedKPI.baseline} → ${selectedKPI.target})?` 
+  : ''}
 ${needsSearch ? '- What do benchmarks say about typical results? (search if needed)' : ''}
 
 3. FIT (0-100):
 - Does this align with the company's stage (${orgMode})?
 ${goalsSection ? '- Does this support P1/P2/P3 company goals? Which specific goals and KPIs?' : ''}
+${selectedKPI?.metric && selectedKPI?.baseline && selectedKPI?.target 
+  ? `- How directly does this move the needle on the TARGETED KPI: ${selectedKPI.metric} (${selectedKPI.baseline} → ${selectedKPI.target})?` 
+  : ''}
 - Does strategic alignment match effort?
 - Is cost of inaction justified?
 - Does this match patterns from past learnings?
@@ -245,11 +260,11 @@ Return ONLY valid JSON (no markdown, no preamble):
   },
   "potential": {
     "score": 0-100,
-    "rationale": "Brief explanation${needsSearch ? ' citing benchmarks if found' : ''}${orgContext || goalsSection ? ' citing company scale, market position, and KPI targets' : ''}"
+    "rationale": "Brief explanation${needsSearch ? ' citing benchmarks if found' : ''}${orgContext || goalsSection ? ' citing company scale, market position, and KPI targets' : ''}${selectedKPI ? ' with specific focus on targeted KPI impact' : ''}"
   },
   "fit": {
     "score": 0-100,
-    "rationale": "Brief explanation${needsSearch ? ' citing market context if found' : ''}${goalsSection ? ' citing specific P1/P2/P3 goals and KPI alignment' : ''}${orgContext ? ' citing strategic priorities and business model' : ''}"
+    "rationale": "Brief explanation${needsSearch ? ' citing market context if found' : ''}${goalsSection ? ' citing specific P1/P2/P3 goals and KPI alignment' : ''}${selectedKPI ? ' explaining direct impact on targeted KPI' : ''}${orgContext ? ' citing strategic priorities and business model' : ''}"
   },
   "market_context": ${needsSearch ? '"Key web findings about similar initiatives"' : 'null'},
   "suggestion": {
@@ -257,7 +272,7 @@ Return ONLY valid JSON (no markdown, no preamble):
     "hypothesis": "Improved/alternative hypothesis",
     "metrics": "Improved/alternative prediction",
     "effort": "Estimated effort",
-    "reasoning": "Why this improvement${needsSearch ? ', citing research' : ''}${orgContext || goalsSection ? ', citing company context and goals' : ''}",
+    "reasoning": "Why this improvement${needsSearch ? ', citing research' : ''}${orgContext || goalsSection ? ', citing company context and goals' : ''}${selectedKPI ? ', noting targeted KPI impact' : ''}",
     "expected_score": estimated score with improvements,
     "market_evidence": ${needsSearch ? '"Supporting web findings"' : 'null'}
   }
