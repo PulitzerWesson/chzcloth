@@ -565,12 +565,11 @@ export function OrganizationSetup({ onComplete, initialData = {} }) {
   // ADD THESE NEW STATES:
 const [companyGoals, setCompanyGoals] = useState([])
 const [goalTimePeriod, setGoalTimePeriod] = useState({ year: 2026, period: 'q1' })
-const [departmentName, setDepartmentName] = useState('')
 const [departmentGoals, setDepartmentGoals] = useState([])
   const [analyzing, setAnalyzing] = useState(false)
   const [saving, setSaving] = useState(false)
 
-  const totalSteps = 5
+  const totalSteps = 4
 
   const updateField = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -608,7 +607,6 @@ const canProceed = () => {
     case 2: return formData.userContext.trim().length >= 20
     case 3: return formData.role && formData.seniority
     case 4: return companyGoals.length > 0
-    case 5: return true  // Department is optional
     default: return false
   }
 }
@@ -653,16 +651,8 @@ const handleSubmit = async () => {
         year: goalTimePeriod.year,
         timePeriod: goalTimePeriod.period,
         priority: index + 1
-      })),
-      department: {
-        name: departmentName
-      },
-      departmentGoals: departmentGoals.map((g, index) => ({
-        ...g,
-        year: goalTimePeriod.year,
-        timePeriod: goalTimePeriod.period,
-        priority: index + 1
       }))
+
     })
   } catch (err) {
     console.error('Error saving organization:', err)
@@ -698,7 +688,7 @@ const handleSubmit = async () => {
             gap: 4, 
             marginBottom: 8 
           }}>
-            {[1, 2, 3, 4, 5].map(s => (
+            {[1, 2, 3, 4 ].map(s => (
               <div
                 key={s}
                 style={{
@@ -1130,129 +1120,7 @@ const handleSubmit = async () => {
           </div>
         )}
 
-{/* Step 5: Department Setup */}
-        {step === 5 && (
-          <div>
-            <h2 style={{ 
-              fontSize: '1.5rem', 
-              fontWeight: 600, 
-              color: '#f1f5f9', 
-              marginBottom: 12 
-            }}>
-              Set up your department (optional)
-            </h2>
-            <p style={{ color: '#64748b', marginBottom: 32, lineHeight: 1.6 }}>
-              If you manage a specific team, create department-level goals. Otherwise, skip this step.
-            </p>
 
-{/* Company Goals Reference - with P badges and expandable KPIs */}
-{companyGoals.length > 0 && (
-  <div style={{ 
-    marginBottom: 24,
-    padding: 16,
-    background: 'rgba(45, 212, 191, 0.05)',
-    border: '1px solid rgba(45, 212, 191, 0.2)',
-    borderRadius: 12
-  }}>
-    <div style={{ 
-      color: '#2dd4bf', 
-      fontSize: '0.85rem', 
-      fontWeight: 600,
-      marginBottom: 12
-    }}>
-      COMPANY GOALS FOR CONTEXT
-    </div>
-    {companyGoals.map((goal, idx) => (
-      <CompanyGoalSummary key={idx} goal={goal} index={idx} />
-    ))}
-  </div>
-)}
-
-            {/* Department Name */}
-            <div style={{ marginBottom: 24 }}>
-              <label style={{ 
-                display: 'block', 
-                color: '#94a3b8', 
-                fontSize: '0.9rem', 
-                marginBottom: 10,
-                fontWeight: 500
-              }}>
-                Department Name
-              </label>
-              <input
-                type="text"
-                value={departmentName}
-                onChange={(e) => setDepartmentName(e.target.value)}
-                placeholder="e.g., Product, Engineering, Marketing"
-                style={{
-                  width: '100%',
-                  padding: '16px 20px',
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 12,
-                  color: '#f1f5f9',
-                  fontSize: '1rem',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-              />
-            </div>
-
-            {/* Department Goals */}
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ 
-                display: 'block', 
-                color: '#94a3b8', 
-                fontSize: '0.9rem', 
-                marginBottom: 10,
-                fontWeight: 500
-              }}>
-                Department Goals ({departmentGoals.length}/3)
-              </label>
-
-              {departmentGoals.map((goal, idx) => (
-                <DepartmentGoalCard
-                  key={idx}
-                  goal={goal}
-                  index={idx}
-                  companyGoals={companyGoals}
-                  onUpdate={(updated) => {
-                    const newGoals = [...departmentGoals]
-                    newGoals[idx] = updated
-                    setDepartmentGoals(newGoals)
-                  }}
-                  onRemove={() => {
-                    setDepartmentGoals(departmentGoals.filter((_, i) => i !== idx))
-                  }}
-                />
-              ))}
-
-              {departmentGoals.length < 3 && (
-                <button
-                  onClick={() => setDepartmentGoals([...departmentGoals, { 
-                    title: '', 
-                    description: '', 
-                    kpis: [],
-                    alignedToCompanyGoalIndex: null
-                  }])}
-                  style={{
-                    width: '100%',
-                    padding: '16px',
-                    background: 'rgba(45, 212, 191, 0.1)',
-                    border: '1px dashed rgba(45, 212, 191, 0.3)',
-                    borderRadius: 12,
-                    color: '#2dd4bf',
-                    fontSize: '0.95rem',
-                    cursor: 'pointer',
-                    fontWeight: 500
-                  }}
-                >
-                  + Add Department Goal
-                </button>
-              )}
-            </div>
-          </div>
-        )}
         {/* Navigation */}
         <div style={{ 
           display: 'flex', 
