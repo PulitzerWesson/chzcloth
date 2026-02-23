@@ -117,7 +117,24 @@ export function useOrganizations() {
           .eq('is_current', true)
       }
 
-      // 3. Create company goals (if provided)
+      // 3. Create user_organization link FIRST (so RLS policies work for goals)
+      const { data: userOrg, error: userOrgError } = await supabase
+        .from('user_organizations')
+        .insert({
+          user_id: user.id,
+          org_id: org.id,
+          role: userOrgData.role,
+          seniority: userOrgData.seniority,
+          started_at: userOrgData.startedAt,
+          is_current: userOrgData.isCurrent !== false,
+          department_id: null  // Will update later if department created
+        })
+        .select()
+        .single()
+
+      if (userOrgError) throw userOrgError
+
+      // 4. Create company goals (NOW policy check will pass)
       let companyGoalIds = []
       if (orgData.companyGoals && orgData.companyGoals.length > 0) {
         const { data: goals, error: goalsError } = await supabase
@@ -139,7 +156,7 @@ export function useOrganizations() {
         companyGoalIds = goals.map(g => g.id)
       }
 
-      // 4. Create department (if provided)
+      // 5. Create department (if provided)
       let departmentId = null
       if (orgData.department && orgData.department.name) {
         const { data: dept, error: deptError } = await supabase
@@ -154,7 +171,13 @@ export function useOrganizations() {
         if (deptError) throw deptError
         departmentId = dept.id
 
-        // 5. Create department goals (if provided)
+        // Update user_organizations with department_id
+        await supabase
+          .from('user_organizations')
+          .update({ department_id: departmentId })
+          .eq('id', userOrg.id)
+
+        // 6. Create department goals (if provided)
         if (orgData.departmentGoals && orgData.departmentGoals.length > 0) {
           const { error: deptGoalsError } = await supabase
             .from('department_goals')
@@ -176,23 +199,6 @@ export function useOrganizations() {
           if (deptGoalsError) throw deptGoalsError
         }
       }
-
-      // 6. Create user_organization link with department
-      const { data: userOrg, error: userOrgError } = await supabase
-        .from('user_organizations')
-        .insert({
-          user_id: user.id,
-          org_id: org.id,
-          role: userOrgData.role,
-          seniority: userOrgData.seniority,
-          started_at: userOrgData.startedAt,
-          is_current: userOrgData.isCurrent !== false,
-          department_id: departmentId
-        })
-        .select()
-        .single()
-
-      if (userOrgError) throw userOrgError
 
       fetchingRef.current = false
       await fetchOrganizations()
