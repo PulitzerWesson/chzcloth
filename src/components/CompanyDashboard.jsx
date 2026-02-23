@@ -4,6 +4,8 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 
 export function CompanyDashboard({ currentOrg, isAdmin }) {
+    console.log('CompanyDashboard rendering', { currentOrg, isAdmin });
+
   const { user } = useAuth();
   const [goals, setGoals] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
