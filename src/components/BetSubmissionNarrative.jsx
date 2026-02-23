@@ -1,10 +1,17 @@
 // BetSubmissionNarrative.jsx - Single smart field with AI validation
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../hooks/useAuth';
 import './BetSubmissionNarrative.css';
 
 export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg }) {
+  const { user } = useAuth();
   const [goalContext, setGoalContext] = useState('');
+  const [companyGoals, setCompanyGoals] = useState([]);
+  const [departmentGoals, setDepartmentGoals] = useState([]);
+  const [selectedGoalType, setSelectedGoalType] = useState(''); // 'company-0', 'department-1', 'custom'
+  const [showCustomInput, setShowCustomInput] = useState(false);
   const [narrative, setNarrative] = useState('');
   const [story, setStory] = useState({
     validationMethod: '',
@@ -13,6 +20,70 @@ export default function BetSubmissionNarrative({ onComplete, orgMode, currentOrg
   const [uploadedFile, setUploadedFile] = useState(null);
   const [uploadError, setUploadError] = useState(null);
   const [showExample, setShowExample] = useState(false);
+
+  // Fetch goals on mount
+  useEffect(() => {
+    const fetchGoals = async () => {
+      if (!currentOrg?.orgId || !user) return;
+
+      try {
+        // Fetch company goals
+        const { data: companyGoalsData } = await supabase
+          .from('company_goals')
+          .select('*')
+          .eq('org_id', currentOrg.orgId)
+          .order('priority', { ascending: true });
+        
+        setCompanyGoals(companyGoalsData || []);
+
+        // Fetch user's department
+        const { data: userOrgData } = await supabase
+          .from('user_organizations')
+          .select('department_id')
+          .eq('user_id', user.id)
+          .eq('org_id', currentOrg.orgId)
+          .single();
+        
+        // If user has department, fetch department goals
+        if (userOrgData?.department_id) {
+          const { data: deptGoalsData } = await supabase
+            .from('department_goals')
+            .select('*')
+            .eq('department_id', userOrgData.department_id)
+            .order('priority', { ascending: true });
+          
+          setDepartmentGoals(deptGoalsData || []);
+        }
+      } catch (error) {
+        console.error('Error fetching goals:', error);
+      }
+    };
+
+    fetchGoals();
+  }, [currentOrg?.orgId, user]);
+
+  // Handle goal selection
+  const handleGoalSelection = (e) => {
+    const value = e.target.value;
+    setSelectedGoalType(value);
+    
+    if (value === 'custom') {
+      setShowCustomInput(true);
+      setGoalContext('');
+    } else {
+      setShowCustomInput(false);
+      
+      // Parse selection (e.g., "department-0" or "company-1")
+      const [type, indexStr] = value.split('-');
+      const index = parseInt(indexStr);
+      
+      if (type === 'department' && departmentGoals[index]) {
+        setGoalContext(departmentGoals[index].title);
+      } else if (type === 'company' && companyGoals[index]) {
+        setGoalContext(companyGoals[index].title);
+      }
+    }
+  };
 
   // Convert file to base64
   const fileToBase64 = (file) => {
@@ -62,10 +133,10 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
 
       const review = await response.json();
       console.log('AI EXTRACTED:', {
-  evidence: review.extracted?.evidence,
-  hasValidationIssue: review.issues?.some(i => i.field.toLowerCase().includes('validation') || i.field.toLowerCase().includes('evidence')),
-  allIssues: review.issues
-});
+        evidence: review.extracted?.evidence,
+        hasValidationIssue: review.issues?.some(i => i.field.toLowerCase().includes('validation') || i.field.toLowerCase().includes('evidence')),
+        allIssues: review.issues
+      });
 
       if (!response.ok) {
         throw new Error(review.error || 'Analysis failed');
@@ -163,7 +234,7 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
   };
 
   const canSubmit = () => {
-    // Must have goal context
+    // Must have goal context (either selected or custom entered)
     if (!hasLeadershipGoal && goalContext.length < 10) return false;
     
     // Must have EITHER narrative OR uploaded file
@@ -219,6 +290,10 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
     setUploadError(null);
   };
 
+  // Determine which goals to show (department takes precedence)
+  const goalsToShow = departmentGoals.length > 0 ? departmentGoals : companyGoals;
+  const goalTypeLabel = departmentGoals.length > 0 ? 'Department' : 'Company';
+
   return (
     <div className="narrative-container">
       {/* Header */}
@@ -238,14 +313,48 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
           </div>
         ) : (
           <div className="goal-context-input">
-            <label>Company/Department Goal</label>
-            <input
-              type="text"
-              value={goalContext}
-              onChange={e => setGoalContext(e.target.value)}
-              placeholder="e.g., Grow revenue by 30% this year, Reduce churn to below 5%, Increase trial signups by 50%"
-              className="goal-input"
-            />
+            <label>{goalTypeLabel} Goal</label>
+            
+            {goalsToShow.length > 0 ? (
+              <>
+                <select
+                  value={selectedGoalType}
+                  onChange={handleGoalSelection}
+                  className="goal-select"
+                >
+                  <option value="">Select a goal...</option>
+                  {goalsToShow.map((goal, idx) => (
+                    <option 
+                      key={idx} 
+                      value={`${departmentGoals.length > 0 ? 'department' : 'company'}-${idx}`}
+                    >
+                      P{idx + 1}: {goal.title}
+                    </option>
+                  ))}
+                  <option value="custom">Custom / Other</option>
+                </select>
+                
+                {showCustomInput && (
+                  <input
+                    type="text"
+                    value={goalContext}
+                    onChange={e => setGoalContext(e.target.value)}
+                    placeholder="Enter your custom goal..."
+                    className="goal-input"
+                    style={{ marginTop: '12px' }}
+                  />
+                )}
+              </>
+            ) : (
+              <input
+                type="text"
+                value={goalContext}
+                onChange={e => setGoalContext(e.target.value)}
+                placeholder="e.g., Grow revenue by 30% this year, Reduce churn to below 5%, Increase trial signups by 50%"
+                className="goal-input"
+              />
+            )}
+            
             <div className="goal-hint">
               AI will check if your bet actually achieves this goal (e.g., more customers ≠ more revenue)
             </div>
