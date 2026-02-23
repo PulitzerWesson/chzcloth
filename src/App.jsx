@@ -3500,8 +3500,13 @@ const { ideas, loading: ideasLoading, updateIdeaStatus, claimIdea, submitIdea, u
       setScreen('bet');
     }
   };
-  const handleOrgSetupComplete = async ({ organization, userOrg }) => {
-    const { error } = await createOrganization(organization, userOrg);
+const handleOrgSetupComplete = async ({ organization, userOrg, companyGoals, department, departmentGoals }) => {
+    const { error } = await createOrganization({
+      ...organization,
+      companyGoals,
+      department,
+      departmentGoals
+    }, userOrg);
     if (error) {
       console.error('Error creating organization:', error);
       alert('Error saving company. Please try again.');
