@@ -15,6 +15,7 @@ export function useBets(orgId, orgMode) {
   const scoreBet = async (betData, orgContext) => {
     console.log('SCOREBET RECEIVED:', orgContext);
     console.log('CONTEXT VALUE:', orgContext?.context?.substring(0, 100));
+    console.log('SELECTED KPI:', orgContext?.selectedKPI);
     try {
       const response = await fetch('/api/score-bet', {
         method: 'POST',
@@ -26,6 +27,7 @@ export function useBets(orgId, orgMode) {
           orgContext: orgContext?.context,
           orgLearnings: orgContext?.learnings,
           companyGoals: orgContext?.companyGoals || [],
+          selectedKPI: orgContext?.selectedKPI || null,
         })
       });
       
@@ -175,6 +177,7 @@ export function useBets(orgId, orgMode) {
         context: orgContext?.combinedContext || orgContext?.userContext,
         learnings: orgLearnings?.learnings || [],
         companyGoals: companyGoals,
+        selectedKPI: betData.selectedKPI || null,
       });
     }
 
