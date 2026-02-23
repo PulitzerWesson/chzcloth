@@ -171,9 +171,9 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
     };
 
     return (
-      <div>
+      <div style={{ width: '100%', boxSizing: 'border-box' }}>
         {/* Priority */}
-        <div style={{ marginBottom: 20 }}>
+        <div style={{ marginBottom: 20, width: '100%', boxSizing: 'border-box' }}>
           <label style={{ display: 'block', color: '#94a3b8', marginBottom: 8, fontSize: '0.9rem' }}>
             Priority
           </label>
@@ -199,7 +199,7 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
         </div>
 
         {/* Title */}
-        <div style={{ marginBottom: 20 }}>
+        <div style={{ marginBottom: 20, width: '100%', boxSizing: 'border-box' }}>
           <label style={{ display: 'block', color: '#94a3b8', marginBottom: 8, fontSize: '0.9rem' }}>
             Goal Title *
           </label>
@@ -223,7 +223,7 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
         </div>
 
         {/* Description */}
-        <div style={{ marginBottom: 20 }}>
+        <div style={{ marginBottom: 20, width: '100%', boxSizing: 'border-box' }}>
           <label style={{ display: 'block', color: '#94a3b8', marginBottom: 8, fontSize: '0.9rem' }}>
             Description (optional)
           </label>
@@ -248,18 +248,20 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
         </div>
 
         {/* KPIs */}
-        <div style={{ marginBottom: 24 }}>
+        <div style={{ marginBottom: 24, width: '100%', boxSizing: 'border-box' }}>
           <label style={{ display: 'block', color: '#94a3b8', marginBottom: 12, fontSize: '0.9rem' }}>
             Key Metrics (KPIs)
           </label>
-          {kpis.map((kpi, idx) => (
-            <div key={idx} style={{ 
-              display: 'grid', 
-              gridTemplateColumns: '2fr 1fr 1fr auto', 
-              gap: 8, 
-              marginBottom: 12,
-              alignItems: 'end'
-            }}>
+          <div style={{ width: '100%', boxSizing: 'border-box' }}>
+            {kpis.map((kpi, idx) => (
+              <div key={idx} style={{ 
+                display: 'grid', 
+                gridTemplateColumns: '2fr 1fr 1fr auto', 
+                gap: 8, 
+                marginBottom: 12,
+                alignItems: 'end',
+                width: '100%'
+              }}>
               <input
                 type="text"
                 value={kpi.metric}
@@ -344,7 +346,7 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
         </div>
 
         {/* Buttons */}
-        <div style={{ display: 'flex', gap: 12 }}>
+        <div style={{ display: 'flex', gap: 12, width: '100%', boxSizing: 'border-box' }}>
           <button
             onClick={onCancel}
             disabled={saving}
@@ -356,7 +358,8 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
               borderRadius: 8,
               color: '#94a3b8',
               cursor: saving ? 'not-allowed' : 'pointer',
-              fontSize: '0.95rem'
+              fontSize: '0.95rem',
+              boxSizing: 'border-box'
             }}
           >
             Cancel
@@ -373,7 +376,8 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
               color: '#0f172a',
               fontWeight: 600,
               cursor: (!title.trim() || saving) ? 'not-allowed' : 'pointer',
-              fontSize: '0.95rem'
+              fontSize: '0.95rem',
+              boxSizing: 'border-box'
             }}
           >
             {saving ? 'Saving...' : goal ? 'Update Goal' : 'Create Goal'}
@@ -776,12 +780,13 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
           <div style={{
             background: '#1e293b',
             borderRadius: 16,
-            padding: 32,
+            padding: 24,
             maxWidth: 600,
             width: '90%',
             maxHeight: '90vh',
             overflowY: 'auto',
-            overflowX: 'hidden'
+            overflowX: 'hidden',
+            boxSizing: 'border-box'
           }}>
             <h2 style={{ color: '#f1f5f9', marginBottom: 24, fontSize: '1.5rem' }}>
               {editingGoal ? 'Edit Goal' : 'Add Goal'}
