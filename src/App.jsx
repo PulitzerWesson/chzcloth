@@ -4100,18 +4100,10 @@ const handleRejectBet = async (betId, reason) => {
           setScreen={setScreen}
             />
           )}
-      {screen === 'dashboard' && (
-  <Dashboard 
-    profile={profile} 
-    bets={bets} 
-    currentOrg={currentOrg} 
-    organizations={organizations} 
-    onSwitchOrg={switchCurrentOrg} 
-    onAddOrg={() => setScreen('orgsetup')} 
-    onNewBet={handleNewBet} 
-    email={user?.email} 
-    onRecordOutcome={handleRecordOutcome}
-    setScreen={setScreen}
+{screen === 'company' && (
+  <CompanyDashboard 
+    currentOrg={currentOrg}
+    isAdmin={isAdmin}
   />
 )}
           
