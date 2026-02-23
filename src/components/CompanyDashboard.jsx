@@ -4,8 +4,6 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 
 export function CompanyDashboard({ currentOrg, isAdmin }) {
-    console.log('CompanyDashboard rendering', { currentOrg, isAdmin });
-
   const { user } = useAuth();
   const [goals, setGoals] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
@@ -96,6 +94,289 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
     setEditingGoal(null);
     setShowEditModal(true);
   };
+
+  // Goal Edit Form Component
+  function GoalEditForm({ goal, timePeriod, currentOrg, onSave, onCancel }) {
+    const [title, setTitle] = useState(goal?.title || '');
+    const [description, setDescription] = useState(goal?.description || '');
+    const [kpis, setKpis] = useState(() => {
+      if (goal?.kpis) {
+        return typeof goal.kpis === 'string' ? JSON.parse(goal.kpis) : goal.kpis;
+      }
+      return [{ metric: '', baseline: '', target: '' }];
+    });
+    const [priority, setPriority] = useState(goal?.priority || 1);
+    const [saving, setSaving] = useState(false);
+
+    const addKPI = () => {
+      setKpis([...kpis, { metric: '', baseline: '', target: '' }]);
+    };
+
+    const removeKPI = (index) => {
+      setKpis(kpis.filter((_, i) => i !== index));
+    };
+
+    const updateKPI = (index, field, value) => {
+      const updated = [...kpis];
+      updated[index][field] = value;
+      setKpis(updated);
+    };
+
+    const handleSave = async () => {
+      if (!title.trim()) {
+        alert('Please enter a goal title');
+        return;
+      }
+
+      setSaving(true);
+      try {
+        const goalData = {
+          org_id: currentOrg.orgId,
+          time_period: timePeriod.period,
+          year: timePeriod.year,
+          title: title.trim(),
+          description: description.trim() || null,
+          kpis: kpis.filter(k => k.metric && k.baseline && k.target),
+          priority: priority
+        };
+
+        if (goal) {
+          // Update existing
+          const { data, error } = await supabase
+            .from('company_goals')
+            .update(goalData)
+            .eq('id', goal.id)
+            .select()
+            .single();
+
+          if (error) throw error;
+          onSave(data);
+        } else {
+          // Create new
+          const { data, error } = await supabase
+            .from('company_goals')
+            .insert(goalData)
+            .select()
+            .single();
+
+          if (error) throw error;
+          onSave(data);
+        }
+      } catch (error) {
+        console.error('Error saving goal:', error);
+        alert('Failed to save goal. Please try again.');
+      } finally {
+        setSaving(false);
+      }
+    };
+
+    return (
+      <div>
+        {/* Priority */}
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ display: 'block', color: '#94a3b8', marginBottom: 8, fontSize: '0.9rem' }}>
+            Priority
+          </label>
+          <select
+            value={priority}
+            onChange={(e) => setPriority(parseInt(e.target.value))}
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: 8,
+              color: '#f1f5f9',
+              fontSize: '1rem',
+              cursor: 'pointer'
+            }}
+          >
+            <option value="1">P1 (Must-hit)</option>
+            <option value="2">P2 (Important)</option>
+            <option value="3">P3 (Stretch)</option>
+          </select>
+        </div>
+
+        {/* Title */}
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ display: 'block', color: '#94a3b8', marginBottom: 8, fontSize: '0.9rem' }}>
+            Goal Title *
+          </label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="e.g., Reach $200K MRR by end of Q1 2026"
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: 8,
+              color: '#f1f5f9',
+              fontSize: '1rem',
+              outline: 'none',
+              boxSizing: 'border-box'
+            }}
+          />
+        </div>
+
+        {/* Description */}
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ display: 'block', color: '#94a3b8', marginBottom: 8, fontSize: '0.9rem' }}>
+            Description (optional)
+          </label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Describe how you'll achieve this goal..."
+            rows={3}
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: 8,
+              color: '#f1f5f9',
+              fontSize: '1rem',
+              outline: 'none',
+              boxSizing: 'border-box',
+              resize: 'vertical'
+            }}
+          />
+        </div>
+
+        {/* KPIs */}
+        <div style={{ marginBottom: 24 }}>
+          <label style={{ display: 'block', color: '#94a3b8', marginBottom: 12, fontSize: '0.9rem' }}>
+            Key Metrics (KPIs)
+          </label>
+          {kpis.map((kpi, idx) => (
+            <div key={idx} style={{ 
+              display: 'grid', 
+              gridTemplateColumns: '2fr 1fr 1fr auto', 
+              gap: 8, 
+              marginBottom: 12,
+              alignItems: 'end'
+            }}>
+              <input
+                type="text"
+                value={kpi.metric}
+                onChange={(e) => updateKPI(idx, 'metric', e.target.value)}
+                placeholder="Metric (e.g., MRR)"
+                style={{
+                  padding: '10px 12px',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 8,
+                  color: '#f1f5f9',
+                  fontSize: '0.9rem',
+                  outline: 'none'
+                }}
+              />
+              <input
+                type="text"
+                value={kpi.baseline}
+                onChange={(e) => updateKPI(idx, 'baseline', e.target.value)}
+                placeholder="143k"
+                style={{
+                  padding: '10px 12px',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 8,
+                  color: '#f1f5f9',
+                  fontSize: '0.9rem',
+                  outline: 'none'
+                }}
+              />
+              <input
+                type="text"
+                value={kpi.target}
+                onChange={(e) => updateKPI(idx, 'target', e.target.value)}
+                placeholder="200k"
+                style={{
+                  padding: '10px 12px',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 8,
+                  color: '#f1f5f9',
+                  fontSize: '0.9rem',
+                  outline: 'none'
+                }}
+              />
+              <button
+                onClick={() => removeKPI(idx)}
+                disabled={kpis.length === 1}
+                style={{
+                  padding: '10px 12px',
+                  background: kpis.length === 1 ? 'rgba(255,255,255,0.02)' : 'rgba(239, 68, 68, 0.1)',
+                  border: kpis.length === 1 ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(239, 68, 68, 0.3)',
+                  borderRadius: 8,
+                  color: kpis.length === 1 ? '#475569' : '#ef4444',
+                  fontSize: '0.85rem',
+                  cursor: kpis.length === 1 ? 'not-allowed' : 'pointer'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+          <button
+            onClick={addKPI}
+            style={{
+              padding: '8px 12px',
+              background: 'rgba(45, 212, 191, 0.1)',
+              border: '1px solid rgba(45, 212, 191, 0.3)',
+              borderRadius: 8,
+              color: '#2dd4bf',
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              marginTop: 8
+            }}
+          >
+            + Add KPI
+          </button>
+        </div>
+
+        {/* Buttons */}
+        <div style={{ display: 'flex', gap: 12 }}>
+          <button
+            onClick={onCancel}
+            disabled={saving}
+            style={{
+              flex: 1,
+              padding: '12px',
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: 8,
+              color: '#94a3b8',
+              cursor: saving ? 'not-allowed' : 'pointer',
+              fontSize: '0.95rem'
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving || !title.trim()}
+            style={{
+              flex: 1,
+              padding: '12px',
+              background: (!title.trim() || saving) ? 'rgba(45, 212, 191, 0.3)' : '#2dd4bf',
+              border: 'none',
+              borderRadius: 8,
+              color: '#0f172a',
+              fontWeight: 600,
+              cursor: (!title.trim() || saving) ? 'not-allowed' : 'pointer',
+              fontSize: '0.95rem'
+            }}
+          >
+            {saving ? 'Saving...' : goal ? 'Update Goal' : 'Create Goal'}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return <div style={{ color: '#94a3b8', padding: 40 }}>Loading...</div>;
@@ -191,9 +472,9 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
             {goals.map((goal, idx) => {
               const kpis = typeof goal.kpis === 'string' ? JSON.parse(goal.kpis) : (goal.kpis || []);
               const priorityColors = {
-                1: '#ef4444', // red for P1
-                2: '#fbbf24', // yellow for P2
-                3: '#3b82f6'  // blue for P3
+                1: '#ef4444',
+                2: '#fbbf24',
+                3: '#3b82f6'
               };
 
               return (
@@ -472,10 +753,53 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
         </div>
       )}
 
-      {/* Edit/Add Goal Modal - TODO: Implement this next */}
+      {/* Edit/Add Goal Modal */}
       {showEditModal && (
-        <div style={{ color: '#94a3b8', padding: 40 }}>
-          Edit modal coming next...
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000,
+          overflow: 'auto'
+        }}>
+          <div style={{
+            background: '#1e293b',
+            borderRadius: 16,
+            padding: 32,
+            maxWidth: 600,
+            width: '90%',
+            maxHeight: '90vh',
+            overflow: 'auto'
+          }}>
+            <h2 style={{ color: '#f1f5f9', marginBottom: 24, fontSize: '1.5rem' }}>
+              {editingGoal ? 'Edit Goal' : 'Add Goal'}
+            </h2>
+            
+            <GoalEditForm
+              goal={editingGoal}
+              timePeriod={timePeriod}
+              currentOrg={currentOrg}
+              onSave={(savedGoal) => {
+                if (editingGoal) {
+                  setGoals(goals.map(g => g.id === savedGoal.id ? savedGoal : g));
+                } else {
+                  setGoals([...goals, savedGoal]);
+                }
+                setShowEditModal(false);
+                setEditingGoal(null);
+              }}
+              onCancel={() => {
+                setShowEditModal(false);
+                setEditingGoal(null);
+              }}
+            />
+          </div>
         </div>
       )}
     </div>
