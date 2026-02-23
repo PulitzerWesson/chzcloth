@@ -127,6 +127,7 @@ export function useOrganizations() {
           seniority: userOrgData.seniority,
           started_at: userOrgData.startedAt,
           is_current: userOrgData.isCurrent !== false,
+          team_role: 'admin' 
         })
         .select()
         .single()
