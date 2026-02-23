@@ -4100,6 +4100,9 @@ const handleRejectBet = async (betId, reason) => {
           setScreen={setScreen}
             />
           )}
+
+      {console.log('Current screen state:', screen)}
+
 {screen === 'company' && (
   <CompanyDashboard 
     currentOrg={currentOrg}
