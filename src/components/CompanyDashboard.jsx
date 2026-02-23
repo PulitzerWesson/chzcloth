@@ -188,7 +188,8 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
               borderRadius: 8,
               color: '#f1f5f9',
               fontSize: '1rem',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              boxSizing: 'border-box'
             }}
           >
             <option value="1">P1 (Must-hit)</option>
@@ -271,7 +272,8 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
                   borderRadius: 8,
                   color: '#f1f5f9',
                   fontSize: '0.9rem',
-                  outline: 'none'
+                  outline: 'none',
+                  boxSizing: 'border-box'
                 }}
               />
               <input
@@ -286,7 +288,8 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
                   borderRadius: 8,
                   color: '#f1f5f9',
                   fontSize: '0.9rem',
-                  outline: 'none'
+                  outline: 'none',
+                  boxSizing: 'border-box'
                 }}
               />
               <input
@@ -301,7 +304,8 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
                   borderRadius: 8,
                   color: '#f1f5f9',
                   fontSize: '0.9rem',
-                  outline: 'none'
+                  outline: 'none',
+                  boxSizing: 'border-box'
                 }}
               />
               <button
@@ -314,7 +318,8 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
                   borderRadius: 8,
                   color: kpis.length === 1 ? '#475569' : '#ef4444',
                   fontSize: '0.85rem',
-                  cursor: kpis.length === 1 ? 'not-allowed' : 'pointer'
+                  cursor: kpis.length === 1 ? 'not-allowed' : 'pointer',
+                  boxSizing: 'border-box'
                 }}
               >
                 ✕
@@ -766,7 +771,7 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 10000,
-          overflow: 'auto'
+          overflowY: 'auto'
         }}>
           <div style={{
             background: '#1e293b',
@@ -775,7 +780,8 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
             maxWidth: 600,
             width: '90%',
             maxHeight: '90vh',
-            overflow: 'auto'
+            overflowY: 'auto',
+            overflowX: 'hidden'
           }}>
             <h2 style={{ color: '#f1f5f9', marginBottom: 24, fontSize: '1.5rem' }}>
               {editingGoal ? 'Edit Goal' : 'Add Goal'}
