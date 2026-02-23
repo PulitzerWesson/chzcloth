@@ -399,15 +399,16 @@ function IdeasQueue({
             <span style={{ color: '#fbbf24' }}>{betData.confidence}%</span>
           </div>
         )}
-        {betData?.strategicAlignment && (
-          <div>
-            <span style={{ color: '#64748b' }}>Strategic Alignment: </span>
-            <span style={{ color: '#94a3b8' }}>
-              {betData.strategicAlignment === 'inner_ring' ? 'Inner Ring' : 
-               betData.strategicAlignment === 'outer_ring' ? 'Outer Ring' : 'Experimental'}
-            </span>
-          </div>
-        )}
+{betData?.strategicAlignment && (
+  <div>
+    <span style={{ color: '#64748b' }}>Strategic Alignment: </span>
+    <span style={{ color: '#94a3b8' }}>
+      {betData.strategicAlignment === 'bullseye' ? 'Bullseye' : 
+       betData.strategicAlignment === 'inner' ? 'Inner Ring' :
+       betData.strategicAlignment === 'outer' ? 'Outer Ring' : 'Experimental'}
+    </span>
+  </div>
+)}
         {betData?.estimatedEffort && (
           <div>
             <span style={{ color: '#64748b' }}>Estimated Effort: </span>
