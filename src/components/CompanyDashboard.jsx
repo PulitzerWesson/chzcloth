@@ -344,6 +344,7 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
             + Add KPI
           </button>
         </div>
+      </div>
 
         {/* Buttons */}
         <div style={{ display: 'flex', gap: 12, width: '100%', boxSizing: 'border-box' }}>
