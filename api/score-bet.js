@@ -4,7 +4,7 @@ export default async function handler(req, res) {
   }
   
   try {
-    const { bet, orgMode, orgName, orgContext, orgLearnings, clarifyingAnswers } = req.body;    
+    const { bet, orgMode, orgName, orgContext, orgLearnings, clarifyingAnswers, companyGoals, departmentGoals } = req.body;    
     
     // Build clarifying answers section if provided
     let clarifyingSection = '';
@@ -29,6 +29,42 @@ PAST ORGANIZATIONAL LEARNINGS:
 ${orgLearnings.slice(0, 5).map(l => `- ${l.summary || l.learned}`).join('\n')}
 
 Consider these patterns when scoring.
+`;
+    }
+    
+    // Build company goals section
+    let goalsSection = '';
+    if (companyGoals && companyGoals.length > 0) {
+      goalsSection = `
+
+COMPANY STRATEGIC GOALS (${companyGoals[0]?.time_period?.toUpperCase() || 'Q1'} ${companyGoals[0]?.year || 2026}):
+${companyGoals.map((goal, idx) => {
+  const kpis = typeof goal.kpis === 'string' ? JSON.parse(goal.kpis) : goal.kpis;
+  const kpiText = kpis && kpis.length > 0 
+    ? kpis.map(k => `  - ${k.metric}: ${k.baseline} → ${k.target}`).join('\n')
+    : '  (No KPIs defined)';
+  
+  return `P${idx + 1} (Priority ${idx + 1}): ${goal.title}
+${kpiText}`;
+}).join('\n\n')}
+`;
+    }
+    
+    // Build department goals section
+    let deptGoalsSection = '';
+    if (departmentGoals && departmentGoals.length > 0) {
+      deptGoalsSection = `
+
+DEPARTMENT GOALS (${departmentGoals[0]?.time_period?.toUpperCase() || 'Q1'} ${departmentGoals[0]?.year || 2026}):
+${departmentGoals.map((goal, idx) => {
+  const kpis = typeof goal.kpis === 'string' ? JSON.parse(goal.kpis) : goal.kpis;
+  const kpiText = kpis && kpis.length > 0 
+    ? kpis.map(k => `  - ${k.metric}: ${k.baseline} → ${k.target}`).join('\n')
+    : '  (No KPIs defined)';
+  
+  return `P${idx + 1} (Priority ${idx + 1}): ${goal.title}
+${kpiText}`;
+}).join('\n\n')}
 `;
     }
     
@@ -65,12 +101,14 @@ ${orgName ? `Company: ${orgName}` : 'Company: Unknown'}
 Mode: ${orgMode || 'growth'}
 
 ${orgContext ? `COMPANY DETAILS:\n${orgContext}\n` : ''}
+${goalsSection}
+${deptGoalsSection}
 ${learningsSection}
 ${clarifyingSection}
 
 SKIP web search if:
 - Bet is clearly broken/nonsensical (missing structure, vague)
-- Bet is well-formed and org context + assumptions provide sufficient basis for scoring
+- Bet is well-formed and org context + goals provide sufficient basis for scoring
 - Past learnings already cover this territory
 - Standard product bet with no unusual claims
 
@@ -139,15 +177,23 @@ ${orgName ? `Company: ${orgName}` : 'Company: Unknown'}
 Mode: ${orgMode || 'growth'}
 
 ${orgContext ? `COMPANY DETAILS:\n${orgContext}\n` : ''}
+${goalsSection}
+${deptGoalsSection}
 ${learningsSection}
 ${clarifyingSection}
 
-${orgContext ? `CRITICAL INSTRUCTION:
-Your rationale for EACH score MUST cite specific details from the COMPANY DETAILS above. Reference their business model, industry dynamics, scale, competitive position, or strategic context. Generic scoring that could apply to any company is unacceptable when detailed company context is provided.
+${orgContext || goalsSection ? `CRITICAL INSTRUCTION:
+Your rationale for EACH score MUST cite specific details from the context above. Reference their business model, strategic goals, KPI targets, industry dynamics, scale, or competitive position. Generic scoring that could apply to any company is unacceptable when detailed company context is provided.
+
+For FIT score specifically:
+- Evaluate alignment with P1/P2/P3 company goals
+- Consider if this bet moves the needle on stated KPIs
+- Assess if effort matches goal priority (P1 goals deserve more effort than P3)
+- Reference specific metric targets (e.g., "helps move MRR from $143K toward $200K target")
 
 For example:
 - Bad: "Aligns with growth stage focus on conversion optimization"
-- Good: "For Further's senior living platform serving 5,500 communities, tour conversion is the critical bottleneck in their buyer journey from prospect to move-in"
+- Good: "Directly supports P1 goal 'Reach $200K MRR' by improving trial→paid conversion (14%→20% target), which is the primary revenue bottleneck"
 
 ` : ''}
 
@@ -155,7 +201,7 @@ TITLE & SUMMARY GENERATION:
 Generate a professional title and summary for this bet:
 - Title: 8-12 words capturing the core action and expected outcome
 - Summary: 15-20 words explaining the value proposition
-${orgContext ? 'Reference company specifics when relevant (e.g., "Further" vs "the company").' : ''}
+${orgContext ? 'Reference company specifics when relevant (e.g., "Testway" vs "the company").' : ''}
 
 PRODUCT IDENTIFICATION:
 Identify which product/surface this bet modifies. Common products:
@@ -188,10 +234,13 @@ ${needsSearch ? '- How does this compare to similar bets in the industry? (searc
 - Is the timeframe appropriate for the change?
 - Does the effort match the expected impact?
 ${orgContext ? '- Is this prediction realistic given their scale and market position?' : ''}
+${goalsSection ? '- Does this prediction move the needle on stated KPI targets?' : ''}
 ${needsSearch ? '- What do benchmarks say about typical results? (search if needed)' : ''}
 
 3. FIT (0-100):
 - Does this align with the company's stage (${orgMode})?
+${goalsSection ? '- Does this support P1/P2/P3 company goals? Which specific goals and KPIs?' : ''}
+${deptGoalsSection ? '- Does this align with department-level goals?' : ''}
 - Does strategic alignment match effort?
 - Is cost of inaction justified?
 - Does this match patterns from past learnings?
@@ -215,11 +264,11 @@ Return ONLY valid JSON (no markdown, no preamble):
   },
   "potential": {
     "score": 0-100,
-    "rationale": "Brief explanation${needsSearch ? ' citing benchmarks if found' : ''}${orgContext ? ' citing company scale and market position' : ''}"
+    "rationale": "Brief explanation${needsSearch ? ' citing benchmarks if found' : ''}${orgContext || goalsSection ? ' citing company scale, market position, and KPI targets' : ''}"
   },
   "fit": {
     "score": 0-100,
-    "rationale": "Brief explanation${needsSearch ? ' citing market context if found' : ''}${orgContext ? ' citing strategic priorities and business model' : ''}"
+    "rationale": "Brief explanation${needsSearch ? ' citing market context if found' : ''}${goalsSection ? ' citing specific P1/P2/P3 goals and KPI alignment' : ''}${orgContext ? ' citing strategic priorities and business model' : ''}"
   },
   "market_context": ${needsSearch ? '"Key web findings about similar initiatives"' : 'null'},
   "suggestion": {
@@ -227,7 +276,7 @@ Return ONLY valid JSON (no markdown, no preamble):
     "hypothesis": "Improved/alternative hypothesis",
     "metrics": "Improved/alternative prediction",
     "effort": "Estimated effort",
-    "reasoning": "Why this improvement${needsSearch ? ', citing research' : ''}${orgContext ? ', citing company context' : ''}",
+    "reasoning": "Why this improvement${needsSearch ? ', citing research' : ''}${orgContext || goalsSection ? ', citing company context and goals' : ''}",
     "expected_score": estimated score with improvements,
     "market_evidence": ${needsSearch ? '"Supporting web findings"' : 'null'}
   }
@@ -269,16 +318,15 @@ Return ONLY valid JSON (no markdown, no preamble):
     };
     
     // Clean up all rationale fields
-
     if (scores.title) {
-  scores.title = stripCitations(scores.title);
-}
-if (scores.summary) {
-  scores.summary = stripCitations(scores.summary);
-}
+      scores.title = stripCitations(scores.title);
+    }
+    if (scores.summary) {
+      scores.summary = stripCitations(scores.summary);
+    }
     if (scores.product) {
-  scores.product = stripCitations(scores.product);
-}
+      scores.product = stripCitations(scores.product);
+    }
     if (scores.approach?.rationale) {
       scores.approach.rationale = stripCitations(scores.approach.rationale);
     }
