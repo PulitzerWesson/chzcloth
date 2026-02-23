@@ -3979,7 +3979,7 @@ const handleRejectBet = async (betId, reason) => {
 )}
       {screen === 'baseline' && <SeedBaseline profile={profile} onComplete={handleBaselineComplete} />}
       {screen === 'record_outcome' && <RecordOutcome bet={betToRecord} onComplete={handleOutcomeComplete} onCancel={handleOutcomeCancel} />}
-{(screen === 'dashboard' || screen === 'ideas_queue' || screen === 'priority_queue') && (
+{(screen === 'dashboard' || screen === 'ideas_queue' || screen === 'priority_queue' || screen === 'company') && (
   <div style={{ padding: '40px 24px' }}>
     <div style={{ maxWidth: 900, margin: '0 auto' }}>
       
