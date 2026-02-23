@@ -35,6 +35,7 @@ export function useOrganizations() {
           started_at,
           ended_at,
           is_current,
+          team_role,
           organizations (
             id,
             name,
