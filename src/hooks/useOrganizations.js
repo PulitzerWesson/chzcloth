@@ -259,6 +259,8 @@ export function useOrganizations() {
     switchCurrentOrg,
     leaveOrganization,
     refreshOrganizations: fetchOrganizations,
-    hasOrganizations: organizations.length > 0
+    hasOrganizations: organizations.length > 0,
+      isAdmin: currentOrg?.teamRole === 'admin',
+  canInviteUsers: currentOrg?.teamRole === 'admin'
   }
 }
