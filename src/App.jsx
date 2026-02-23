@@ -16,7 +16,8 @@ import SignalSubmission from './components/SignalSubmission';
 import SuggestionCard from './components/SuggestionCard';
 import { getOrgLearnings } from './utils/orgLearnings';
 import { supabase } from './lib/supabase';
-import BetConfirmation from './components/BetConfirmation'
+import BetConfirmation from './components/BetConfirmation';
+import CompanyDashboard from './components/CompanyDashboard';
 
 // ============================================
 // CHZCLOTH Free - Where Bets Get Smarter
@@ -4061,6 +4062,26 @@ const handleRejectBet = async (betId, reason) => {
             <span style={{ color: screen === 'ideas_queue' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>◎</span>
             Marketplace
           </button>
+          <button
+  onClick={() => setScreen('company')}
+  style={{
+    background: 'transparent',
+    border: 'none',
+    borderBottom: screen === 'company' ? '2px solid #7dd3fc' : '2px solid transparent',
+    padding: '16px 0',
+    color: screen === 'company' ? '#e0e0e0' : '#666',
+    fontSize: '0.9rem',
+    fontWeight: 500,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
+  }}
+>
+  <span style={{ color: screen === 'company' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>●</span>
+  Company
+</button>
         </div>
       </div>
 
@@ -4079,6 +4100,20 @@ const handleRejectBet = async (betId, reason) => {
           setScreen={setScreen}
             />
           )}
+      {screen === 'dashboard' && (
+  <Dashboard 
+    profile={profile} 
+    bets={bets} 
+    currentOrg={currentOrg} 
+    organizations={organizations} 
+    onSwitchOrg={switchCurrentOrg} 
+    onAddOrg={() => setScreen('orgsetup')} 
+    onNewBet={handleNewBet} 
+    email={user?.email} 
+    onRecordOutcome={handleRecordOutcome}
+    setScreen={setScreen}
+  />
+)}
           
 {screen === 'priority_queue' && (
   <div>
