@@ -4,7 +4,7 @@ export default async function handler(req, res) {
   }
   
   try {
-    const { bet, orgMode, orgName, orgContext, orgLearnings, clarifyingAnswers, companyGoals, departmentGoals } = req.body;    
+    const { bet, orgMode, orgName, orgContext, orgLearnings, clarifyingAnswers, companyGoals,  } = req.body;    
     
     // Build clarifying answers section if provided
     let clarifyingSection = '';
@@ -50,23 +50,7 @@ ${kpiText}`;
 `;
     }
     
-    // Build department goals section
-    let deptGoalsSection = '';
-    if (departmentGoals && departmentGoals.length > 0) {
-      deptGoalsSection = `
 
-DEPARTMENT GOALS (${departmentGoals[0]?.time_period?.toUpperCase() || 'Q1'} ${departmentGoals[0]?.year || 2026}):
-${departmentGoals.map((goal, idx) => {
-  const kpis = typeof goal.kpis === 'string' ? JSON.parse(goal.kpis) : goal.kpis;
-  const kpiText = kpis && kpis.length > 0 
-    ? kpis.map(k => `  - ${k.metric}: ${k.baseline} → ${k.target}`).join('\n')
-    : '  (No KPIs defined)';
-  
-  return `P${idx + 1} (Priority ${idx + 1}): ${goal.title}
-${kpiText}`;
-}).join('\n\n')}
-`;
-    }
     
     // PASS 1: Determine if web search is needed
     const assessmentResponse = await fetch('https://api.anthropic.com/v1/messages', {
@@ -102,7 +86,6 @@ Mode: ${orgMode || 'growth'}
 
 ${orgContext ? `COMPANY DETAILS:\n${orgContext}\n` : ''}
 ${goalsSection}
-${deptGoalsSection}
 ${learningsSection}
 ${clarifyingSection}
 
@@ -178,7 +161,6 @@ Mode: ${orgMode || 'growth'}
 
 ${orgContext ? `COMPANY DETAILS:\n${orgContext}\n` : ''}
 ${goalsSection}
-${deptGoalsSection}
 ${learningsSection}
 ${clarifyingSection}
 
@@ -240,7 +222,6 @@ ${needsSearch ? '- What do benchmarks say about typical results? (search if need
 3. FIT (0-100):
 - Does this align with the company's stage (${orgMode})?
 ${goalsSection ? '- Does this support P1/P2/P3 company goals? Which specific goals and KPIs?' : ''}
-${deptGoalsSection ? '- Does this align with department-level goals?' : ''}
 - Does strategic alignment match effort?
 - Is cost of inaction justified?
 - Does this match patterns from past learnings?
