@@ -240,6 +240,12 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
       betType: 'improve',
       goalContext: hasLeadershipGoal ? leadershipGoal : goalContext,
       goalId: selectedGoalId,
+      goalQuarterEnd: selectedGoalId ? (() => {
+          const goal = companyGoals.find(g => g.id === selectedGoalId);
+          if (!goal) return null;
+          const ends = { q1: `${goal.year}-03-31`, q2: `${goal.year}-06-30`, q3: `${goal.year}-09-30`, q4: `${goal.year}-12-31` };
+          return ends[goal.time_period] || null;
+        })() : null,
       selectedKPI,
       goalAlignment: aiReview.goalAlignment,
       documentProvided: !!uploadedFile,
