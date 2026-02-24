@@ -3034,7 +3034,7 @@ const getStatusBadge = (bet) => {
   return { bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)', text: '#94a3b8', label: 'Draft' };
 };
 
-function BetCard({ bet, showAddToMarketplace, expandedBets, setExpandedBets, onRecordOutcome, onAddToMarketplace, onWithdrawFromMarketplace, markStarted, markCompleted }) {
+function BetCard({ bet, showAddToMarketplace, expandedBets, setExpandedBets, onRecordOutcome, onAddToMarketplace, onWithdrawFromMarketplace, markStarted, onMarkCompletedClick }) {
   const isExpanded = expandedBets[bet.id];
   const isAIEnhanced = bet.aiEnhanced;
   const aiScore = bet.aiPredictedScore;
@@ -3152,7 +3152,6 @@ function BetCard({ bet, showAddToMarketplace, expandedBets, setExpandedBets, onR
                 Add to Marketplace
               </button>
             )}
-
             {/* In Marketplace — withdraw */}
             {showAddToMarketplace && bet.approvalStatus === 'pending_approval' && (
               <button
@@ -3162,7 +3161,6 @@ function BetCard({ bet, showAddToMarketplace, expandedBets, setExpandedBets, onR
                 Withdraw
               </button>
             )}
-
             {/* Sponsored — mark started */}
             {bet.approvalStatus === 'approved' && !isStarted && !isCompleted && !hasOutcome && (
               <button
@@ -3172,17 +3170,15 @@ function BetCard({ bet, showAddToMarketplace, expandedBets, setExpandedBets, onR
                 Mark Started
               </button>
             )}
-
-            {/* Started — mark completed */}
+            {/* Started — mark completed (opens modal) */}
             {isStarted && !isCompleted && !hasOutcome && (
               <button
-                onClick={() => markCompleted && markCompleted(bet.id)}
+                onClick={() => onMarkCompletedClick && onMarkCompletedClick(bet)}
                 style={{ padding: '7px 16px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 8, color: '#22c55e', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}
               >
                 Mark Completed
               </button>
             )}
-
             {/* Completed — record outcome */}
             {isCompleted && !hasOutcome && (
               <button
@@ -3274,6 +3270,7 @@ function BetCard({ bet, showAddToMarketplace, expandedBets, setExpandedBets, onR
 function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEditMode, onAddOrg, onNewBet, email, currentUserId, onRecordOutcome, onAddToMarketplace, onWithdrawFromMarketplace, markStarted, markCompleted, setScreen }) {
   const safeBets = bets || [];
   const [expandedBets, setExpandedBets] = useState({});
+  const [completionModal, setCompletionModal] = useState(null); // holds the bet being completed
 
   const yourBets = safeBets.filter(b => b.userId === currentUserId || b.user_id === currentUserId);
   const sponsoredBets = safeBets.filter(b =>
@@ -3300,7 +3297,30 @@ function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEd
     });
   };
 
-  const cardProps = { expandedBets, setExpandedBets, onRecordOutcome, onAddToMarketplace, onWithdrawFromMarketplace, markStarted, markCompleted };
+  const handleMarkCompletedClick = (bet) => {
+    setCompletionModal(bet);
+  };
+
+  const handleConfirmComplete = async () => {
+    if (!completionModal) return;
+    await markCompleted(completionModal.id);
+    setCompletionModal(null);
+  };
+
+  const handleCompleteAndRecord = async () => {
+    if (!completionModal) return;
+    await markCompleted(completionModal.id);
+    const completedBet = { ...completionModal, completedAt: new Date().toISOString() };
+    setCompletionModal(null);
+    onRecordOutcome && onRecordOutcome(completedBet);
+  };
+
+  const cardProps = {
+    expandedBets, setExpandedBets,
+    onRecordOutcome, onAddToMarketplace, onWithdrawFromMarketplace,
+    markStarted,
+    onMarkCompletedClick: handleMarkCompletedClick
+  };
 
   return (
     <>
@@ -3393,10 +3413,61 @@ function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEd
           </button>
         </div>
       )}
+
+      {/* Completion Modal */}
+      {completionModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.8)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', zIndex: 10000
+        }}>
+          <div style={{
+            background: '#1e293b', borderRadius: 16, padding: 32,
+            maxWidth: 440, width: 'calc(100% - 32px)',
+            border: '1px solid rgba(255,255,255,0.08)'
+          }}>
+            <div style={{ fontSize: '2rem', marginBottom: 12 }}>🎉</div>
+            <h3 style={{ color: '#f1f5f9', fontSize: '1.3rem', fontWeight: 600, marginBottom: 12, margin: '0 0 12px 0' }}>
+              Bet Completed!
+            </h3>
+            <p style={{ color: '#94a3b8', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: 8 }}>
+              <strong style={{ color: '#f1f5f9' }}>{completionModal.title || completionModal.hypothesis}</strong>
+            </p>
+            <p style={{ color: '#64748b', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 28 }}>
+              Ready to record what happened? Outcome data is what makes your predictions meaningful over time.
+            </p>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                onClick={handleConfirmComplete}
+                style={{
+                  flex: 1, padding: '12px',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 8, color: '#94a3b8',
+                  fontSize: '0.95rem', cursor: 'pointer'
+                }}
+              >
+                Remind Me Later
+              </button>
+              <button
+                onClick={handleCompleteAndRecord}
+                style={{
+                  flex: 1, padding: '12px',
+                  background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
+                  border: 'none', borderRadius: 8,
+                  color: '#0a0f1a', fontWeight: 600,
+                  fontSize: '0.95rem', cursor: 'pointer'
+                }}
+              >
+                Record Outcome →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
-
 
 // ============================================
 // MAIN APP
