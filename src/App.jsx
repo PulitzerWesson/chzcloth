@@ -3473,7 +3473,7 @@ const {
   canInviteUsers
 } = useOrganizations();
   
-const { bets, loading: betsLoading, createBet, createPastBets, recordOutcome, scoreBet, approveBet, rejectBet, refreshBets} = useBets(currentOrg?.orgId, currentOrg?.mode);
+const { bets, loading: betsLoading, createBet, createPastBets, recordOutcome, scoreBet, approveBet, rejectBet, refreshBets, markStarted, markCompleted} = useBets(currentOrg?.orgId, currentOrg?.mode);
 const { ideas, loading: ideasLoading, updateIdeaStatus, claimIdea, submitIdea, unclaimIdea } = useIdeas(currentOrg?.orgId);
   const [screen, setScreen] = useState('landing');
   const [currentBet, setCurrentBet] = useState(null);
