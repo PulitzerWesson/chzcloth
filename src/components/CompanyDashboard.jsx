@@ -14,16 +14,16 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(null);
 
-  // Fetch goals and team members
+  // FIX: Don't refetch while any modal is open — prevents loading state from destroying the modal
   useEffect(() => {
     if (!currentOrg?.orgId) return;
+    if (showEditModal || showDeleteConfirm || showRemoveConfirm) return;
     fetchData();
-  }, [currentOrg?.orgId, timePeriod]);
+  }, [currentOrg?.orgId, timePeriod, showEditModal, showDeleteConfirm, showRemoveConfirm]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch goals for selected time period
       const { data: goalsData } = await supabase
         .from('company_goals')
         .select('*')
@@ -34,7 +34,6 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
 
       setGoals(goalsData || []);
 
-      // Fetch team members
       const { data: membersData } = await supabase
         .from('user_organizations')
         .select(`
@@ -95,7 +94,6 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
     setShowEditModal(true);
   };
 
-  // Goal Edit Form Component
   function GoalEditForm({ goal, timePeriod, currentOrg, onSave, onCancel }) {
     const [title, setTitle] = useState(goal?.title || '');
     const [description, setDescription] = useState(goal?.description || '');
@@ -141,7 +139,6 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
         };
 
         if (goal) {
-          // Update existing
           const { data, error } = await supabase
             .from('company_goals')
             .update(goalData)
@@ -152,7 +149,6 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
           if (error) throw error;
           onSave(data);
         } else {
-          // Create new
           const { data, error } = await supabase
             .from('company_goals')
             .insert(goalData)
@@ -172,7 +168,6 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
 
     return (
       <div>
-        {/* Priority */}
         <div style={{ marginBottom: 20 }}>
           <label style={{ display: 'block', color: '#94a3b8', marginBottom: 8, fontSize: '0.9rem' }}>
             Priority
@@ -198,7 +193,6 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
           </select>
         </div>
 
-        {/* Title */}
         <div style={{ marginBottom: 20 }}>
           <label style={{ display: 'block', color: '#94a3b8', marginBottom: 8, fontSize: '0.9rem' }}>
             Goal Title *
@@ -222,7 +216,6 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
           />
         </div>
 
-        {/* Description */}
         <div style={{ marginBottom: 20 }}>
           <label style={{ display: 'block', color: '#94a3b8', marginBottom: 8, fontSize: '0.9rem' }}>
             Description (optional)
@@ -247,7 +240,6 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
           />
         </div>
 
-        {/* KPIs */}
         <div style={{ marginBottom: 24 }}>
           <label style={{ display: 'block', color: '#94a3b8', marginBottom: 12, fontSize: '0.9rem' }}>
             Key Metrics (KPIs)
@@ -348,7 +340,6 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
           </button>
         </div>
 
-        {/* Buttons */}
         <div style={{ display: 'flex', gap: 12 }}>
           <button
             onClick={onCancel}
@@ -388,13 +379,14 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
     );
   }
 
-  if (loading) {
+  // FIX: Only show full loading screen on initial load (no data yet)
+  // During refetches, render normally so modals aren't destroyed
+  if (loading && goals.length === 0 && teamMembers.length === 0) {
     return <div style={{ color: '#94a3b8', padding: 40 }}>Loading...</div>;
   }
 
   return (
     <div style={{ padding: '0 40px 40px 40px' }}>
-      {/* Header */}
       <div style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
@@ -418,7 +410,6 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
             Company Goals
           </h2>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-            {/* Time Period Selector */}
             <select
               value={`${timePeriod.period}-${timePeriod.year}`}
               onChange={(e) => {
@@ -465,7 +456,6 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
           </div>
         </div>
 
-        {/* Goals List */}
         {goals.length === 0 ? (
           <div style={{
             padding: 40,
@@ -479,13 +469,9 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {goals.map((goal, idx) => {
+            {goals.map((goal) => {
               const kpis = typeof goal.kpis === 'string' ? JSON.parse(goal.kpis) : (goal.kpis || []);
-              const priorityColors = {
-                1: '#ef4444',
-                2: '#fbbf24',
-                3: '#3b82f6'
-              };
+              const priorityColors = { 1: '#ef4444', 2: '#fbbf24', 3: '#3b82f6' };
 
               return (
                 <div
@@ -555,7 +541,6 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
                     )}
                   </div>
 
-                  {/* KPIs */}
                   {kpis.length > 0 && (
                     <div>
                       <div style={{ color: '#64748b', fontSize: '0.8rem', marginBottom: 8, fontWeight: 600 }}>
@@ -642,58 +627,20 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
       {/* Delete Goal Confirmation */}
       {showDeleteConfirm && (
         <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 10000
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.8)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', zIndex: 10000
         }}>
-          <div style={{
-            background: '#1e293b',
-            borderRadius: 16,
-            padding: 32,
-            maxWidth: 400,
-            width: '90%'
-          }}>
-            <h3 style={{ color: '#f1f5f9', marginBottom: 12, fontSize: '1.2rem' }}>
-              Delete Goal?
-            </h3>
+          <div style={{ background: '#1e293b', borderRadius: 16, padding: 32, maxWidth: 400, width: '90%' }}>
+            <h3 style={{ color: '#f1f5f9', marginBottom: 12, fontSize: '1.2rem' }}>Delete Goal?</h3>
             <p style={{ color: '#94a3b8', marginBottom: 24, lineHeight: 1.6 }}>
               This will permanently delete this goal. Any bets aligned to this goal will lose their alignment.
             </p>
             <div style={{ display: 'flex', gap: 12 }}>
-              <button
-                onClick={() => setShowDeleteConfirm(null)}
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 8,
-                  color: '#94a3b8',
-                  cursor: 'pointer'
-                }}
-              >
+              <button onClick={() => setShowDeleteConfirm(null)} style={{ flex: 1, padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#94a3b8', cursor: 'pointer' }}>
                 Cancel
               </button>
-              <button
-                onClick={() => handleDeleteGoal(showDeleteConfirm)}
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  background: '#ef4444',
-                  border: 'none',
-                  borderRadius: 8,
-                  color: '#fff',
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
-              >
+              <button onClick={() => handleDeleteGoal(showDeleteConfirm)} style={{ flex: 1, padding: '12px', background: '#ef4444', border: 'none', borderRadius: 8, color: '#fff', fontWeight: 600, cursor: 'pointer' }}>
                 Delete Goal
               </button>
             </div>
@@ -704,58 +651,20 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
       {/* Remove Member Confirmation */}
       {showRemoveConfirm && (
         <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 10000
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.8)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', zIndex: 10000
         }}>
-          <div style={{
-            background: '#1e293b',
-            borderRadius: 16,
-            padding: 32,
-            maxWidth: 400,
-            width: '90%'
-          }}>
-            <h3 style={{ color: '#f1f5f9', marginBottom: 12, fontSize: '1.2rem' }}>
-              Remove Team Member?
-            </h3>
+          <div style={{ background: '#1e293b', borderRadius: 16, padding: 32, maxWidth: 400, width: '90%' }}>
+            <h3 style={{ color: '#f1f5f9', marginBottom: 12, fontSize: '1.2rem' }}>Remove Team Member?</h3>
             <p style={{ color: '#94a3b8', marginBottom: 24, lineHeight: 1.6 }}>
               This person will lose access to this company and all its data.
             </p>
             <div style={{ display: 'flex', gap: 12 }}>
-              <button
-                onClick={() => setShowRemoveConfirm(null)}
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 8,
-                  color: '#94a3b8',
-                  cursor: 'pointer'
-                }}
-              >
+              <button onClick={() => setShowRemoveConfirm(null)} style={{ flex: 1, padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#94a3b8', cursor: 'pointer' }}>
                 Cancel
               </button>
-              <button
-                onClick={() => handleRemoveMember(showRemoveConfirm)}
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  background: '#ef4444',
-                  border: 'none',
-                  borderRadius: 8,
-                  color: '#fff',
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
-              >
+              <button onClick={() => handleRemoveMember(showRemoveConfirm)} style={{ flex: 1, padding: '12px', background: '#ef4444', border: 'none', borderRadius: 8, color: '#fff', fontWeight: 600, cursor: 'pointer' }}>
                 Remove Member
               </button>
             </div>
@@ -766,33 +675,18 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
       {/* Edit/Add Goal Modal */}
       {showEditModal && (
         <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 10000,
-          overflowY: 'auto'
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.8)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', zIndex: 10000, overflowY: 'auto'
         }}>
           <div style={{
-            background: '#1e293b',
-            borderRadius: 16,
-            padding: '32px 24px',
-            maxWidth: 560,
-            width: 'calc(100% - 32px)',
-            maxHeight: '90vh',
-            overflowY: 'auto',
-            overflowX: 'hidden',
-            boxSizing: 'border-box'
+            background: '#1e293b', borderRadius: 16, padding: '32px 24px',
+            maxWidth: 560, width: 'calc(100% - 32px)',
+            maxHeight: '90vh', overflowY: 'auto', overflowX: 'hidden', boxSizing: 'border-box'
           }}>
             <h2 style={{ color: '#f1f5f9', marginBottom: 24, fontSize: '1.5rem' }}>
               {editingGoal ? 'Edit Goal' : 'Add Goal'}
             </h2>
-            
             <GoalEditForm
               goal={editingGoal}
               timePeriod={timePeriod}
