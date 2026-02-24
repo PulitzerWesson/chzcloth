@@ -3401,7 +3401,7 @@ const {
 } = useOrganizations();
   
 const { bets, loading: betsLoading, createBet, createPastBets, recordOutcome, scoreBet, approveBet, rejectBet, refreshBets, markStarted, markCompleted} = useBets(currentOrg?.orgId, currentOrg?.mode);
-const { ideas, loading: ideasLoading, updateIdeaStatus, claimIdea, submitIdea, unclaimIdea } = useIdeas(currentOrg?.orgId);
+const { ideas, loading: ideasLoading, updateIdeaStatus, claimIdea, submitIdea, unclaimIdea, withdrawFromMarketplace } = useIdeas(currentOrg?.orgId);
   const [screen, setScreen] = useState('landing');
   const [currentBet, setCurrentBet] = useState(null);
   const [betToRecord, setBetToRecord] = useState(null);
@@ -3664,6 +3664,19 @@ const { error } = await submitIdea(ideaEntry);
   const handleRefineBet = () => {
   // User wants to refine their bet - go back to form with current data
   setScreen('bet');
+};
+
+  const handleWithdrawFromMarketplace = async (bet) => {
+  const { error } = await withdrawFromMarketplace(bet.id);
+  if (error) {
+    alert('Error withdrawing from marketplace.');
+  } else {
+    await supabase
+      .from('bets')
+      .update({ approval_status: 'draft' })
+      .eq('id', bet.id);
+    refreshBets();
+  }
 };
 
 const handleSubmitToMarketplace = async () => {
@@ -4124,6 +4137,7 @@ const handleRejectBet = async (betId, reason) => {
     currentUserId={user?.id}
     onRecordOutcome={handleRecordOutcome}
     onAddToMarketplace={handleAddToMarketplaceFromContributors}
+    onWithdrawFromMarketplace={handleWithdrawFromMarketplace}
     markStarted={markStarted}
     markCompleted={markCompleted}
     setScreen={setScreen}
