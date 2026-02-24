@@ -23,7 +23,7 @@ import CompanyDashboard from './components/CompanyDashboard';
 // CHZCLOTH Free - Where Bets Get Smarter
 // ============================================
 
-onst StrategicAlignmentIcon = ({ alignment }) => {
+const StrategicAlignmentIcon = ({ alignment }) => {
   const n = alignment?.toLowerCase();
 
   if (n === 'inner' || n === 'inner_ring' || n === 'inner ring') {
