@@ -127,7 +127,9 @@ export function useBets(orgId, orgMode) {
           rejectedAt: bet.rejected_at,
           rejectedBy: bet.rejected_by,
           ideaId: bet.idea_id,
-          structuredBy: bet.structured_by
+          structuredBy: bet.structured_by,
+          goalId: bet.goal_id,
+          selectedKpi: bet.selected_kpi
         }
       })
 
@@ -219,7 +221,9 @@ export function useBets(orgId, orgMode) {
           structured_by: ideaId ? user.id : null,
           document_provided: betData.documentProvided || false,
           document_name: betData.documentName || null,
-          document_type: betData.documentType || null
+          document_type: betData.documentType || null,
+          goal_id: betData.goalId || null,
+          selected_kpi: betData.selectedKPI || null
         })
         .select()
         .single()
@@ -286,6 +290,8 @@ export function useBets(orgId, orgMode) {
         approvalStatus: data.approval_status,
         ideaId: data.idea_id,
         structuredBy: data.structured_by,
+        goalId: betData.goalId || null,
+        selectedKpi: betData.selectedKPI || null,
         // AI enhancement tracking
         aiEnhanced: betData.aiEnhanced || false,
         originalHypothesis: betData.originalHypothesis
