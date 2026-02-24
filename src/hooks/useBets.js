@@ -124,6 +124,8 @@ export function useBets(orgId, orgMode) {
           approvalStatus: bet.approval_status,
           rejectionReason: bet.rejection_reason,
           approvedAt: bet.approved_at,
+          startedAt: bet.started_at,
+          completedAt: bet.completed_at,
           approvedBy: bet.approved_by,
           rejectedAt: bet.rejected_at,
           rejectedBy: bet.rejected_by,
@@ -440,6 +442,28 @@ export function useBets(orgId, orgMode) {
     }
   }
 
+  const markStarted = async (betId) => {
+  const { error } = await supabase
+    .from('bets')
+    .update({ started_at: new Date().toISOString() })
+    .eq('id', betId)
+  if (!error) setBets(prev => prev.map(b => 
+    b.id === betId ? { ...b, startedAt: new Date().toISOString() } : b
+  ))
+  return { error }
+}
+
+const markCompleted = async (betId) => {
+  const { error } = await supabase
+    .from('bets')
+    .update({ completed_at: new Date().toISOString() })
+    .eq('id', betId)
+  if (!error) setBets(prev => prev.map(b => 
+    b.id === betId ? { ...b, completedAt: new Date().toISOString() } : b
+  ))
+  return { error }
+}
+
   const rejectBet = async (betId, reason) => {
     if (!user) return { error: { message: 'Not authenticated' } }
 
@@ -553,6 +577,8 @@ export function useBets(orgId, orgMode) {
     getStats,
     scoreBet,
     approveBet,
-    rejectBet
+    rejectBet,
+    markStarted,
+markCompleted
   }
 }
