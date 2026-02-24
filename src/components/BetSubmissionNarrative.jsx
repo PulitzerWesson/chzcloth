@@ -10,7 +10,7 @@ export default function BetSubmissionNarrative({ onComplete, currentOrg }) {
   const [goalContext, setGoalContext] = useState('');
   const [companyGoals, setCompanyGoals] = useState([]);
   const [selectedGoalType, setSelectedGoalType] = useState('');
-  const [showCustomInput, setShowCustomInput] = useState(false);
+  const [selectedGoalId, setSelectedGoalId] = useState(null);
   const [selectedKPI, setSelectedKPI] = useState(null);
   const [narrative, setNarrative] = useState('');
   const [story, setStory] = useState({
@@ -49,20 +49,18 @@ export default function BetSubmissionNarrative({ onComplete, currentOrg }) {
   const handleGoalSelection = (e) => {
     const value = e.target.value;
     setSelectedGoalType(value);
-    setSelectedKPI(null); // Reset KPI when goal changes
+    setSelectedKPI(null);
     
-    if (value === 'custom') {
-      setShowCustomInput(true);
+    if (value === 'unaligned' || value === '') {
+      setSelectedGoalId(null);
       setGoalContext('');
     } else {
-      setShowCustomInput(false);
-      
-      // Parse selection (e.g., "company-0")
       const [type, indexStr] = value.split('-');
       const index = parseInt(indexStr);
       
       if (type === 'company' && companyGoals[index]) {
         setGoalContext(companyGoals[index].title);
+        setSelectedGoalId(companyGoals[index].id);
       }
     }
   };
@@ -157,13 +155,13 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
       isOwnIdea: true,
       betType: 'improve',
       goalContext: hasLeadershipGoal ? leadershipGoal : goalContext,
+      goalId: selectedGoalId,
       selectedKPI: selectedKPI,
       goalAlignment: aiReview.goalAlignment,
       documentProvided: !!uploadedFile,
       documentName: uploadedFile?.name || null,
       documentType: uploadedFile?.type || null,
       change: extracted.change || '',
-      baseline: extracted.baseline || '',
       magnitude: extracted.magnitude || '',
       mechanism: extracted.mechanism || '',
       evidenceType: 'tested',
@@ -171,7 +169,6 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
       cheaperTest: ''
     };
 
-    console.log('Bet data:', betData);
     onComplete(betData);
   };
 
@@ -207,7 +204,11 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
   };
 
   const canSubmit = () => {
-    if (!hasLeadershipGoal && goalContext.length < 10) return false;
+    // If leadership goal is set, skip goal selection requirement
+    if (!hasLeadershipGoal) {
+      // Must have made a selection (either a goal or explicitly unaligned)
+      if (!selectedGoalType) return false;
+    }
     const hasNarrative = narrative.length >= 100;
     const hasDocument = !!uploadedFile;
     if (!hasNarrative && !hasDocument) return false;
@@ -284,15 +285,15 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
                 >
                   <option value="">Select a goal...</option>
                   {companyGoals.map((goal, idx) => (
-                    <option key={idx} value={`company-${idx}`}>
-                      P{idx + 1}: {goal.title}
+                    <option key={goal.id} value={`company-${idx}`}>
+                      P{goal.priority}: {goal.title}
                     </option>
                   ))}
-                  <option value="custom">Custom / Other</option>
+                  <option value="unaligned">Not aligned to a current goal</option>
                 </select>
                 
-                {/* KPI Selection */}
-                {selectedGoalType && selectedGoalType !== 'custom' && selectedGoalType !== '' && (
+                {/* KPI Selection — only when a real goal is selected */}
+                {selectedGoalType && selectedGoalType !== 'unaligned' && selectedGoalType !== '' && (
                   <div style={{ marginTop: 16 }}>
                     <label style={{ 
                       display: 'block', 
@@ -336,10 +337,7 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
                                   value={kpiIdx}
                                   checked={selectedKPI?.index === kpiIdx}
                                   onChange={() => setSelectedKPI({ index: kpiIdx, kpi })}
-                                  style={{
-                                    marginTop: 4,
-                                    accentColor: '#2dd4bf'
-                                  }}
+                                  style={{ marginTop: 4, accentColor: '#2dd4bf' }}
                                 />
                                 <div style={{ flex: 1 }}>
                                   <div style={{ color: '#f1f5f9', fontWeight: 500, marginBottom: 4 }}>
@@ -352,16 +350,14 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
                               </label>
                             ))}
                             
-                            <label 
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 12,
-                                padding: '12px 0',
-                                cursor: 'pointer',
-                                borderTop: kpis.length > 0 ? '1px solid rgba(255,255,255,0.05)' : 'none'
-                              }}
-                            >
+                            <label style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 12,
+                              padding: '12px 0',
+                              cursor: 'pointer',
+                              borderTop: kpis.length > 0 ? '1px solid rgba(255,255,255,0.05)' : 'none'
+                            }}>
                               <input
                                 type="radio"
                                 name="kpi"
@@ -373,15 +369,13 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
                               <span style={{ color: '#94a3b8' }}>Multiple KPIs (explain in bet description)</span>
                             </label>
                             
-                            <label 
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 12,
-                                padding: '12px 0',
-                                cursor: 'pointer'
-                              }}
-                            >
+                            <label style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 12,
+                              padding: '12px 0',
+                              cursor: 'pointer'
+                            }}>
                               <input
                                 type="radio"
                                 name="kpi"
@@ -397,17 +391,6 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
                       })()}
                     </div>
                   </div>
-                )}
-                
-                {showCustomInput && (
-                  <input
-                    type="text"
-                    value={goalContext}
-                    onChange={e => setGoalContext(e.target.value)}
-                    placeholder="Enter your custom goal..."
-                    className="goal-input"
-                    style={{ marginTop: '12px' }}
-                  />
                 )}
               </>
             ) : (
