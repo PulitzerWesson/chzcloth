@@ -3005,314 +3005,299 @@ function RecordOutcome({ bet, onComplete, onCancel }) {
   );
 }
 
-function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEditMode, onAddOrg, onNewBet, email, onRecordOutcome, setScreen }) {
+function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEditMode, onAddOrg, onNewBet, email, currentUserId, onRecordOutcome, onAddToMarketplace, markStarted, markCompleted, setScreen }) {
   const safeBets = bets || [];
   const [expandedBets, setExpandedBets] = useState({});
-  
-  const completedBets = safeBets.filter(b => b.outcome || b.status);
-  const activeBets = safeBets.filter(b => !b.outcome && !b.status && !b.isPastBet);
-  
+
+  // Split bets into yours vs sponsored
+  const yourBets = safeBets.filter(b => b.userId === currentUserId || b.user_id === currentUserId);
+  const sponsoredBets = safeBets.filter(b => 
+    b.sponsoredBy === currentUserId && 
+    (b.userId !== currentUserId && b.user_id !== currentUserId)
+  );
+
+  // Stats
   const betsWithOutcomes = safeBets.filter(b => ['succeeded', 'partial', 'failed'].includes(b.outcome) || ['succeeded', 'partial', 'failed'].includes(b.status));
   const ownIdeas = betsWithOutcomes.filter(b => b.isOwnIdea !== false);
   const othersIdeas = betsWithOutcomes.filter(b => b.isOwnIdea === false);
-  
   const getOutcome = (b) => b.status || b.outcome;
   const isSuccess = (b) => ['succeeded', 'partial'].includes(getOutcome(b));
-  
-  const totalAccuracy = betsWithOutcomes.length > 0
-    ? Math.round((betsWithOutcomes.filter(isSuccess).length / betsWithOutcomes.length) * 100)
-    : null;
-  
+
+  const totalCompleted = betsWithOutcomes.length;
   const ownAccuracy = ownIdeas.length >= 2
     ? Math.round((ownIdeas.filter(isSuccess).length / ownIdeas.length) * 100)
     : null;
-    
   const othersAccuracy = othersIdeas.length >= 2
     ? Math.round((othersIdeas.filter(isSuccess).length / othersIdeas.length) * 100)
     : null;
-  
-const betsWithScores = safeBets.filter(b => b.approachScore != null);
-const avgScore = betsWithScores.length > 0
-  ? Math.round(betsWithScores.reduce((sum, b) => sum + (b.approachScore + b.potentialScore + b.fitScore) / 3, 0) / betsWithScores.length)
-  : null;
-    
-  return (
-        <>
 
-        
+  const leverColors = {
+    Revenue:     { bg: 'rgba(34,197,94,0.15)',   border: 'rgba(34,197,94,0.3)',   text: '#22c55e' },
+    Retention:   { bg: 'rgba(45,212,191,0.15)',  border: 'rgba(45,212,191,0.3)',  text: '#2dd4bf' },
+    Acquisition: { bg: 'rgba(251,191,36,0.15)',  border: 'rgba(251,191,36,0.3)',  text: '#fbbf24' },
+    Efficiency:  { bg: 'rgba(125,211,252,0.15)', border: 'rgba(125,211,252,0.3)', text: '#7dd3fc' },
+    Platform:    { bg: 'rgba(167,139,250,0.15)', border: 'rgba(167,139,250,0.3)', text: '#a78bfa' },
+    Experience:  { bg: 'rgba(249,115,22,0.15)',  border: 'rgba(249,115,22,0.3)',  text: '#f97316' },
+    Risk:        { bg: 'rgba(239,68,68,0.15)',   border: 'rgba(239,68,68,0.3)',   text: '#ef4444' },
+  };
 
-{/* Stats cards - Full width 4-column */}
-<div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
-  <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
-    <div style={{ color: '#f1f5f9', fontSize: '2.5rem', fontWeight: 800 }}>{safeBets.length}</div>
-    <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Total Bets</div>
-  </div>
-  <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
-    <div style={{ color: '#22c55e', fontSize: '2.5rem', fontWeight: 800 }}>
-      {safeBets.filter(b => b.approvalStatus === 'approved').length}
-    </div>
-    <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Approved</div>
-  </div>
-  <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
-    <div style={{ color: '#fbbf24', fontSize: '2.5rem', fontWeight: 800 }}>
-      {safeBets.filter(b => b.approvalStatus === 'approved' && !b.outcome && !b.status).length}
-    </div>
-    <div style={{ color: '#64748b', fontSize: '0.85rem' }}>In Progress</div>
-  </div>
-  <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
-    <div style={{ color: '#2dd4bf', fontSize: '2.5rem', fontWeight: 800 }}>{completedBets.length}</div>
-    <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Completed</div>
-  </div>
-</div>
-        
-        {/* Ownership split stats */}
-        {(ownAccuracy !== null || othersAccuracy !== null) && (
-          <div style={{ 
-            background: 'rgba(255,255,255,0.02)', 
-            borderRadius: 12, 
-            padding: 20, 
-            marginBottom: 40,
-            border: '1px solid rgba(255,255,255,0.05)'
-          }}>
-            <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: 16, fontWeight: 600 }}>Accuracy by Idea Source</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                  <span style={{ color: '#2dd4bf', fontSize: '1.75rem', fontWeight: 700 }}>
-                    {ownAccuracy !== null ? `${ownAccuracy}%` : '—'}
-                  </span>
-                  <span style={{ color: '#64748b', fontSize: '0.8rem' }}>({ownIdeas.length} bets)</span>
+  const getStatusBadge = (bet) => {
+    const outcome = bet.status || bet.outcome;
+    if (['succeeded', 'partial', 'failed', 'inconclusive', 'never_shipped'].includes(outcome)) {
+      const colors = {
+        succeeded:    { bg: 'rgba(34,197,94,0.15)',   border: 'rgba(34,197,94,0.3)',   text: '#22c55e',  label: '✓ Succeeded' },
+        partial:      { bg: 'rgba(251,191,36,0.15)',  border: 'rgba(251,191,36,0.3)',  text: '#fbbf24',  label: '◐ Partial' },
+        failed:       { bg: 'rgba(239,68,68,0.15)',   border: 'rgba(239,68,68,0.3)',   text: '#ef4444',  label: '✗ Failed' },
+        inconclusive: { bg: 'rgba(100,116,139,0.15)', border: 'rgba(100,116,139,0.3)', text: '#94a3b8',  label: '? Inconclusive' },
+        never_shipped:{ bg: 'rgba(71,85,105,0.15)',   border: 'rgba(71,85,105,0.3)',   text: '#64748b',  label: '⊘ Never shipped' },
+      };
+      return colors[outcome] || { bg: 'rgba(100,116,139,0.15)', border: 'rgba(100,116,139,0.3)', text: '#94a3b8', label: outcome };
+    }
+    if (bet.completedAt) return { bg: 'rgba(45,212,191,0.15)', border: 'rgba(45,212,191,0.3)', text: '#2dd4bf', label: 'Completed' };
+    if (bet.startedAt)   return { bg: 'rgba(251,191,36,0.15)', border: 'rgba(251,191,36,0.3)', text: '#fbbf24', label: 'In Progress' };
+    if (bet.approvalStatus === 'approved') return { bg: 'rgba(167,139,250,0.15)', border: 'rgba(167,139,250,0.3)', text: '#a78bfa', label: 'Sponsored' };
+    if (bet.approvalStatus === 'pending_approval') return { bg: 'rgba(125,211,252,0.15)', border: 'rgba(125,211,252,0.3)', text: '#7dd3fc', label: 'In Marketplace' };
+    return { bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)', text: '#94a3b8', label: 'Draft' };
+  };
+
+  const sortBets = (bets) => {
+    const order = { 'In Progress': 0, 'Sponsored': 1, 'In Marketplace': 2, 'Draft': 3, 'Completed': 4, 'Succeeded': 5, 'Partial': 6, 'Failed': 7, 'Inconclusive': 8, 'Never shipped': 9 };
+    return [...bets].sort((a, b) => {
+      const aLabel = getStatusBadge(a).label;
+      const bLabel = getStatusBadge(b).label;
+      return (order[aLabel] ?? 99) - (order[bLabel] ?? 99);
+    });
+  };
+
+  const BetCard = ({ bet, showAddToMarketplace = false }) => {
+    const isExpanded = expandedBets[bet.id];
+    const isAIEnhanced = bet.aiEnhanced;
+    const aiScore = bet.aiPredictedScore;
+    const lever = bet.lever;
+    const isStarted = !!bet.startedAt;
+    const isCompleted = !!bet.completedAt;
+    const hasOutcome = ['succeeded', 'partial', 'failed', 'inconclusive', 'never_shipped'].includes(bet.status || bet.outcome);
+    const lc = lever && leverColors[lever]
+      ? leverColors[lever]
+      : { bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)', text: '#94a3b8' };
+    const statusBadge = getStatusBadge(bet);
+
+    return (
+      <div style={{
+        background: 'rgba(255,255,255,0.03)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: 12,
+        padding: 20,
+        display: 'flex',
+        gap: 16,
+        marginBottom: 12
+      }}>
+        {/* Strategic Alignment Icon */}
+        <div style={{ flexShrink: 0, paddingTop: 4 }}>
+          <StrategicAlignmentIcon alignment={bet.strategicAlignment} />
+        </div>
+
+        <div style={{ flex: 1 }}>
+          {/* Title + Scores row */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+            <div style={{ flex: 1, paddingRight: 16 }}>
+              {bet.product && (
+                <div style={{ color: '#fbbf24', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+                  {bet.product}
                 </div>
-                <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Your ideas</div>
-              </div>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                  <span style={{ color: '#fbbf24', fontSize: '1.75rem', fontWeight: 700 }}>
-                    {othersAccuracy !== null ? `${othersAccuracy}%` : '—'}
-                  </span>
-                  <span style={{ color: '#64748b', fontSize: '0.8rem' }}>({othersIdeas.length} bets)</span>
-                </div>
-                <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Others' ideas you tracked</div>
-              </div>
+              )}
+              <h3 style={{ color: '#f1f5f9', fontSize: '1.05rem', fontWeight: 600, margin: 0, lineHeight: 1.4 }}>
+                {bet.title || bet.hypothesis}
+              </h3>
             </div>
-            {ownAccuracy !== null && othersAccuracy !== null && ownAccuracy > othersAccuracy && (
-              <div style={{ marginTop: 16, padding: 12, background: 'rgba(45, 212, 191, 0.1)', borderRadius: 8 }}>
-                <span style={{ color: '#2dd4bf', fontSize: '0.85rem' }}>
-                  Your ideas succeed {ownAccuracy - othersAccuracy}% more often than ideas you execute for others.
-                </span>
-              </div>
-            )}
-          </div>
-        )}
 
-        {/* Active bets */}
-{activeBets.length > 0 && (
-  <div style={{ marginBottom: 40 }}>
-    <h2 style={{ color: '#f1f5f9', fontSize: '1.25rem', fontWeight: 600, marginBottom: 16 }}>
-      Active Bets ({activeBets.length})
-    </h2>
-        
-{activeBets.map((bet, i) => {
-  const hasAIScores = bet.approachScore != null;
-  return (
-    <div key={bet.id || i} style={{
-      background: 'rgba(255,255,255,0.03)',
-      border: '1px solid rgba(255,255,255,0.1)',
-      borderRadius: 12,
-      padding: 20,
-      marginBottom: 12
-    }}>
-      {/* MAIN ROW - Just hypothesis, approval, and scores */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        {/* Hypothesis */}
-              <div style={{ 
-                color: '#f1f5f9', 
-                lineHeight: 1.5, 
-                flex: 1, 
-                marginRight: 16,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8
-              }}>
-                {bet.hypothesis}
-              </div>
-        
-{/* Right side: Approval + Scores */}
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexShrink: 0 }}>
-          {/* Approval badge */}
-          <span style={{
-            fontSize: '0.75rem',
-            fontWeight: 600,
-            padding: '6px 12px',
-            borderRadius: 6,
-            color: bet.approvalStatus === 'approved' ? '#86efac' : '#fbbf24',
-            background: bet.approvalStatus === 'approved' ? 'rgba(134, 239, 172, 0.15)' : 'rgba(251, 191, 36, 0.15)',
-            border: bet.approvalStatus === 'approved' ? '1px solid rgba(134, 239, 172, 0.3)' : '1px solid rgba(251, 191, 36, 0.3)'
-          }}>
-            {bet.approvalStatus === 'approved' ? '✓ Approved' : 'Pending'}
-          </span>
-          
-          {/* Scores container */}
-          {hasAIScores && (
-            <div style={{ display: 'flex', gap: 0, alignItems: 'center' }}>
-              {/* CHZ Score */}
-              {bet.aiEnhanced && bet.aiPredictedScore && (
+            {/* Scores */}
+            <div style={{ display: 'flex', gap: 0, flexShrink: 0, alignItems: 'center' }}>
+              {isAIEnhanced && aiScore ? (
                 <div style={{ textAlign: 'center', paddingRight: 8 }}>
-                  <div style={{ fontSize: '0.7rem', color: '#2dd4bf', marginBottom: 2, fontWeight: 700, letterSpacing: '0.05em', textShadow: '0 0 10px rgba(45, 212, 191, 0.6)' }}>
-                    CHZ
+                  <div style={{ fontSize: '0.7rem', color: '#2dd4bf', marginBottom: 2, fontWeight: 700, letterSpacing: '0.05em', textShadow: '0 0 10px rgba(45,212,191,0.6)' }}>CHZ</div>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#2dd4bf', textShadow: '0 0 15px rgba(45,212,191,0.8)' }}>{aiScore}</div>
+                </div>
+              ) : null}
+              {bet.approachScore && (
+                <div style={{ display: 'flex', gap: 8, flexShrink: 0, paddingLeft: isAIEnhanced && aiScore ? 8 : 0, borderLeft: isAIEnhanced && aiScore ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: 2 }}>APR</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#2dd4bf' }}>{bet.approachScore}</div>
                   </div>
-                  <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#2dd4bf', textShadow: '0 0 15px rgba(45, 212, 191, 0.8)' }}>
-                    {bet.aiPredictedScore}
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: 2 }}>POT</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#fbbf24' }}>{bet.potentialScore}</div>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: 2 }}>FIT</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#7dd3fc' }}>{bet.fitScore}</div>
                   </div>
                 </div>
               )}
-              
-              {/* Dimension scores */}
-              <div style={{ 
-                display: 'flex', 
-                gap: 8,
-                paddingLeft: bet.aiEnhanced && bet.aiPredictedScore ? 8 : 0,
-                borderLeft: bet.aiEnhanced && bet.aiPredictedScore ? '1px solid rgba(255,255,255,0.1)' : 'none'
-              }}>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.65rem', color: '#64748b', marginBottom: 2 }}>APR</div>
-                  <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#2dd4bf' }}>{bet.approachScore}</div>
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.65rem', color: '#64748b', marginBottom: 2 }}>POT</div>
-                  <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#fbbf24' }}>{bet.potentialScore}</div>
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.65rem', color: '#64748b', marginBottom: 2 }}>FIT</div>
-                  <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#7dd3fc' }}>{bet.fitScore}</div>
-                </div>
-              </div>
+            </div>
+          </div>
+
+          {/* Summary */}
+          {bet.summary && (
+            <div style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.5, marginBottom: 12 }}>
+              {bet.summary}
             </div>
           )}
-        </div>
-      </div>
-      
-      {/* EXPANDABLE DETAILS */}
-      {hasAIScores && bet.scoringRationale && (
-        <>
-          <button
-            onClick={() => setExpandedBets(prev => ({ ...prev, [bet.id]: !prev[bet.id] }))}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#2dd4bf',
-              fontSize: '0.8rem',
-              cursor: 'pointer',
-              padding: '4px 0',
-              marginBottom: 8
-            }}
-          >
-            {expandedBets[bet.id] ? '▼ Hide details' : '▶ Show details'}
-          </button>
-          
-{expandedBets[bet.id] && (
-            <div style={{
-              background: 'rgba(0,0,0,0.2)',
-              borderRadius: 8,
-              padding: 16,
-              marginBottom: 12,
-              fontSize: '0.85rem',
-              lineHeight: 1.6
-            }}>
-              {/* BET DETAILS */}
+
+          {/* Meta row */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: '0.8rem', color: '#64748b', marginBottom: 16, flexWrap: 'wrap' }}>
+            {/* Status badge */}
+            <span style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 10px', background: statusBadge.bg, border: `1px solid ${statusBadge.border}`, borderRadius: 6, color: statusBadge.text, fontSize: '0.75rem', fontWeight: 600 }}>
+              {statusBadge.label}
+            </span>
+
+            {/* Lever badge */}
+            {lever && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 10px', background: lc.bg, border: `1px solid ${lc.border}`, borderRadius: 6, color: lc.text, fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {lever}
+              </span>
+            )}
+            <span>•</span>
+            <span>{new Date(bet.createdAt).toLocaleDateString()}</span>
+            {isStarted && (
+              <>
+                <span>•</span>
+                <span>Started {new Date(bet.startedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+              </>
+            )}
+            {isCompleted && (
+              <>
+                <span>•</span>
+                <span>Completed {new Date(bet.completedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+              </>
+            )}
+          </div>
+
+          {/* Actions row */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            {/* Show details */}
+            {(bet.scoringRationale || bet.hypothesis) && (
+              <button
+                onClick={() => setExpandedBets(prev => ({ ...prev, [bet.id]: !prev[bet.id] }))}
+                style={{ background: 'transparent', border: 'none', color: '#2dd4bf', fontSize: '0.8rem', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 4 }}
+              >
+                <span style={{ fontSize: '0.7rem' }}>{isExpanded ? '▼' : '▶'}</span>
+                {isExpanded ? 'Hide details' : 'Show details'}
+              </button>
+            )}
+
+            {/* Right side action buttons */}
+            <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
+              {/* Add to Marketplace — only for drafts */}
+              {showAddToMarketplace && bet.approvalStatus === 'draft' && (
+                <button
+                  onClick={() => onAddToMarketplace && onAddToMarketplace(bet)}
+                  style={{ padding: '7px 16px', background: 'rgba(125,211,252,0.1)', border: '1px solid rgba(125,211,252,0.3)', borderRadius: 8, color: '#7dd3fc', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}
+                >
+                  Add to Marketplace
+                </button>
+              )}
+
+              {/* Mark Started — approved, not yet started */}
+              {bet.approvalStatus === 'approved' && !isStarted && !isCompleted && !hasOutcome && (
+                <button
+                  onClick={() => markStarted && markStarted(bet.id)}
+                  style={{ padding: '7px 16px', background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: 8, color: '#fbbf24', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}
+                >
+                  Mark Started
+                </button>
+              )}
+
+              {/* Mark Completed — started, not yet completed */}
+              {isStarted && !isCompleted && !hasOutcome && (
+                <button
+                  onClick={() => markCompleted && markCompleted(bet.id)}
+                  style={{ padding: '7px 16px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 8, color: '#22c55e', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}
+                >
+                  Mark Completed
+                </button>
+              )}
+
+              {/* Record Outcome — completed, no outcome yet */}
+              {isCompleted && !hasOutcome && (
+                <button
+                  onClick={() => onRecordOutcome && onRecordOutcome(bet)}
+                  style={{ padding: '7px 16px', background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)', border: 'none', borderRadius: 8, color: '#0a0f1a', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}
+                >
+                  Record Outcome →
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Expandable details */}
+          {isExpanded && (
+            <div style={{ marginTop: 12, padding: 16, background: 'rgba(0,0,0,0.2)', borderRadius: 8, fontSize: '0.85rem', lineHeight: 1.6 }}>
               <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                <div style={{ 
-                  color: '#94a3b8', 
-                  fontSize: '0.75rem', 
-                  fontWeight: 600, 
-                  marginBottom: 12, 
-                  textTransform: 'uppercase', 
-                  letterSpacing: '0.05em'
-                }}>
+                <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   BET DETAILS
                 </div>
-                
-                {/* Source - Contributors specific */}
-                <div style={{ marginBottom: 12 }}>
-                  <span style={{ color: '#64748b' }}>Source: </span>
-                  <span style={{ color: '#94a3b8' }}>
-                    {bet.isOwnIdea !== false ? 'Your idea' : `${bet.ideaSource || "Other"}`}
-                  </span>
-                </div>
-                
-                {/* 2-column grid */}
+
+                {bet.hypothesis && (
+                  <div style={{ marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ color: '#64748b', marginBottom: 6, fontSize: '0.85rem' }}>Full Hypothesis:</div>
+                    <div style={{ color: '#f1f5f9', lineHeight: 1.6, fontSize: '0.95rem' }}>{bet.hypothesis}</div>
+                  </div>
+                )}
+
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-                  <div>
-                    <span style={{ color: '#64748b' }}>Metric: </span>
-                    <span style={{ color: '#2dd4bf' }}>{bet.metric}</span>
-                  </div>
-                  <div>
-                    <span style={{ color: '#64748b' }}>Prediction: </span>
-                    <span style={{ color: '#94a3b8' }}>{bet.prediction}</span>
-                  </div>
-                  {bet.baseline && (
-                    <div>
-                      <span style={{ color: '#64748b' }}>Baseline: </span>
-                      <span style={{ color: '#94a3b8' }}>{bet.baseline}</span>
-                    </div>
-                  )}
-                  {bet.timeframe && (
-                    <div>
-                      <span style={{ color: '#64748b' }}>Timeframe: </span>
-                      <span style={{ color: '#94a3b8' }}>{bet.timeframe} days</span>
-                    </div>
-                  )}
-                  {bet.confidence && (
-                    <div>
-                      <span style={{ color: '#64748b' }}>Confidence: </span>
-                      <span style={{ color: '#fbbf24' }}>{bet.confidence}%</span>
-                    </div>
-                  )}
+                  <div><span style={{ color: '#64748b' }}>Metric: </span><span style={{ color: '#2dd4bf' }}>{bet.metric}</span></div>
+                  <div><span style={{ color: '#64748b' }}>Prediction: </span><span style={{ color: '#94a3b8' }}>{bet.prediction}</span></div>
+                  {bet.baseline && <div><span style={{ color: '#64748b' }}>Baseline: </span><span style={{ color: '#94a3b8' }}>{bet.baseline}</span></div>}
+                  {bet.timeframe && <div><span style={{ color: '#64748b' }}>Timeframe: </span><span style={{ color: '#94a3b8' }}>{bet.timeframe} days</span></div>}
+                  {bet.confidence && <div><span style={{ color: '#64748b' }}>Confidence: </span><span style={{ color: '#fbbf24' }}>{bet.confidence}%</span></div>}
                   {bet.strategicAlignment && (
                     <div>
                       <span style={{ color: '#64748b' }}>Strategic Alignment: </span>
                       <span style={{ color: '#94a3b8' }}>
-                        {bet.strategicAlignment === 'bullseye' ? 'Bullseye' : 
-                         bet.strategicAlignment === 'inner' ? 'Inner Ring' :
-                         bet.strategicAlignment === 'outer' ? 'Outer Ring' : 'Edge'}
+                        {bet.strategicAlignment === 'inner' ? 'Inner Ring' :
+                         bet.strategicAlignment === 'outer' ? 'Outer Ring' :
+                         bet.strategicAlignment === 'experimental' ? 'Experimental' : bet.strategicAlignment}
                       </span>
                     </div>
                   )}
-                  {bet.estimatedEffort && (
-                    <div>
-                      <span style={{ color: '#64748b' }}>Estimated Effort: </span>
-                      <span style={{ color: '#94a3b8' }}>{bet.estimatedEffort}</span>
-                    </div>
-                  )}
+                  {bet.estimatedEffort && <div><span style={{ color: '#64748b' }}>Estimated Effort: </span><span style={{ color: '#94a3b8' }}>{bet.estimatedEffort}</span></div>}
                 </div>
-                
-                {/* Assumptions - full width */}
+
                 {bet.assumptions && (
                   <div>
                     <div style={{ color: '#64748b', marginBottom: 4 }}>Assumptions:</div>
                     <div style={{ color: '#94a3b8' }}>{bet.assumptions}</div>
                   </div>
                 )}
+
+                {/* Outcome section if recorded */}
+                {hasOutcome && (
+                  <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                    {bet.actualResult && (
+                      <div style={{ marginBottom: 8 }}>
+                        <span style={{ color: '#64748b' }}>Result: </span>
+                        <span style={{ color: '#94a3b8' }}>{bet.actualResult}</span>
+                      </div>
+                    )}
+                    {bet.learned && (
+                      <div>
+                        <span style={{ color: '#64748b' }}>Learned: </span>
+                        <span style={{ color: '#94a3b8' }}>{bet.learned}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-              
-              {/* CHZCLOTH SCORING RATIONALE */}
+
+              {/* Scoring rationale */}
               {bet.scoringRationale && (
                 <div style={{ paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div style={{ 
-                    color: '#94a3b8', 
-                    fontSize: '0.75rem', 
-                    fontWeight: 600, 
-                    marginBottom: 12, 
-                    textTransform: 'uppercase', 
-                    letterSpacing: '0.05em',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6
-                  }}>
+                  <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: 6 }}>
                     CHZCLOTH SCORING RATIONALE
-                    {bet.aiEnhanced && <span style={{ color: '#2dd4bf', fontWeight: 700 }}>• ENHANCED</span>}
+                    {isAIEnhanced && <span style={{ color: '#2dd4bf', fontWeight: 700 }}>• ENHANCED</span>}
                   </div>
-                  
                   <div style={{ marginBottom: 8 }}>
                     <span style={{ color: '#2dd4bf', fontWeight: 600 }}>Approach:</span>
                     <span style={{ color: '#94a3b8', marginLeft: 8 }}>{bet.scoringRationale?.approach?.rationale}</span>
@@ -3329,130 +3314,106 @@ const avgScore = betsWithScores.length > 0
               )}
             </div>
           )}
-        </>
-      )}
-      
-{/* Record Outcome Button */}
-<div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-  <button
-    onClick={() => onRecordOutcome(bet)}
-    style={{
-      padding: '10px 24px',
-      background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
-      border: 'none',
-      borderRadius: 8,
-      color: '#0a0f1a',
-      fontSize: '0.9rem',
-      fontWeight: 600,
-      cursor: 'pointer'
-    }}
-  >
-    Record Outcome →
-  </button>
-</div>
-    </div>
-  );
-})}
+        </div>
+      </div>
+    );
+  };
 
-  </div>
-)}
-        
-        {/* Completed bets */}
-        {completedBets.length > 0 && (
-          <div>
-            <h2 style={{ color: '#f1f5f9', fontSize: '1.25rem', fontWeight: 600, marginBottom: 16 }}>
-              Completed Bets ({completedBets.length})
-            </h2>
-            {completedBets.map((bet, i) => {
-              const status = bet.status || bet.outcome;
-              const statusColors = {
-                succeeded: '#22c55e',
-                partial: '#fbbf24', 
-                failed: '#f87171',
-                inconclusive: '#64748b',
-                never_shipped: '#475569',
-                unknown: '#64748b'
-              };
-              const statusLabels = {
-                succeeded: '✓ Succeeded',
-                partial: '◐ Partial',
-                failed: '✗ Failed',
-                inconclusive: '? Inconclusive',
-                never_shipped: '⊘ Never shipped',
-                unknown: '? Unknown'
-              };
-              return (
-                <div key={bet.id || i} style={{
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 12,
-                  padding: 20,
-                  marginBottom: 12
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                          <div style={{ 
-                            color: '#cbd5e1', 
-                            flex: 1,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 8
-                          }}>
-                            {bet.hypothesis || bet.description}
-                          </div>
-                                              
-                    
-                    <span style={{ 
-                      padding: '4px 12px',
-                      borderRadius: 20,
-                      fontSize: '0.8rem',
-                      fontWeight: 600,
-                      background: `${statusColors[status]}22`,
-                      color: statusColors[status],
-                      flexShrink: 0,
-                      marginLeft: 12
-                    }}>
-                      {statusLabels[status] || status}
-                    </span>
-                  </div>
-                  {bet.learned && (
-                    <div style={{ 
-                      marginTop: 12, 
-                      paddingTop: 12, 
-                      borderTop: '1px solid rgba(255,255,255,0.05)',
-                      fontSize: '0.85rem'
-                    }}>
-                      <span style={{ color: '#64748b' }}>Learned: </span>
-                      <span style={{ color: '#94a3b8' }}>{bet.learned}</span>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+  return (
+    <>
+      {/* Stats row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+        <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
+          <div style={{ color: '#f1f5f9', fontSize: '2.5rem', fontWeight: 800 }}>{safeBets.length}</div>
+          <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Total Bets</div>
+        </div>
+        <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
+          <div style={{ color: '#22c55e', fontSize: '2.5rem', fontWeight: 800 }}>
+            {safeBets.filter(b => b.approvalStatus === 'approved').length}
           </div>
-        )}
-        
-        {safeBets.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-            <div style={{ color: '#64748b', marginBottom: 24 }}>No bets yet. Submit your first one!</div>
-            <button
-              onClick={onNewBet}
-              style={{
-                padding: '14px 32px',
-                background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
-                border: 'none',
-                borderRadius: 10,
-                color: '#0a0f1a',
-                fontWeight: 600,
-                cursor: 'pointer'
-              }}
-            >
-              Submit a Bet →
-            </button>
+          <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Sponsored</div>
+        </div>
+        <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
+          <div style={{ color: '#fbbf24', fontSize: '2.5rem', fontWeight: 800 }}>
+            {safeBets.filter(b => b.startedAt && !b.completedAt).length}
           </div>
-        )}
-  </>
-);
+          <div style={{ color: '#64748b', fontSize: '0.85rem' }}>In Progress</div>
+        </div>
+        <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
+          <div style={{ color: '#2dd4bf', fontSize: '2.5rem', fontWeight: 800 }}>{totalCompleted}</div>
+          <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Completed</div>
+        </div>
+      </div>
+
+      {/* Accuracy split */}
+      {(ownAccuracy !== null || othersAccuracy !== null) && (
+        <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 12, padding: 20, marginBottom: 40, border: '1px solid rgba(255,255,255,0.05)' }}>
+          <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: 16, fontWeight: 600 }}>Accuracy by Idea Source</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                <span style={{ color: '#2dd4bf', fontSize: '1.75rem', fontWeight: 700 }}>{ownAccuracy !== null ? `${ownAccuracy}%` : '—'}</span>
+                <span style={{ color: '#64748b', fontSize: '0.8rem' }}>({ownIdeas.length} bets)</span>
+              </div>
+              <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Your ideas</div>
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                <span style={{ color: '#fbbf24', fontSize: '1.75rem', fontWeight: 700 }}>{othersAccuracy !== null ? `${othersAccuracy}%` : '—'}</span>
+                <span style={{ color: '#64748b', fontSize: '0.8rem' }}>({othersIdeas.length} bets)</span>
+              </div>
+              <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Others' ideas you tracked</div>
+            </div>
+          </div>
+          {ownAccuracy !== null && othersAccuracy !== null && ownAccuracy > othersAccuracy && (
+            <div style={{ marginTop: 16, padding: 12, background: 'rgba(45,212,191,0.1)', borderRadius: 8 }}>
+              <span style={{ color: '#2dd4bf', fontSize: '0.85rem' }}>
+                Your ideas succeed {ownAccuracy - othersAccuracy}% more often than ideas you execute for others.
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Your Bets */}
+      {yourBets.length > 0 && (
+        <div style={{ marginBottom: 40 }}>
+          <h2 style={{ color: '#f1f5f9', fontSize: '1.25rem', fontWeight: 600, marginBottom: 16 }}>
+            Your Bets ({yourBets.length})
+          </h2>
+          {sortBets(yourBets).map(bet => (
+            <BetCard key={bet.id} bet={bet} showAddToMarketplace={true} />
+          ))}
+        </div>
+      )}
+
+      {/* Sponsored by You */}
+      {sponsoredBets.length > 0 && (
+        <div style={{ marginBottom: 40 }}>
+          <h2 style={{ color: '#f1f5f9', fontSize: '1.25rem', fontWeight: 600, marginBottom: 16 }}>
+            Sponsored by You ({sponsoredBets.length})
+          </h2>
+          {sortBets(sponsoredBets).map(bet => (
+            <BetCard key={bet.id} bet={bet} showAddToMarketplace={false} />
+          ))}
+        </div>
+      )}
+
+      {safeBets.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+          <div style={{ color: '#64748b', marginBottom: 24 }}>No bets yet. Submit your first one!</div>
+          <button
+            onClick={onNewBet}
+            style={{ padding: '14px 32px', background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)', border: 'none', borderRadius: 10, color: '#0a0f1a', fontWeight: 600, cursor: 'pointer' }}
+          >
+            Submit a Bet →
+          </button>
+        </div>
+      )}
+    </>
+  );
 }
+
 
 // ============================================
 // MAIN APP
