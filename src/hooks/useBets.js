@@ -444,23 +444,25 @@ export function useBets(orgId, orgMode) {
     }
   }
 
-  const markStarted = async (betId) => {
+const markStarted = async (betId) => {
+  if (!user) return { error: { message: 'Not authenticated' } }
   const { error } = await supabase
     .from('bets')
     .update({ started_at: new Date().toISOString() })
     .eq('id', betId)
-  if (!error) setBets(prev => prev.map(b => 
+  if (!error) setBets(prev => prev.map(b =>
     b.id === betId ? { ...b, startedAt: new Date().toISOString() } : b
   ))
   return { error }
 }
 
 const markCompleted = async (betId) => {
+  if (!user) return { error: { message: 'Not authenticated' } }
   const { error } = await supabase
     .from('bets')
     .update({ completed_at: new Date().toISOString() })
     .eq('id', betId)
-  if (!error) setBets(prev => prev.map(b => 
+  if (!error) setBets(prev => prev.map(b =>
     b.id === betId ? { ...b, completedAt: new Date().toISOString() } : b
   ))
   return { error }
