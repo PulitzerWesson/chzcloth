@@ -3034,7 +3034,7 @@ const getStatusBadge = (bet) => {
   return { bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)', text: '#94a3b8', label: 'Draft' };
 };
 
-function BetCard({ bet, showAddToMarketplace, expandedBets, setExpandedBets, onRecordOutcome, onAddToMarketplace, markStarted, markCompleted }) {
+function BetCard({ bet, showAddToMarketplace, expandedBets, setExpandedBets, onRecordOutcome, onAddToMarketplace, onWithdrawFromMarketplace, markStarted, markCompleted }) {
   const isExpanded = expandedBets[bet.id];
   const isAIEnhanced = bet.aiEnhanced;
   const aiScore = bet.aiPredictedScore;
@@ -3143,6 +3143,7 @@ function BetCard({ bet, showAddToMarketplace, expandedBets, setExpandedBets, onR
           )}
 
           <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
+            {/* Draft — add to marketplace */}
             {showAddToMarketplace && bet.approvalStatus === 'draft' && (
               <button
                 onClick={() => onAddToMarketplace && onAddToMarketplace(bet)}
@@ -3151,6 +3152,18 @@ function BetCard({ bet, showAddToMarketplace, expandedBets, setExpandedBets, onR
                 Add to Marketplace
               </button>
             )}
+
+            {/* In Marketplace — withdraw */}
+            {showAddToMarketplace && bet.approvalStatus === 'pending_approval' && (
+              <button
+                onClick={() => onWithdrawFromMarketplace && onWithdrawFromMarketplace(bet)}
+                style={{ padding: '7px 16px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, color: '#ef4444', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}
+              >
+                Withdraw
+              </button>
+            )}
+
+            {/* Sponsored — mark started */}
             {bet.approvalStatus === 'approved' && !isStarted && !isCompleted && !hasOutcome && (
               <button
                 onClick={() => markStarted && markStarted(bet.id)}
@@ -3159,6 +3172,8 @@ function BetCard({ bet, showAddToMarketplace, expandedBets, setExpandedBets, onR
                 Mark Started
               </button>
             )}
+
+            {/* Started — mark completed */}
             {isStarted && !isCompleted && !hasOutcome && (
               <button
                 onClick={() => markCompleted && markCompleted(bet.id)}
@@ -3167,6 +3182,8 @@ function BetCard({ bet, showAddToMarketplace, expandedBets, setExpandedBets, onR
                 Mark Completed
               </button>
             )}
+
+            {/* Completed — record outcome */}
             {isCompleted && !hasOutcome && (
               <button
                 onClick={() => onRecordOutcome && onRecordOutcome(bet)}
@@ -3254,7 +3271,7 @@ function BetCard({ bet, showAddToMarketplace, expandedBets, setExpandedBets, onR
   );
 }
 
-function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEditMode, onAddOrg, onNewBet, email, currentUserId, onRecordOutcome, onAddToMarketplace, markStarted, markCompleted, setScreen }) {
+function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEditMode, onAddOrg, onNewBet, email, currentUserId, onRecordOutcome, onAddToMarketplace, onWithdrawFromMarketplace, markStarted, markCompleted, setScreen }) {
   const safeBets = bets || [];
   const [expandedBets, setExpandedBets] = useState({});
 
@@ -3283,7 +3300,7 @@ function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEd
     });
   };
 
-  const cardProps = { expandedBets, setExpandedBets, onRecordOutcome, onAddToMarketplace, markStarted, markCompleted };
+  const cardProps = { expandedBets, setExpandedBets, onRecordOutcome, onAddToMarketplace, onWithdrawFromMarketplace, markStarted, markCompleted };
 
   return (
     <>
