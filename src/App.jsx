@@ -4126,11 +4126,28 @@ const handleRejectBet = async (betId, reason) => {
     ) : (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {bets?.filter(b => b.approvalStatus === 'approved').map(bet => {
-        console.log('PRIORITY BET:', bet);
           const isExpanded = expandedPriorityBet === bet.id;
           const isAIEnhanced = bet.aiEnhanced;
           const aiScore = bet.aiPredictedScore;
-          
+          const lever = bet.lever;
+
+          // Derive work status from timestamps
+          const isStarted = !!bet.startedAt;
+          const isCompleted = !!bet.completedAt;
+
+          const leverColors = {
+            Revenue:     { bg: 'rgba(34,197,94,0.15)',   border: 'rgba(34,197,94,0.3)',   text: '#22c55e' },
+            Retention:   { bg: 'rgba(45,212,191,0.15)',  border: 'rgba(45,212,191,0.3)',  text: '#2dd4bf' },
+            Acquisition: { bg: 'rgba(251,191,36,0.15)',  border: 'rgba(251,191,36,0.3)',  text: '#fbbf24' },
+            Efficiency:  { bg: 'rgba(125,211,252,0.15)', border: 'rgba(125,211,252,0.3)', text: '#7dd3fc' },
+            Platform:    { bg: 'rgba(167,139,250,0.15)', border: 'rgba(167,139,250,0.3)', text: '#a78bfa' },
+            Experience:  { bg: 'rgba(249,115,22,0.15)',  border: 'rgba(249,115,22,0.3)',  text: '#f97316' },
+            Risk:        { bg: 'rgba(239,68,68,0.15)',   border: 'rgba(239,68,68,0.3)',   text: '#ef4444' },
+          };
+          const lc = lever && leverColors[lever]
+            ? leverColors[lever]
+            : { bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)', text: '#94a3b8' };
+
           return (
             <div
               key={bet.id}
@@ -4138,230 +4155,287 @@ const handleRejectBet = async (betId, reason) => {
                 background: 'rgba(255,255,255,0.03)',
                 border: '1px solid rgba(255,255,255,0.1)',
                 borderRadius: 12,
-                padding: 20
+                padding: 20,
+                display: 'flex',
+                gap: 16
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                <div style={{ flex: 1, paddingRight: 16 }}>
-                  <div style={{ 
-                    color: '#f1f5f9', 
-                    fontWeight: 600, 
-                    fontSize: '1.05rem', 
-                    lineHeight: 1.4,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6
+              {/* Left col — status indicator */}
+              <div style={{ flexShrink: 0, paddingTop: 4 }}>
+                {isCompleted ? (
+                  <div style={{
+                    width: 20, height: 20, borderRadius: '50%',
+                    background: 'rgba(34,197,94,0.2)',
+                    border: '2px solid #22c55e',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
                   }}>
-                    {bet.hypothesis}
+                    <span style={{ color: '#22c55e', fontSize: '0.65rem', fontWeight: 700 }}>✓</span>
+                  </div>
+                ) : isStarted ? (
+                  <div style={{
+                    width: 20, height: 20, borderRadius: '50%',
+                    background: 'rgba(251,191,36,0.2)',
+                    border: '2px solid #fbbf24'
+                  }} />
+                ) : (
+                  <div style={{
+                    width: 20, height: 20, borderRadius: '50%',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '2px solid rgba(255,255,255,0.15)'
+                  }} />
+                )}
+              </div>
+
+              {/* Card content */}
+              <div style={{ flex: 1 }}>
+                {/* Title + Scores row */}
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  marginBottom: 8
+                }}>
+                  <div style={{ flex: 1, paddingRight: 16 }}>
+                    {/* Product label */}
+                    {bet.product && (
+                      <div style={{
+                        color: '#fbbf24',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        marginBottom: 6
+                      }}>
+                        {bet.product}
+                      </div>
+                    )}
+                    <h3 style={{
+                      color: '#f1f5f9',
+                      fontSize: '1.05rem',
+                      fontWeight: 600,
+                      margin: 0,
+                      lineHeight: 1.4
+                    }}>
+                      {bet.title || bet.hypothesis}
+                    </h3>
+                  </div>
+
+                  {/* Scores */}
+                  <div style={{ display: 'flex', gap: 0, flexShrink: 0, alignItems: 'center' }}>
+                    {isAIEnhanced && aiScore ? (
+                      <div style={{ textAlign: 'center', paddingRight: 8 }}>
+                        <div style={{ fontSize: '0.7rem', color: '#2dd4bf', marginBottom: 2, fontWeight: 700, letterSpacing: '0.05em', textShadow: '0 0 10px rgba(45,212,191,0.6)' }}>
+                          CHZ
+                        </div>
+                        <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#2dd4bf', textShadow: '0 0 15px rgba(45,212,191,0.8)' }}>
+                          {aiScore}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {bet.approachScore && (
+                      <div style={{
+                        display: 'flex', gap: 8, flexShrink: 0,
+                        paddingLeft: isAIEnhanced && aiScore ? 8 : 0,
+                        borderLeft: isAIEnhanced && aiScore ? '1px solid rgba(255,255,255,0.1)' : 'none'
+                      }}>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: 2 }}>APR</div>
+                          <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#2dd4bf' }}>{bet.approachScore}</div>
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: 2 }}>POT</div>
+                          <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#fbbf24' }}>{bet.potentialScore}</div>
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: 2 }}>FIT</div>
+                          <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#7dd3fc' }}>{bet.fitScore}</div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-                
-                {/* Scores section - CHZCLOTH score first if enhanced, then dimensions */}
-                <div style={{ 
-                  display: 'flex', 
-                  gap: 0, 
-                  flexShrink: 0,
-                  alignItems: 'center'
-                }}>
-{/* CHZCLOTH Score - No box, just glow, symmetric spacing */}
-{isAIEnhanced && aiScore ? (
-  <div style={{ 
-    textAlign: 'center',
-    paddingRight: 8  // no minWidth!
-  }}>
-    <div style={{ 
-      fontSize: '0.7rem', 
-      color: '#2dd4bf', 
-      marginBottom: 2,
-      fontWeight: 700,
-      letterSpacing: '0.05em',
-      textShadow: '0 0 10px rgba(45, 212, 191, 0.6)'
-    }}>
-      CHZ
-    </div>
-    <div style={{ 
-      fontSize: '1.2rem', 
-      fontWeight: 600, 
-      color: '#2dd4bf',
-      textShadow: '0 0 15px rgba(45, 212, 191, 0.8)'
-    }}>
-      {aiScore}
-    </div>
-  </div>
-) : null}
-                  
-                  {/* Compact dimension scores */}
-                  {bet.approachScore && (
-                    <div style={{ 
-                      display: 'flex', 
-                      gap: 8, 
-                      flexShrink: 0,
-                      paddingLeft: isAIEnhanced && aiScore ? 8 : 0,
-                      borderLeft: isAIEnhanced && aiScore ? '1px solid rgba(255,255,255,0.1)' : 'none'
+
+                {/* Summary */}
+                {bet.summary && (
+                  <div style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.5, marginBottom: 12 }}>
+                    {bet.summary}
+                  </div>
+                )}
+
+                {/* Meta row — lever badge, sponsor, date */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: '0.8rem', color: '#64748b', marginBottom: 16, flexWrap: 'wrap' }}>
+                  {lever && (
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center',
+                      padding: '4px 10px',
+                      background: lc.bg, border: `1px solid ${lc.border}`,
+                      borderRadius: 6, color: lc.text,
+                      fontSize: '0.75rem', fontWeight: 600,
+                      textTransform: 'uppercase', letterSpacing: '0.05em'
                     }}>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '0.65rem', color: '#64748b', marginBottom: 2 }}>APR</div>
-                        <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#2dd4bf' }}>{bet.approachScore}</div>
-                      </div>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '0.65rem', color: '#64748b', marginBottom: 2 }}>POT</div>
-                        <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#fbbf24' }}>{bet.potentialScore}</div>
-                      </div>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '0.65rem', color: '#64748b', marginBottom: 2 }}>FIT</div>
-                        <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#7dd3fc' }}>{bet.fitScore}</div>
-                      </div>
-                    </div>
+                      {lever}
+                    </span>
+                  )}
+                  <span>•</span>
+                  <span>
+                    Sponsored by {bet.sponsoredByEmail || bet.sponsoredBy || 'unknown'}
+                  </span>
+                  <span>•</span>
+                  <span>{new Date(bet.createdAt).toLocaleDateString()}</span>
+                  {isStarted && (
+                    <>
+                      <span>•</span>
+                      <span style={{ color: '#fbbf24' }}>
+                        Started {new Date(bet.startedAt).toLocaleDateString()}
+                      </span>
+                    </>
+                  )}
+                  {isCompleted && (
+                    <>
+                      <span>•</span>
+                      <span style={{ color: '#22c55e' }}>
+                        Completed {new Date(bet.completedAt).toLocaleDateString()}
+                      </span>
+                    </>
                   )}
                 </div>
-              </div>
-              
-              
-              {/* Expandable rationale */}
-              {bet.scoringRationale && (
-                <div>
-                  <button
-                    onClick={() => setExpandedPriorityBet(isExpanded ? null : bet.id)}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: '#2dd4bf',
-                      fontSize: '0.8rem',
-                      cursor: 'pointer',
-                      padding: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 4
-                    }}
-                  >
-                    <span style={{ fontSize: '0.7rem' }}>{isExpanded ? '▼' : '▶'}</span>
-                    {isExpanded ? 'Hide details' : 'Show details'}
-                  </button>
 
-{isExpanded && (
-                    <div style={{
-                      marginTop: 12,
-                      padding: 16,
-                      background: 'rgba(255,255,255,0.02)',
-                      border: '1px solid rgba(255,255,255,0.05)',
-                      borderRadius: 8
-                    }}>
-                      {/* BET DETAILS */}
-                      <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div style={{ 
-                          color: '#94a3b8', 
-                          fontSize: '0.75rem', 
-                          fontWeight: 600, 
-                          marginBottom: 12, 
-                          textTransform: 'uppercase', 
-                          letterSpacing: '0.05em'
-                        }}>
-                          BET DETAILS
+                {/* Work status buttons + Show details row */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: bet.scoringRationale ? 12 : 0 }}>
+                  {/* Show details toggle */}
+                  {bet.scoringRationale && (
+                    <button
+                      onClick={() => setExpandedPriorityBet(isExpanded ? null : bet.id)}
+                      style={{
+                        background: 'transparent', border: 'none',
+                        color: '#2dd4bf', fontSize: '0.8rem',
+                        cursor: 'pointer', padding: 0,
+                        display: 'flex', alignItems: 'center', gap: 4
+                      }}
+                    >
+                      <span style={{ fontSize: '0.7rem' }}>{isExpanded ? '▼' : '▶'}</span>
+                      {isExpanded ? 'Hide details' : 'Show details'}
+                    </button>
+                  )}
+
+                  {/* Work status actions */}
+                  <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
+                    {!isStarted && !isCompleted && (
+                      <button
+                        onClick={() => markStarted && markStarted(bet.id)}
+                        style={{
+                          padding: '7px 16px',
+                          background: 'rgba(251,191,36,0.1)',
+                          border: '1px solid rgba(251,191,36,0.3)',
+                          borderRadius: 8, color: '#fbbf24',
+                          fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer'
+                        }}
+                      >
+                        Mark Started
+                      </button>
+                    )}
+                    {isStarted && !isCompleted && (
+                      <button
+                        onClick={() => markCompleted && markCompleted(bet.id)}
+                        style={{
+                          padding: '7px 16px',
+                          background: 'rgba(34,197,94,0.1)',
+                          border: '1px solid rgba(34,197,94,0.3)',
+                          borderRadius: 8, color: '#22c55e',
+                          fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer'
+                        }}
+                      >
+                        Mark Completed
+                      </button>
+                    )}
+                    {isCompleted && (
+                      <button
+                        onClick={() => setScreen('record_outcome')}
+                        style={{
+                          padding: '7px 16px',
+                          background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
+                          border: 'none',
+                          borderRadius: 8, color: '#0a0f1a',
+                          fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer'
+                        }}
+                      >
+                        Record Outcome →
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Expandable details */}
+                {isExpanded && bet.scoringRationale && (
+                  <div style={{
+                    marginTop: 12, padding: 16,
+                    background: 'rgba(255,255,255,0.02)',
+                    border: '1px solid rgba(255,255,255,0.05)',
+                    borderRadius: 8
+                  }}>
+                    {/* Bet details */}
+                    <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                      <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        BET DETAILS
+                      </div>
+
+                      {bet.hypothesis && (
+                        <div style={{ marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                          <div style={{ color: '#64748b', marginBottom: 6, fontSize: '0.85rem' }}>Full Hypothesis:</div>
+                          <div style={{ color: '#f1f5f9', lineHeight: 1.6, fontSize: '0.95rem' }}>{bet.hypothesis}</div>
                         </div>
-                        
-                        {/* 2-column grid */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                      )}
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                        <div><span style={{ color: '#64748b' }}>Metric: </span><span style={{ color: '#2dd4bf' }}>{bet.metric}</span></div>
+                        <div><span style={{ color: '#64748b' }}>Prediction: </span><span style={{ color: '#94a3b8' }}>{bet.prediction}</span></div>
+                        {bet.baseline && <div><span style={{ color: '#64748b' }}>Baseline: </span><span style={{ color: '#94a3b8' }}>{bet.baseline}</span></div>}
+                        {bet.timeframe && <div><span style={{ color: '#64748b' }}>Timeframe: </span><span style={{ color: '#94a3b8' }}>{bet.timeframe} days</span></div>}
+                        {bet.confidence && <div><span style={{ color: '#64748b' }}>Confidence: </span><span style={{ color: '#fbbf24' }}>{bet.confidence}%</span></div>}
+                        {bet.strategicAlignment && (
                           <div>
-                            <span style={{ color: '#64748b' }}>Metric: </span>
-                            <span style={{ color: '#2dd4bf' }}>{bet.metric}</span>
-                          </div>
-                          <div>
-                            <span style={{ color: '#64748b' }}>Prediction: </span>
-                            <span style={{ color: '#94a3b8' }}>{bet.prediction}</span>
-                          </div>
-                          {bet.baseline && (
-                            <div>
-                              <span style={{ color: '#64748b' }}>Baseline: </span>
-                              <span style={{ color: '#94a3b8' }}>{bet.baseline}</span>
-                            </div>
-                          )}
-                          {bet.timeframe && (
-                            <div>
-                              <span style={{ color: '#64748b' }}>Timeframe: </span>
-                              <span style={{ color: '#94a3b8' }}>{bet.timeframe} days</span>
-                            </div>
-                          )}
-                          {bet.confidence && (
-                            <div>
-                              <span style={{ color: '#64748b' }}>Confidence: </span>
-                              <span style={{ color: '#fbbf24' }}>{bet.confidence}%</span>
-                            </div>
-                          )}
-                          {bet.strategicAlignment && (
-                            <div>
-                              <span style={{ color: '#64748b' }}>Strategic Alignment: </span>
-                              <span style={{ color: '#94a3b8' }}>
-                                {bet.strategicAlignment === 'bullseye' ? 'Bullseye' : 
-                                 bet.strategicAlignment === 'inner' ? 'Inner Ring' :
-                                 bet.strategicAlignment === 'outer' ? 'Outer Ring' : 'Edge'}
-                              </span>
-                            </div>
-                          )}
-                          {bet.estimatedEffort && (
-                            <div>
-                              <span style={{ color: '#64748b' }}>Estimated Effort: </span>
-                              <span style={{ color: '#94a3b8' }}>{bet.estimatedEffort}</span>
-                            </div>
-                          )}
-                        </div>
-                        
-                        {/* Assumptions - full width */}
-                        {bet.assumptions && (
-                          <div>
-                            <div style={{ color: '#64748b', marginBottom: 4 }}>Assumptions:</div>
-                            <div style={{ color: '#94a3b8' }}>{bet.assumptions}</div>
+                            <span style={{ color: '#64748b' }}>Strategic Alignment: </span>
+                            <span style={{ color: '#94a3b8' }}>
+                              {bet.strategicAlignment === 'inner' ? 'Inner Ring' :
+                               bet.strategicAlignment === 'outer' ? 'Outer Ring' :
+                               bet.strategicAlignment === 'experimental' ? 'Experimental' : bet.strategicAlignment}
+                            </span>
                           </div>
                         )}
+                        {bet.estimatedEffort && <div><span style={{ color: '#64748b' }}>Estimated Effort: </span><span style={{ color: '#94a3b8' }}>{bet.estimatedEffort}</span></div>}
                       </div>
-                      
-                      {/* CHZCLOTH SCORING RATIONALE */}
-                      <div>
-                        <div style={{ 
-                          color: '#94a3b8', 
-                          fontSize: '0.75rem', 
-                          fontWeight: 600, 
-                          marginBottom: 12, 
-                          textTransform: 'uppercase', 
-                          letterSpacing: '0.05em',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 6
-                        }}>
-                          CHZCLOTH SCORING RATIONALE
-                          {isAIEnhanced && <span style={{ color: '#2dd4bf', fontWeight: 700 }}>• ENHANCED</span>}
-                        </div>
-                        
-                        <div style={{ marginBottom: 12 }}>
-                          <div style={{ color: '#2dd4bf', fontWeight: 600, fontSize: '0.85rem', marginBottom: 4 }}>
-                            Approach:
-                          </div>
-                          <div style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.5 }}>
-                            {bet.scoringRationale?.approach?.rationale}
-                          </div>
-                        </div>
 
-                        <div style={{ marginBottom: 12 }}>
-                          <div style={{ color: '#fbbf24', fontWeight: 600, fontSize: '0.85rem', marginBottom: 4 }}>
-                            Potential:
-                          </div>
-                          <div style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.5 }}>
-                            {bet.scoringRationale?.potential?.rationale}
-                          </div>
-                        </div>
-
+                      {bet.assumptions && (
                         <div>
-                          <div style={{ color: '#7dd3fc', fontWeight: 600, fontSize: '0.85rem', marginBottom: 4 }}>
-                            Fit:
-                          </div>
-                          <div style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.5 }}>
-                            {bet.scoringRationale?.fit?.rationale}
-                          </div>
+                          <div style={{ color: '#64748b', marginBottom: 4 }}>Assumptions:</div>
+                          <div style={{ color: '#94a3b8' }}>{bet.assumptions}</div>
                         </div>
+                      )}
+                    </div>
+
+                    {/* Scoring rationale */}
+                    <div>
+                      <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        CHZCLOTH SCORING RATIONALE
+                        {isAIEnhanced && <span style={{ color: '#2dd4bf', fontWeight: 700 }}>• ENHANCED</span>}
+                      </div>
+                      <div style={{ marginBottom: 8 }}>
+                        <span style={{ color: '#2dd4bf', fontWeight: 600 }}>Approach:</span>
+                        <span style={{ color: '#94a3b8', marginLeft: 8 }}>{bet.scoringRationale?.approach?.rationale}</span>
+                      </div>
+                      <div style={{ marginBottom: 8 }}>
+                        <span style={{ color: '#fbbf24', fontWeight: 600 }}>Potential:</span>
+                        <span style={{ color: '#94a3b8', marginLeft: 8 }}>{bet.scoringRationale?.potential?.rationale}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#7dd3fc', fontWeight: 600 }}>Fit:</span>
+                        <span style={{ color: '#94a3b8', marginLeft: 8 }}>{bet.scoringRationale?.fit?.rationale}</span>
                       </div>
                     </div>
-                  )}
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
             </div>
           );
         })}
