@@ -128,6 +128,7 @@ export function useBets(orgId, orgMode) {
           startedAt: bet.started_at,
           completedAt: bet.completed_at,
           approvedBy: bet.approved_by,
+          sponsoredBy: bet.sponsored_by,
           rejectedAt: bet.rejected_at,
           rejectedBy: bet.rejected_by,
           ideaId: bet.idea_id,
