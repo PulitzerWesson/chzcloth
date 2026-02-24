@@ -1,10 +1,114 @@
 // BetSubmissionNarrative.jsx - Single smart field with AI validation
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import './BetSubmissionNarrative.css';
 
+// ─── Custom Dropdown ─────────────────────────────────────────────────────────
+function CustomSelect({ value, onChange, options, placeholder = 'Select...' }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const selected = options.find(o => o.value === value);
+
+  return (
+    <div ref={ref} style={{ position: 'relative', width: '100%' }}>
+      {/* Trigger */}
+      <div
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: '100%',
+          padding: '12px 40px 12px 16px',
+          background: 'rgba(255,255,255,0.05)',
+          border: `1px solid ${open ? 'rgba(45,212,191,0.5)' : 'rgba(255,255,255,0.1)'}`,
+          borderRadius: open ? '8px 8px 0 0' : 8,
+          color: selected ? '#f1f5f9' : '#64748b',
+          fontSize: '1rem',
+          cursor: 'pointer',
+          boxSizing: 'border-box',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          userSelect: 'none',
+          transition: 'border-color 0.15s'
+        }}
+      >
+        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {selected ? selected.label : placeholder}
+        </span>
+        <svg
+          width="12" height="12" viewBox="0 0 12 12"
+          style={{
+            flexShrink: 0,
+            marginLeft: 8,
+            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 0.15s',
+            fill: '#94a3b8'
+          }}
+        >
+          <path d="M6 8L1 3h10z" />
+        </svg>
+      </div>
+
+      {/* Options list */}
+      {open && (
+        <div style={{
+          position: 'absolute',
+          top: '100%',
+          left: 0,
+          right: 0,
+          background: '#1e293b',
+          border: '1px solid rgba(45,212,191,0.5)',
+          borderTop: 'none',
+          borderRadius: '0 0 8px 8px',
+          zIndex: 1000,
+          maxHeight: 280,
+          overflowY: 'auto'
+        }}>
+          {options.map((opt, idx) => {
+            const isSelected = opt.value === value;
+            const isSpecial = opt.value === 'unaligned';
+            return (
+              <div
+                key={opt.value}
+                onClick={() => { onChange(opt.value); setOpen(false); }}
+                style={{
+                  padding: '12px 16px',
+                  cursor: 'pointer',
+                  color: isSelected ? '#2dd4bf' : isSpecial ? '#64748b' : '#f1f5f9',
+                  background: isSelected ? 'rgba(45,212,191,0.1)' : 'transparent',
+                  borderTop: isSpecial ? '1px solid rgba(255,255,255,0.05)' : idx > 0 ? '1px solid rgba(255,255,255,0.03)' : 'none',
+                  fontSize: '0.95rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  transition: 'background 0.1s'
+                }}
+                onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+                onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
+              >
+                {isSelected && <span style={{ color: '#2dd4bf', fontSize: '0.8rem' }}>✓</span>}
+                <span>{opt.label}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function BetSubmissionNarrative({ onComplete, currentOrg }) {
   const { user } = useAuth();
   const [goalContext, setGoalContext] = useState('');
@@ -13,10 +117,7 @@ export default function BetSubmissionNarrative({ onComplete, currentOrg }) {
   const [selectedGoalId, setSelectedGoalId] = useState(null);
   const [selectedKPI, setSelectedKPI] = useState(null);
   const [narrative, setNarrative] = useState('');
-  const [story, setStory] = useState({
-    validationMethod: '',
-    validationTimeframe: '90'
-  });
+  const [story, setStory] = useState({ validationMethod: '', validationTimeframe: '90' });
   const [uploadedFile, setUploadedFile] = useState(null);
   const [uploadError, setUploadError] = useState(null);
   const [showExample, setShowExample] = useState(false);
@@ -28,12 +129,12 @@ export default function BetSubmissionNarrative({ onComplete, currentOrg }) {
     const fetchGoals = async () => {
       if (!currentOrg?.orgId || !user) return;
       try {
-        const { data: companyGoalsData } = await supabase
+        const { data } = await supabase
           .from('company_goals')
           .select('*')
           .eq('org_id', currentOrg.orgId)
           .order('priority', { ascending: true });
-        setCompanyGoals(companyGoalsData || []);
+        setCompanyGoals(data || []);
       } catch (error) {
         console.error('Error fetching goals:', error);
       }
@@ -41,32 +142,37 @@ export default function BetSubmissionNarrative({ onComplete, currentOrg }) {
     fetchGoals();
   }, [currentOrg?.orgId, user]);
 
-  const handleGoalSelection = (e) => {
-    const value = e.target.value;
+  // Build options for custom dropdown
+  const goalOptions = [
+    ...companyGoals.map((goal, idx) => ({
+      value: `company-${idx}`,
+      label: `P${goal.priority} · ${goal.time_period?.toUpperCase()} ${goal.year} · ${goal.title}`
+    })),
+    { value: 'unaligned', label: 'Not aligned to a current goal' }
+  ];
+
+  const handleGoalSelection = (value) => {
     setSelectedGoalType(value);
     setSelectedKPI(null);
-
     if (value === 'unaligned' || value === '') {
       setSelectedGoalId(null);
       setGoalContext('');
     } else {
-      const [type, indexStr] = value.split('-');
+      const [, indexStr] = value.split('-');
       const index = parseInt(indexStr);
-      if (type === 'company' && companyGoals[index]) {
+      if (companyGoals[index]) {
         setGoalContext(companyGoals[index].title);
         setSelectedGoalId(companyGoals[index].id);
       }
     }
   };
 
-  const fileToBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result.split(',')[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
+  const fileToBase64 = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 
   const hasLeadershipGoal = currentOrg?.leadershipGoal;
   const leadershipGoal = hasLeadershipGoal ? currentOrg.leadershipGoal : null;
@@ -111,7 +217,7 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
   };
 
   const handleContinue = () => {
-    if (!aiReview || !aiReview.readyToScore) return;
+    if (!aiReview?.readyToScore) return;
     const extracted = aiReview.extracted;
     const betData = {
       hypothesis: extracted.change
@@ -134,7 +240,7 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
       betType: 'improve',
       goalContext: hasLeadershipGoal ? leadershipGoal : goalContext,
       goalId: selectedGoalId,
-      selectedKPI: selectedKPI,
+      selectedKPI,
       goalAlignment: aiReview.goalAlignment,
       documentProvided: !!uploadedFile,
       documentName: uploadedFile?.name || null,
@@ -195,47 +301,17 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
     const allowedTypes = [
       'application/pdf',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'text/plain',
-      'text/markdown'
+      'text/plain', 'text/markdown'
     ];
-    if (!allowedTypes.includes(file.type)) {
-      setUploadError('Please upload a PDF, Word document, or text file');
-      return;
-    }
-    if (file.size > 32 * 1024 * 1024) {
-      setUploadError('File size must be under 32MB');
-      return;
-    }
+    if (!allowedTypes.includes(file.type)) { setUploadError('Please upload a PDF, Word document, or text file'); return; }
+    if (file.size > 32 * 1024 * 1024) { setUploadError('File size must be under 32MB'); return; }
     try {
       const base64Data = await fileToBase64(file);
       setUploadedFile({ name: file.name, type: file.type, data: base64Data });
       setUploadError(null);
-    } catch (error) {
+    } catch {
       setUploadError('Failed to upload file. Please try again.');
     }
-  };
-
-  const handleRemoveFile = () => {
-    setUploadedFile(null);
-    setUploadError(null);
-  };
-
-  const selectStyle = {
-    width: '100%',
-    padding: '12px 16px',
-    background: 'rgba(255,255,255,0.05)',
-    border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: 8,
-    color: '#f1f5f9',
-    fontSize: '1rem',
-    cursor: 'pointer',
-    boxSizing: 'border-box',
-    outline: 'none',
-    appearance: 'none',
-    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
-    backgroundRepeat: 'no-repeat',
-    backgroundPosition: 'right 16px center',
-    paddingRight: 40
   };
 
   return (
@@ -260,90 +336,43 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
 
             {companyGoals.length > 0 ? (
               <>
-                <select
+                <CustomSelect
                   value={selectedGoalType}
                   onChange={handleGoalSelection}
-                  style={selectStyle}
-                >
-                  <option value="" style={{ background: '#1e293b' }}>Select a goal...</option>
-                  {companyGoals.map((goal, idx) => (
-                    <option key={goal.id} value={`company-${idx}`} style={{ background: '#1e293b' }}>
-                      P{goal.priority} · {goal.time_period?.toUpperCase()} {goal.year} · {goal.title}
-                    </option>
-                  ))}
-                  <option value="unaligned" style={{ background: '#1e293b' }}>Not aligned to a current goal</option>
-                </select>
+                  options={goalOptions}
+                  placeholder="Select a goal..."
+                />
 
-                {/* KPI Selection — only when a real goal is selected */}
-                {selectedGoalType && selectedGoalType !== 'unaligned' && selectedGoalType !== '' && (
+                {/* KPI Selection */}
+                {selectedGoalType && selectedGoalType !== 'unaligned' && (
                   <div style={{ marginTop: 16 }}>
-                    <label style={{
-                      display: 'block',
-                      color: '#94a3b8',
-                      fontSize: '0.9rem',
-                      marginBottom: 12,
-                      fontWeight: 500
-                    }}>
+                    <label style={{ display: 'block', color: '#94a3b8', fontSize: '0.9rem', marginBottom: 12, fontWeight: 500 }}>
                       Which KPI does this bet move?
                     </label>
-
-                    <div style={{
-                      background: 'rgba(255,255,255,0.02)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: 12,
-                      padding: 16
-                    }}>
+                    <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 16 }}>
                       {(() => {
-                        const [type, indexStr] = selectedGoalType.split('-');
-                        const index = parseInt(indexStr);
-                        const goal = companyGoals[index];
+                        const [, indexStr] = selectedGoalType.split('-');
+                        const goal = companyGoals[parseInt(indexStr)];
                         const kpis = typeof goal.kpis === 'string' ? JSON.parse(goal.kpis) : (goal.kpis || []);
-
                         return (
                           <>
                             {kpis.map((kpi, kpiIdx) => (
-                              <label
-                                key={kpiIdx}
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'flex-start',
-                                  gap: 12,
-                                  padding: '12px 0',
-                                  cursor: 'pointer',
-                                  borderBottom: kpiIdx < kpis.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none'
-                                }}
-                              >
+                              <label key={kpiIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 0', cursor: 'pointer', borderBottom: kpiIdx < kpis.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
                                 <input
-                                  type="radio"
-                                  name="kpi"
-                                  value={kpiIdx}
+                                  type="radio" name="kpi" value={kpiIdx}
                                   checked={selectedKPI?.index === kpiIdx}
                                   onChange={() => setSelectedKPI({ index: kpiIdx, kpi })}
                                   style={{ marginTop: 4, accentColor: '#2dd4bf' }}
                                 />
                                 <div style={{ flex: 1 }}>
-                                  <div style={{ color: '#f1f5f9', fontWeight: 500, marginBottom: 4 }}>
-                                    {kpi.metric}
-                                  </div>
-                                  <div style={{ color: '#64748b', fontSize: '0.85rem' }}>
-                                    {kpi.baseline} → {kpi.target}
-                                  </div>
+                                  <div style={{ color: '#f1f5f9', fontWeight: 500, marginBottom: 4 }}>{kpi.metric}</div>
+                                  <div style={{ color: '#64748b', fontSize: '0.85rem' }}>{kpi.baseline} → {kpi.target}</div>
                                 </div>
                               </label>
                             ))}
-
-                            <label style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 12,
-                              padding: '12px 0',
-                              cursor: 'pointer',
-                              borderTop: kpis.length > 0 ? '1px solid rgba(255,255,255,0.05)' : 'none'
-                            }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', cursor: 'pointer', borderTop: kpis.length > 0 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
                               <input
-                                type="radio"
-                                name="kpi"
-                                value="indirect"
+                                type="radio" name="kpi" value="indirect"
                                 checked={selectedKPI?.index === 'indirect'}
                                 onChange={() => setSelectedKPI({ index: 'indirect', kpi: null })}
                                 style={{ accentColor: '#2dd4bf' }}
@@ -362,7 +391,7 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
                 type="text"
                 value={goalContext}
                 onChange={e => setGoalContext(e.target.value)}
-                placeholder="e.g., Grow revenue by 30% this year, Reduce churn to below 5%, Increase trial signups by 50%"
+                placeholder="e.g., Grow revenue by 30% this year, Reduce churn to below 5%"
                 className="goal-input"
               />
             )}
@@ -373,17 +402,13 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
           </div>
         )}
 
-        {/* Show Example Toggle */}
+        {/* Show Example */}
         <div className="example-toggle-container">
-          <button
-            onClick={() => setShowExample(!showExample)}
-            className="btn-show-example"
-          >
+          <button onClick={() => setShowExample(!showExample)} className="btn-show-example">
             {showExample ? 'Hide Example' : 'Show Example of Strong Bet'}
           </button>
         </div>
 
-        {/* Example */}
         {showExample && (
           <div className="example-display">
             <div className="example-header">Example of a Strong Bet:</div>
@@ -391,7 +416,7 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
           </div>
         )}
 
-        {/* Main Narrative Field */}
+        {/* Narrative */}
         <div className="narrative-field">
           <label>
             Describe Your Bet {uploadedFile && <span className="optional-tag">(optional - you uploaded a doc)</span>}
@@ -415,19 +440,10 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
         {/* File Upload */}
         <div className="file-upload-section">
           <label>Upload Document (alternative to writing narrative)</label>
-          <div className="file-upload-hint">
-            Upload a PRD, meeting notes, or research doc instead of typing everything out
-          </div>
-
+          <div className="file-upload-hint">Upload a PRD, meeting notes, or research doc instead of typing everything out</div>
           {!uploadedFile ? (
             <div className="file-upload-zone">
-              <input
-                type="file"
-                id="file-upload"
-                accept=".pdf,.docx,.txt,.md"
-                onChange={handleFileUpload}
-                className="file-input"
-              />
+              <input type="file" id="file-upload" accept=".pdf,.docx,.txt,.md" onChange={handleFileUpload} className="file-input" />
               <label htmlFor="file-upload" className="file-upload-label">
                 <div className="upload-icon">📄</div>
                 <div className="upload-text">Click to upload or drag and drop</div>
@@ -440,12 +456,9 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
                 <span className="file-icon">📄</span>
                 <span className="file-name">{uploadedFile.name}</span>
               </div>
-              <button type="button" onClick={handleRemoveFile} className="btn-remove-file">
-                Remove
-              </button>
+              <button type="button" onClick={() => { setUploadedFile(null); setUploadError(null); }} className="btn-remove-file">Remove</button>
             </div>
           )}
-
           {uploadError && <div className="upload-error">{uploadError}</div>}
         </div>
 
@@ -461,7 +474,6 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
               className="validation-input"
             />
           </div>
-
           <div className="validation-field">
             <label>When will you check?</label>
             <select
@@ -478,34 +490,27 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
           </div>
         </div>
 
-        {/* AI Review Results */}
+        {/* AI Review */}
         {hasSubmitted && aiReview && (
           <div className="ai-review-section">
             <h3>CHZCLOTH Review</h3>
-
             <div className={`alignment-check ${aiReview.goalAlignment.aligned ? 'aligned' : 'misaligned'}`}>
               <div className="alignment-header">
                 {aiReview.goalAlignment.aligned ? 'Goal Aligned' : 'Goal Misalignment Detected'}
               </div>
               <div className="alignment-text">{aiReview.goalAlignment.reasoning}</div>
             </div>
-
             {aiReview.strengths.length > 0 && (
               <div className="review-section strengths">
                 <div className="section-header">Strengths</div>
-                <ul>
-                  {aiReview.strengths.map((strength, idx) => (
-                    <li key={idx}>{strength}</li>
-                  ))}
-                </ul>
+                <ul>{aiReview.strengths.map((s, i) => <li key={i}>{s}</li>)}</ul>
               </div>
             )}
-
             {aiReview.issues.length > 0 && (
               <div className="review-section issues">
                 <div className="section-header">Issues to Address</div>
-                {aiReview.issues.map((issue, idx) => (
-                  <div key={idx} className={`issue-item ${issue.severity}`}>
+                {aiReview.issues.map((issue, i) => (
+                  <div key={i} className={`issue-item ${issue.severity}`}>
                     <div className="issue-field">{issue.field}</div>
                     <div className="issue-message">{issue.message}</div>
                   </div>
@@ -515,24 +520,16 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
           </div>
         )}
 
-        {/* Action Buttons */}
+        {/* Actions */}
         <div className="action-buttons">
           {!hasSubmitted || (hasSubmitted && !aiReview?.readyToScore) ? (
-            <button
-              onClick={handleSubmit}
-              disabled={!canSubmit() || isAnalyzing}
-              className="btn-submit"
-            >
+            <button onClick={handleSubmit} disabled={!canSubmit() || isAnalyzing} className="btn-submit">
               {isAnalyzing ? 'Analyzing...' : hasSubmitted ? 'Re-submit for Review' : 'Submit for Review'}
             </button>
           ) : (
             <>
-              <button onClick={handleSubmit} className="btn-revise">
-                Revise & Re-submit
-              </button>
-              <button onClick={handleContinue} className="btn-continue">
-                Continue to Scoring
-              </button>
+              <button onClick={handleSubmit} className="btn-revise">Revise & Re-submit</button>
+              <button onClick={handleContinue} className="btn-continue">Continue to Scoring</button>
             </>
           )}
         </div>
