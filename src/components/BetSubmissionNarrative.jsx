@@ -24,40 +24,34 @@ export default function BetSubmissionNarrative({ onComplete, currentOrg }) {
   const [aiReview, setAiReview] = useState(null);
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
-  // Fetch company goals on mount
   useEffect(() => {
     const fetchGoals = async () => {
       if (!currentOrg?.orgId || !user) return;
-
       try {
         const { data: companyGoalsData } = await supabase
           .from('company_goals')
           .select('*')
           .eq('org_id', currentOrg.orgId)
           .order('priority', { ascending: true });
-        
         setCompanyGoals(companyGoalsData || []);
       } catch (error) {
         console.error('Error fetching goals:', error);
       }
     };
-
     fetchGoals();
   }, [currentOrg?.orgId, user]);
 
-  // Handle goal selection
   const handleGoalSelection = (e) => {
     const value = e.target.value;
     setSelectedGoalType(value);
     setSelectedKPI(null);
-    
+
     if (value === 'unaligned' || value === '') {
       setSelectedGoalId(null);
       setGoalContext('');
     } else {
       const [type, indexStr] = value.split('-');
       const index = parseInt(indexStr);
-      
       if (type === 'company' && companyGoals[index]) {
         setGoalContext(companyGoals[index].title);
         setSelectedGoalId(companyGoals[index].id);
@@ -65,20 +59,15 @@ export default function BetSubmissionNarrative({ onComplete, currentOrg }) {
     }
   };
 
-  // Convert file to base64
   const fileToBase64 = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = reader.result.split(',')[1];
-        resolve(base64);
-      };
+      reader.onload = () => resolve(reader.result.split(',')[1]);
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
   };
 
-  // Check if org has leadership goal
   const hasLeadershipGoal = currentOrg?.leadershipGoal;
   const leadershipGoal = hasLeadershipGoal ? currentOrg.leadershipGoal : null;
 
@@ -94,26 +83,18 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
     setHasSubmitted(true);
     setIsAnalyzing(true);
     setAiReview(null);
-
     try {
       const response = await fetch('/api/parse-narrative', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           narrative,
           goalContext: hasLeadershipGoal ? leadershipGoal : goalContext,
           uploadedFile
         })
       });
-
       const review = await response.json();
-
-      if (!response.ok) {
-        throw new Error(review.error || 'Analysis failed');
-      }
-
+      if (!response.ok) throw new Error(review.error || 'Analysis failed');
       setAiReview(review);
     } catch (error) {
       console.error('AI review error:', error);
@@ -130,13 +111,10 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
   };
 
   const handleContinue = () => {
-    if (!aiReview || !aiReview.readyToScore) {
-      return;
-    }
-
+    if (!aiReview || !aiReview.readyToScore) return;
     const extracted = aiReview.extracted;
     const betData = {
-      hypothesis: extracted.change 
+      hypothesis: extracted.change
         ? `If we ${extracted.change}, then ${extracted.baseline || 'the metric'} will improve to ${extracted.magnitude || 'target'}, because ${extracted.mechanism || 'of expected impact'}`
         : narrative.substring(0, 200) || 'Bet based on uploaded document',
       metricDomain: inferMetricDomain(narrative || extracted.change),
@@ -168,7 +146,6 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
       evidenceDetails: extracted.evidence || '',
       cheaperTest: ''
     };
-
     onComplete(betData);
   };
 
@@ -204,11 +181,7 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
   };
 
   const canSubmit = () => {
-    // If leadership goal is set, skip goal selection requirement
-    if (!hasLeadershipGoal) {
-      // Must have made a selection (either a goal or explicitly unaligned)
-      if (!selectedGoalType) return false;
-    }
+    if (!hasLeadershipGoal && !selectedGoalType) return false;
     const hasNarrative = narrative.length >= 100;
     const hasDocument = !!uploadedFile;
     if (!hasNarrative && !hasDocument) return false;
@@ -219,41 +192,50 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     const allowedTypes = [
       'application/pdf',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'text/plain',
       'text/markdown'
     ];
-    
     if (!allowedTypes.includes(file.type)) {
       setUploadError('Please upload a PDF, Word document, or text file');
       return;
     }
-
     if (file.size > 32 * 1024 * 1024) {
       setUploadError('File size must be under 32MB');
       return;
     }
-
     try {
       const base64Data = await fileToBase64(file);
-      setUploadedFile({
-        name: file.name,
-        type: file.type,
-        data: base64Data
-      });
+      setUploadedFile({ name: file.name, type: file.type, data: base64Data });
       setUploadError(null);
     } catch (error) {
       setUploadError('Failed to upload file. Please try again.');
-      console.error('File upload error:', error);
     }
   };
 
   const handleRemoveFile = () => {
     setUploadedFile(null);
     setUploadError(null);
+  };
+
+  const selectStyle = {
+    width: '100%',
+    padding: '12px 16px',
+    background: 'rgba(255,255,255,0.05)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: 8,
+    color: '#f1f5f9',
+    fontSize: '1rem',
+    cursor: 'pointer',
+    boxSizing: 'border-box',
+    outline: 'none',
+    appearance: 'none',
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'right 16px center',
+    paddingRight: 40
   };
 
   return (
@@ -275,37 +257,37 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
         ) : (
           <div className="goal-context-input">
             <label>Company Goal</label>
-            
+
             {companyGoals.length > 0 ? (
               <>
                 <select
                   value={selectedGoalType}
                   onChange={handleGoalSelection}
-                  className="goal-select"
+                  style={selectStyle}
                 >
-                  <option value="">Select a goal...</option>
+                  <option value="" style={{ background: '#1e293b' }}>Select a goal...</option>
                   {companyGoals.map((goal, idx) => (
-                    <option key={goal.id} value={`company-${idx}`}>
-                      P{goal.priority}: {goal.title}
+                    <option key={goal.id} value={`company-${idx}`} style={{ background: '#1e293b' }}>
+                      P{goal.priority} · {goal.time_period?.toUpperCase()} {goal.year} · {goal.title}
                     </option>
                   ))}
-                  <option value="unaligned">Not aligned to a current goal</option>
+                  <option value="unaligned" style={{ background: '#1e293b' }}>Not aligned to a current goal</option>
                 </select>
-                
+
                 {/* KPI Selection — only when a real goal is selected */}
                 {selectedGoalType && selectedGoalType !== 'unaligned' && selectedGoalType !== '' && (
                   <div style={{ marginTop: 16 }}>
-                    <label style={{ 
-                      display: 'block', 
-                      color: '#94a3b8', 
-                      fontSize: '0.9rem', 
+                    <label style={{
+                      display: 'block',
+                      color: '#94a3b8',
+                      fontSize: '0.9rem',
                       marginBottom: 12,
                       fontWeight: 500
                     }}>
                       Which KPI does this bet move?
                     </label>
-                    
-                    <div style={{ 
+
+                    <div style={{
                       background: 'rgba(255,255,255,0.02)',
                       border: '1px solid rgba(255,255,255,0.08)',
                       borderRadius: 12,
@@ -316,11 +298,11 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
                         const index = parseInt(indexStr);
                         const goal = companyGoals[index];
                         const kpis = typeof goal.kpis === 'string' ? JSON.parse(goal.kpis) : (goal.kpis || []);
-                        
+
                         return (
                           <>
                             {kpis.map((kpi, kpiIdx) => (
-                              <label 
+                              <label
                                 key={kpiIdx}
                                 style={{
                                   display: 'flex',
@@ -349,7 +331,7 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
                                 </div>
                               </label>
                             ))}
-                            
+
                             <label style={{
                               display: 'flex',
                               alignItems: 'center',
@@ -357,24 +339,6 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
                               padding: '12px 0',
                               cursor: 'pointer',
                               borderTop: kpis.length > 0 ? '1px solid rgba(255,255,255,0.05)' : 'none'
-                            }}>
-                              <input
-                                type="radio"
-                                name="kpi"
-                                value="multiple"
-                                checked={selectedKPI?.index === 'multiple'}
-                                onChange={() => setSelectedKPI({ index: 'multiple', kpi: null })}
-                                style={{ accentColor: '#2dd4bf' }}
-                              />
-                              <span style={{ color: '#94a3b8' }}>Multiple KPIs (explain in bet description)</span>
-                            </label>
-                            
-                            <label style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 12,
-                              padding: '12px 0',
-                              cursor: 'pointer'
                             }}>
                               <input
                                 type="radio"
@@ -402,7 +366,7 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
                 className="goal-input"
               />
             )}
-            
+
             <div className="goal-hint">
               AI will check if your bet actually achieves this goal (e.g., more customers ≠ more revenue)
             </div>
@@ -435,14 +399,14 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
           <textarea
             value={narrative}
             onChange={e => setNarrative(e.target.value)}
-            placeholder={uploadedFile 
-              ? "Add any additional context not in the document..." 
+            placeholder={uploadedFile
+              ? "Add any additional context not in the document..."
               : "Include: What you'll change, current state (with numbers), expected outcome (with numbers), why it will work, and evidence you have..."}
             className="narrative-textarea"
             rows={16}
           />
           <div className="character-count">
-            {narrative.length} characters 
+            {narrative.length} characters
             {!uploadedFile && narrative.length < 100 && ` (minimum 100 required)`}
             {uploadedFile && ` (optional with document)`}
           </div>
@@ -454,7 +418,7 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
           <div className="file-upload-hint">
             Upload a PRD, meeting notes, or research doc instead of typing everything out
           </div>
-          
+
           {!uploadedFile ? (
             <div className="file-upload-zone">
               <input
@@ -476,19 +440,13 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
                 <span className="file-icon">📄</span>
                 <span className="file-name">{uploadedFile.name}</span>
               </div>
-              <button
-                type="button"
-                onClick={handleRemoveFile}
-                className="btn-remove-file"
-              >
+              <button type="button" onClick={handleRemoveFile} className="btn-remove-file">
                 Remove
               </button>
             </div>
           )}
-          
-          {uploadError && (
-            <div className="upload-error">{uploadError}</div>
-          )}
+
+          {uploadError && <div className="upload-error">{uploadError}</div>}
         </div>
 
         {/* Validation Plan */}
@@ -569,16 +527,10 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
             </button>
           ) : (
             <>
-              <button
-                onClick={handleSubmit}
-                className="btn-revise"
-              >
+              <button onClick={handleSubmit} className="btn-revise">
                 Revise & Re-submit
               </button>
-              <button
-                onClick={handleContinue}
-                className="btn-continue"
-              >
+              <button onClick={handleContinue} className="btn-continue">
                 Continue to Scoring
               </button>
             </>
