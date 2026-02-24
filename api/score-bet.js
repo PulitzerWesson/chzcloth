@@ -192,6 +192,8 @@ TITLE & SUMMARY GENERATION:
 Generate a professional title and summary for this bet:
 - Title: 8-12 words capturing the core action and expected outcome
 - Summary: 15-20 words explaining the value proposition
+- Lever: The primary business lever this bet moves. Must be exactly one of: Revenue, Retention, Acquisition, Efficiency, Platform, Experience, Risk. Choose based on what success ultimately unlocks, not just what's being measured (e.g. improving CSAT → Retention, faster page load → Experience, new referral program → Acquisition).
+
 ${orgContext ? 'Reference company specifics when relevant (e.g., "Testway" vs "the company").' : ''}
 
 PRODUCT IDENTIFICATION:
@@ -254,6 +256,7 @@ Return ONLY valid JSON (no markdown, no preamble):
   "title": "Concise professional title (8-12 words)",
   "summary": "One-sentence value proposition (15-20 words)",
   "product": "Which product/surface this bet modifies",
+  "lever": "One of: Revenue, Retention, Acquisition, Efficiency, Platform, Experience, Risk",
   "approach": {
     "score": 0-100,
     "rationale": "Brief explanation${needsSearch ? ' citing any relevant web findings' : ''}${orgContext ? ' citing specific company details' : ''}"
