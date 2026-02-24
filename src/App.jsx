@@ -4185,28 +4185,29 @@ const handleRejectBet = async (betId, reason) => {
     Risk:        { bg: 'rgba(239,68,68,0.15)',   border: 'rgba(239,68,68,0.3)',   text: '#ef4444' },
   };
 
+  const queueBets = bets?.filter(b => b.approvalStatus === 'approved' && !b.completedAt) || [];
+
   return (
     <div>
       <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#f1f5f9', marginBottom: 8 }}>
         Priority Queue
       </h1>
       <p style={{ color: '#64748b', fontSize: '0.95rem', marginBottom: 32 }}>
-        Approved bets ready to execute
+        Sponsored bets ready to execute. Vote on what gets built next.
       </p>
 
-      {bets?.filter(b => b.approvalStatus === 'approved').length === 0 ? (
+      {queueBets.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 20px', color: '#64748b' }}>
-          No approved bets yet. Sponsor bets from the Marketplace to add them here.
+          No sponsored bets yet. Sponsor bets from the Marketplace to add them here.
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {bets?.filter(b => b.approvalStatus === 'approved').map(bet => {
+          {queueBets.map(bet => {
             const isExpanded = expandedPriorityBet === bet.id;
             const isAIEnhanced = bet.aiEnhanced;
             const aiScore = bet.aiPredictedScore;
             const lever = bet.lever;
             const isStarted = !!bet.startedAt;
-            const isCompleted = !!bet.completedAt;
             const lc = lever && leverColors[lever]
               ? leverColors[lever]
               : { bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)', text: '#94a3b8' };
@@ -4283,68 +4284,35 @@ const handleRejectBet = async (betId, reason) => {
                         {lever}
                       </span>
                     )}
+                    {isStarted && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 10px', background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: 6, color: '#fbbf24', fontSize: '0.75rem', fontWeight: 600 }}>
+                        In Progress
+                      </span>
+                    )}
                     <span>•</span>
                     <span>Submitted by {bet.submittedByEmail || 'unknown'}</span>
                     <span>•</span>
                     <span>Sponsored by {bet.sponsoredByEmail || 'unknown'}</span>
                     <span>•</span>
                     <span>{new Date(bet.createdAt).toLocaleDateString()}</span>
+                    {isStarted && (
+                      <>
+                        <span>•</span>
+                        <span>Started {new Date(bet.startedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                      </>
+                    )}
                   </div>
 
-                  {/* Show details + work status */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                      {bet.scoringRationale && (
-                        <button
-                          onClick={() => setExpandedPriorityBet(isExpanded ? null : bet.id)}
-                          style={{ background: 'transparent', border: 'none', color: '#2dd4bf', fontSize: '0.8rem', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 4 }}
-                        >
-                          <span style={{ fontSize: '0.7rem' }}>{isExpanded ? '▼' : '▶'}</span>
-                          {isExpanded ? 'Hide details' : 'Show details'}
-                        </button>
-                      )}
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-                      {!isStarted && !isCompleted && (
-                        <button
-                          onClick={() => markStarted && markStarted(bet.id)}
-                          style={{ padding: '7px 16px', background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: 8, color: '#fbbf24', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}
-                        >
-                          Mark Started
-                        </button>
-                      )}
-                      {isStarted && !isCompleted && (
-                        <>
-                          <div style={{ color: '#64748b', fontSize: '0.75rem' }}>
-                            Started {new Date(bet.startedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                          </div>
-                          <button
-                            onClick={() => markCompleted && markCompleted(bet.id)}
-                            style={{ padding: '7px 16px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 8, color: '#22c55e', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}
-                          >
-                            Mark Completed
-                          </button>
-                        </>
-                      )}
-                      {isCompleted && (
-                        <>
-                          <div style={{ color: '#64748b', fontSize: '0.75rem' }}>
-                            Started {new Date(bet.startedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                          </div>
-                          <div style={{ color: '#64748b', fontSize: '0.75rem' }}>
-                            Completed {new Date(bet.completedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                          </div>
-                          <button
-                            onClick={() => setScreen('record_outcome')}
-                            style={{ padding: '7px 16px', background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)', border: 'none', borderRadius: 8, color: '#0a0f1a', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}
-                          >
-                            Record Outcome →
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
+                  {/* Show details — read only, no action buttons */}
+                  {bet.scoringRationale && (
+                    <button
+                      onClick={() => setExpandedPriorityBet(isExpanded ? null : bet.id)}
+                      style={{ background: 'transparent', border: 'none', color: '#2dd4bf', fontSize: '0.8rem', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 4 }}
+                    >
+                      <span style={{ fontSize: '0.7rem' }}>{isExpanded ? '▼' : '▶'}</span>
+                      {isExpanded ? 'Hide details' : 'Show details'}
+                    </button>
+                  )}
 
                   {/* Expandable details */}
                   {isExpanded && bet.scoringRationale && (
