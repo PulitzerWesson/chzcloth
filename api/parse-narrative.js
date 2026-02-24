@@ -1,5 +1,20 @@
 // api/parse-narrative.js - AI parsing of narrative bet submissions with logging
 
+// Retry helper — handles Anthropic 529 overloaded errors gracefully
+async function callWithRetry(fn, maxAttempts = 3) {
+  let lastResponse;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    lastResponse = await fn();
+    if (lastResponse.status !== 529) return lastResponse;
+    if (attempt < maxAttempts) {
+      const wait = attempt * 1500;
+      console.log(`Anthropic overloaded (attempt ${attempt}/${maxAttempts}), retrying in ${wait}ms...`);
+      await new Promise(r => setTimeout(r, wait));
+    }
+  }
+  return lastResponse;
+}
+
 export default async function handler(req, res) {
   // COMPREHENSIVE LOGGING FOR DEBUGGING
   console.log('=== PARSE NARRATIVE REQUEST START ===');
@@ -122,7 +137,7 @@ Instructions:
       contentParts: Array.isArray(messageContent) ? messageContent.length : 1
     });
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await callWithRetry(() => fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -130,7 +145,7 @@ Instructions:
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify(apiPayload)
-    });
+    }));
 
     console.log('Anthropic API response status:', response.status);
     console.log('Response OK:', response.ok);
