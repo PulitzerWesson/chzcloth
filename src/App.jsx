@@ -3677,15 +3677,19 @@ const ideaEntry = {
     ai_enhanced: bet.aiEnhanced || false
   };
 
-  const { error } = await submitIdea(ideaEntry);
+const { error } = await submitIdea(ideaEntry);
   if (error) {
     alert('Error submitting to marketplace. Please try again.');
   } else {
+    await supabase
+      .from('bets')
+      .update({ approval_status: 'pending_approval' })
+      .eq('id', bet.id);
+    refreshBets();
     alert('Bet added to marketplace!');
     setScreen('ideas_queue');
   }
 };
-
   const handleRefineBet = () => {
   // User wants to refine their bet - go back to form with current data
   setScreen('bet');
