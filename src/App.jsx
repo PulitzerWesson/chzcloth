@@ -4111,20 +4111,11 @@ const handleRejectBet = async (betId, reason) => {
 )}
           
 {screen === 'priority_queue' && (() => {
-  // StrategicAlignmentIcon defined here since it lives in IdeasQueue.jsx, not App.jsx
   const StrategicAlignmentIcon = ({ alignment }) => {
     const n = alignment?.toLowerCase();
     if (n === 'inner' || n === 'inner_ring' || n === 'inner ring') {
       return (
         <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
-          <style>{`
-            @keyframes pq-growFromDot {
-              0% { transform: scale(0); opacity: 0; }
-              22% { transform: scale(1); opacity: 1; }
-              100% { transform: scale(1); opacity: 1; }
-            }
-            .pq-grow { animation: pq-growFromDot 9s ease-out infinite; transform-origin: center; }
-          `}</style>
           <circle cx="14" cy="14" r="12" stroke="url(#pq-teal1)" strokeWidth="2.5" fill="none"/>
           <circle className="pq-grow" cx="14" cy="14" r="6" fill="url(#pq-teal1)"/>
           <defs>
@@ -4138,14 +4129,6 @@ const handleRejectBet = async (betId, reason) => {
     if (n === 'outer' || n === 'outer_ring' || n === 'outer ring') {
       return (
         <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
-          <style>{`
-            @keyframes pq-draw {
-              0% { stroke-dashoffset: 75.4; }
-              30% { stroke-dashoffset: 0; }
-              100% { stroke-dashoffset: 0; }
-            }
-            .pq-drawc { stroke-dasharray: 75.4; animation: pq-draw 10s linear infinite; }
-          `}</style>
           <circle className="pq-drawc" cx="14" cy="14" r="12" stroke="url(#pq-teal2)" strokeWidth="3" fill="none"/>
           <circle cx="14" cy="14" r="6" fill="#1e293b"/>
           <defs>
@@ -4159,14 +4142,6 @@ const handleRejectBet = async (betId, reason) => {
     if (n === 'experimental') {
       return (
         <svg width="20" height="20" viewBox="0 0 24 28" fill="none">
-          <style>{`
-            @keyframes pq-b1 { 0% { cy: 20; opacity: 0; } 20% { opacity: 1; } 100% { cy: 3; opacity: 0; } }
-            @keyframes pq-b2 { 0% { cy: 20; opacity: 0; } 20% { opacity: 1; } 100% { cy: 3.5; opacity: 0; } }
-            @keyframes pq-b3 { 0% { cy: 20; opacity: 0; } 20% { opacity: 1; } 100% { cy: 3; opacity: 0; } }
-            .pq-b1 { animation: pq-b1 2.5s ease-in infinite; }
-            .pq-b2 { animation: pq-b2 2.5s ease-in infinite 0.8s; }
-            .pq-b3 { animation: pq-b3 2.5s ease-in infinite 1.6s; }
-          `}</style>
           <path d="M8 2 L8 10 L4 22 C3.5 24 4.5 26 7 26 L17 26 C19.5 26 20.5 24 20 22 L16 10 L16 2" stroke="url(#pq-beaker)" strokeWidth="2" fill="none"/>
           <line x1="8" y1="2" x2="16" y2="2" stroke="url(#pq-beaker)" strokeWidth="2"/>
           <circle className="pq-b1" cx="9" cy="20" r="2" fill="#2dd4bf" opacity="0"/>
@@ -4194,315 +4169,319 @@ const handleRejectBet = async (betId, reason) => {
   };
 
   return (
-    <div>
-      <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#f1f5f9', marginBottom: 8 }}>
-        Priority Queue
-      </h1>
-      <p style={{ color: '#64748b', fontSize: '0.95rem', marginBottom: 32 }}>
-        Approved bets ready to execute
-      </p>
+    <>
+      <style>{`
+        @keyframes pq-growFromDot {
+          0% { transform: scale(0); opacity: 0; }
+          22% { transform: scale(1); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes pq-draw {
+          0% { stroke-dashoffset: 75.4; }
+          30% { stroke-dashoffset: 0; }
+          100% { stroke-dashoffset: 0; }
+        }
+        @keyframes pq-b1 { 0% { cy: 20; opacity: 0; } 20% { opacity: 1; } 100% { cy: 3; opacity: 0; } }
+        @keyframes pq-b2 { 0% { cy: 20; opacity: 0; } 20% { opacity: 1; } 100% { cy: 3.5; opacity: 0; } }
+        @keyframes pq-b3 { 0% { cy: 20; opacity: 0; } 20% { opacity: 1; } 100% { cy: 3; opacity: 0; } }
+        .pq-grow { animation: pq-growFromDot 9s ease-out infinite; transform-origin: center; }
+        .pq-drawc { stroke-dasharray: 75.4; animation: pq-draw 10s linear infinite; }
+        .pq-b1 { animation: pq-b1 2.5s ease-in infinite; }
+        .pq-b2 { animation: pq-b2 2.5s ease-in infinite 0.8s; }
+        .pq-b3 { animation: pq-b3 2.5s ease-in infinite 1.6s; }
+      `}</style>
 
-      {bets?.filter(b => b.approvalStatus === 'approved').length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 20px', color: '#64748b' }}>
-          No approved bets yet. Sponsor bets from the Marketplace to add them here.
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {bets?.filter(b => b.approvalStatus === 'approved').map(bet => {
-            const isExpanded = expandedPriorityBet === bet.id;
-            const isAIEnhanced = bet.aiEnhanced;
-            const aiScore = bet.aiPredictedScore;
-            const lever = bet.lever;
-            const isStarted = !!bet.startedAt;
-            const isCompleted = !!bet.completedAt;
-            const lc = lever && leverColors[lever]
-              ? leverColors[lever]
-              : { bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)', text: '#94a3b8' };
+      <div>
+        <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#f1f5f9', marginBottom: 8 }}>
+          Priority Queue
+        </h1>
+        <p style={{ color: '#64748b', fontSize: '0.95rem', marginBottom: 32 }}>
+          Approved bets ready to execute
+        </p>
 
-            return (
-              <div
-                key={bet.id}
-                style={{
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 12,
-                  padding: 20,
-                  display: 'flex',
-                  gap: 16
-                }}
-              >
-                {/* Strategic Alignment Icon */}
-                <div style={{ flexShrink: 0, paddingTop: 4 }}>
-                  <StrategicAlignmentIcon alignment={bet.strategicAlignment} />
-                </div>
+        {bets?.filter(b => b.approvalStatus === 'approved').length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '60px 20px', color: '#64748b' }}>
+            No approved bets yet. Sponsor bets from the Marketplace to add them here.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {bets?.filter(b => b.approvalStatus === 'approved').map(bet => {
+              const isExpanded = expandedPriorityBet === bet.id;
+              const isAIEnhanced = bet.aiEnhanced;
+              const aiScore = bet.aiPredictedScore;
+              const lever = bet.lever;
+              const isStarted = !!bet.startedAt;
+              const isCompleted = !!bet.completedAt;
+              const lc = lever && leverColors[lever]
+                ? leverColors[lever]
+                : { bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)', text: '#94a3b8' };
 
-                {/* Card content */}
-                <div style={{ flex: 1 }}>
-                  {/* Title + Scores row */}
-                  <div style={{
+              return (
+                <div
+                  key={bet.id}
+                  style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 12,
+                    padding: 20,
                     display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    marginBottom: 8
-                  }}>
-                    <div style={{ flex: 1, paddingRight: 16 }}>
-                      {bet.product && (
-                        <div style={{
-                          color: '#fbbf24',
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.05em',
-                          marginBottom: 6
-                        }}>
-                          {bet.product}
-                        </div>
-                      )}
-                      <h3 style={{
-                        color: '#f1f5f9',
-                        fontSize: '1.05rem',
-                        fontWeight: 600,
-                        margin: 0,
-                        lineHeight: 1.4
-                      }}>
-                        {bet.title || bet.hypothesis}
-                      </h3>
-                    </div>
-
-                    {/* Scores */}
-                    <div style={{ display: 'flex', gap: 0, flexShrink: 0, alignItems: 'center' }}>
-                      {isAIEnhanced && aiScore ? (
-                        <div style={{ textAlign: 'center', paddingRight: 8 }}>
-                          <div style={{ fontSize: '0.7rem', color: '#2dd4bf', marginBottom: 2, fontWeight: 700, letterSpacing: '0.05em', textShadow: '0 0 10px rgba(45,212,191,0.6)' }}>CHZ</div>
-                          <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#2dd4bf', textShadow: '0 0 15px rgba(45,212,191,0.8)' }}>{aiScore}</div>
-                        </div>
-                      ) : null}
-                      {bet.approachScore && (
-                        <div style={{
-                          display: 'flex', gap: 8, flexShrink: 0,
-                          paddingLeft: isAIEnhanced && aiScore ? 8 : 0,
-                          borderLeft: isAIEnhanced && aiScore ? '1px solid rgba(255,255,255,0.1)' : 'none'
-                        }}>
-                          <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: 2 }}>APR</div>
-                            <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#2dd4bf' }}>{bet.approachScore}</div>
-                          </div>
-                          <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: 2 }}>POT</div>
-                            <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#fbbf24' }}>{bet.potentialScore}</div>
-                          </div>
-                          <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: 2 }}>FIT</div>
-                            <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#7dd3fc' }}>{bet.fitScore}</div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    gap: 16
+                  }}
+                >
+                  {/* Strategic Alignment Icon */}
+                  <div style={{ flexShrink: 0, paddingTop: 4 }}>
+                    <StrategicAlignmentIcon alignment={bet.strategicAlignment} />
                   </div>
 
-                  {/* Summary */}
-                  {bet.summary && (
-                    <div style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.5, marginBottom: 12 }}>
-                      {bet.summary}
-                    </div>
-                  )}
-
-                  {/* Meta row */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: '0.8rem', color: '#64748b', marginBottom: 16, flexWrap: 'wrap' }}>
-                    {lever && (
-                      <span style={{
-                        display: 'inline-flex', alignItems: 'center',
-                        padding: '4px 10px',
-                        background: lc.bg, border: `1px solid ${lc.border}`,
-                        borderRadius: 6, color: lc.text,
-                        fontSize: '0.75rem', fontWeight: 600,
-                        textTransform: 'uppercase', letterSpacing: '0.05em'
-                      }}>
-                        {lever}
-                      </span>
-                    )}
-                    <span>•</span>
-                    <span>Submitted by {bet.submittedByEmail || 'unknown'}</span>
-                    <span>•</span>
-                    <span>Sponsored by {bet.sponsoredByEmail || 'unknown'}</span>
-                    <span>•</span>
-                    <span>{new Date(bet.createdAt).toLocaleDateString()}</span>
-                  </div>
-
-                  {/* Show details toggle */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                      {bet.scoringRationale && (
-                        <button
-                          onClick={() => setExpandedPriorityBet(isExpanded ? null : bet.id)}
-                          style={{
-                            background: 'transparent', border: 'none',
-                            color: '#2dd4bf', fontSize: '0.8rem',
-                            cursor: 'pointer', padding: 0,
-                            display: 'flex', alignItems: 'center', gap: 4
-                          }}
-                        >
-                          <span style={{ fontSize: '0.7rem' }}>{isExpanded ? '▼' : '▶'}</span>
-                          {isExpanded ? 'Hide details' : 'Show details'}
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Work status */}
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-                      {!isStarted && !isCompleted && (
-                        <button
-                          onClick={() => markStarted && markStarted(bet.id)}
-                          style={{
-                            padding: '7px 16px',
-                            background: 'rgba(251,191,36,0.1)',
-                            border: '1px solid rgba(251,191,36,0.3)',
-                            borderRadius: 8, color: '#fbbf24',
-                            fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer'
-                          }}
-                        >
-                          Mark Started
-                        </button>
-                      )}
-                      {isStarted && !isCompleted && (
-                        <>
-                          <div style={{ color: '#64748b', fontSize: '0.75rem' }}>
-                            Started {new Date(bet.startedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                          </div>
-                          <button
-                            onClick={() => markCompleted && markCompleted(bet.id)}
-                            style={{
-                              padding: '7px 16px',
-                              background: 'rgba(34,197,94,0.1)',
-                              border: '1px solid rgba(34,197,94,0.3)',
-                              borderRadius: 8, color: '#22c55e',
-                              fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer'
-                            }}
-                          >
-                            Mark Completed
-                          </button>
-                        </>
-                      )}
-                      {isCompleted && (
-                        <>
-                          <div style={{ color: '#64748b', fontSize: '0.75rem' }}>
-                            Started {new Date(bet.startedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                          </div>
-                          <div style={{ color: '#64748b', fontSize: '0.75rem' }}>
-                            Completed {new Date(bet.completedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                          </div>
-                          <button
-                            onClick={() => setScreen('record_outcome')}
-                            style={{
-                              padding: '7px 16px',
-                              background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
-                              border: 'none',
-                              borderRadius: 8, color: '#0a0f1a',
-                              fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer'
-                            }}
-                          >
-                            Record Outcome →
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Expandable details — matching marketplace formatting */}
-                  {isExpanded && bet.scoringRationale && (
+                  {/* Card content */}
+                  <div style={{ flex: 1 }}>
+                    {/* Title + Scores row */}
                     <div style={{
-                      marginTop: 12,
-                      padding: 16,
-                      background: 'rgba(0,0,0,0.2)',
-                      borderRadius: 8,
-                      fontSize: '0.85rem',
-                      lineHeight: 1.6
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      marginBottom: 8
                     }}>
-                      {/* Bet details */}
-                      <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div style={{
-                          color: '#94a3b8',
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          marginBottom: 12,
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.05em'
-                        }}>
-                          BET DETAILS
-                        </div>
-
-                        {bet.hypothesis && (
-                          <div style={{ marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                            <div style={{ color: '#64748b', marginBottom: 6, fontSize: '0.85rem' }}>Full Hypothesis:</div>
-                            <div style={{ color: '#f1f5f9', lineHeight: 1.6, fontSize: '0.95rem' }}>{bet.hypothesis}</div>
+                      <div style={{ flex: 1, paddingRight: 16 }}>
+                        {bet.product && (
+                          <div style={{
+                            color: '#fbbf24',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            marginBottom: 6
+                          }}>
+                            {bet.product}
                           </div>
                         )}
+                        <h3 style={{
+                          color: '#f1f5f9',
+                          fontSize: '1.05rem',
+                          fontWeight: 600,
+                          margin: 0,
+                          lineHeight: 1.4
+                        }}>
+                          {bet.title || bet.hypothesis}
+                        </h3>
+                      </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-                          <div><span style={{ color: '#64748b' }}>Metric: </span><span style={{ color: '#2dd4bf' }}>{bet.metric}</span></div>
-                          <div><span style={{ color: '#64748b' }}>Prediction: </span><span style={{ color: '#94a3b8' }}>{bet.prediction}</span></div>
-                          {bet.baseline && <div><span style={{ color: '#64748b' }}>Baseline: </span><span style={{ color: '#94a3b8' }}>{bet.baseline}</span></div>}
-                          {bet.timeframe && <div><span style={{ color: '#64748b' }}>Timeframe: </span><span style={{ color: '#94a3b8' }}>{bet.timeframe} days</span></div>}
-                          {bet.confidence && <div><span style={{ color: '#64748b' }}>Confidence: </span><span style={{ color: '#fbbf24' }}>{bet.confidence}%</span></div>}
-                          {bet.strategicAlignment && (
-                            <div>
-                              <span style={{ color: '#64748b' }}>Strategic Alignment: </span>
-                              <span style={{ color: '#94a3b8' }}>
-                                {bet.strategicAlignment === 'inner' ? 'Inner Ring' :
-                                 bet.strategicAlignment === 'outer' ? 'Outer Ring' :
-                                 bet.strategicAlignment === 'experimental' ? 'Experimental' : bet.strategicAlignment}
-                              </span>
+                      {/* Scores */}
+                      <div style={{ display: 'flex', gap: 0, flexShrink: 0, alignItems: 'center' }}>
+                        {isAIEnhanced && aiScore ? (
+                          <div style={{ textAlign: 'center', paddingRight: 8 }}>
+                            <div style={{ fontSize: '0.7rem', color: '#2dd4bf', marginBottom: 2, fontWeight: 700, letterSpacing: '0.05em', textShadow: '0 0 10px rgba(45,212,191,0.6)' }}>CHZ</div>
+                            <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#2dd4bf', textShadow: '0 0 15px rgba(45,212,191,0.8)' }}>{aiScore}</div>
+                          </div>
+                        ) : null}
+                        {bet.approachScore && (
+                          <div style={{
+                            display: 'flex', gap: 8, flexShrink: 0,
+                            paddingLeft: isAIEnhanced && aiScore ? 8 : 0,
+                            borderLeft: isAIEnhanced && aiScore ? '1px solid rgba(255,255,255,0.1)' : 'none'
+                          }}>
+                            <div style={{ textAlign: 'center' }}>
+                              <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: 2 }}>APR</div>
+                              <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#2dd4bf' }}>{bet.approachScore}</div>
+                            </div>
+                            <div style={{ textAlign: 'center' }}>
+                              <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: 2 }}>POT</div>
+                              <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#fbbf24' }}>{bet.potentialScore}</div>
+                            </div>
+                            <div style={{ textAlign: 'center' }}>
+                              <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: 2 }}>FIT</div>
+                              <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#7dd3fc' }}>{bet.fitScore}</div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Summary */}
+                    {bet.summary && (
+                      <div style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.5, marginBottom: 12 }}>
+                        {bet.summary}
+                      </div>
+                    )}
+
+                    {/* Meta row */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: '0.8rem', color: '#64748b', marginBottom: 16, flexWrap: 'wrap' }}>
+                      {lever && (
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center',
+                          padding: '4px 10px',
+                          background: lc.bg, border: `1px solid ${lc.border}`,
+                          borderRadius: 6, color: lc.text,
+                          fontSize: '0.75rem', fontWeight: 600,
+                          textTransform: 'uppercase', letterSpacing: '0.05em'
+                        }}>
+                          {lever}
+                        </span>
+                      )}
+                      <span>•</span>
+                      <span>Submitted by {bet.submittedByEmail || 'unknown'}</span>
+                      <span>•</span>
+                      <span>Sponsored by {bet.sponsoredByEmail || 'unknown'}</span>
+                      <span>•</span>
+                      <span>{new Date(bet.createdAt).toLocaleDateString()}</span>
+                    </div>
+
+                    {/* Show details + work status row */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div>
+                        {bet.scoringRationale && (
+                          <button
+                            onClick={() => setExpandedPriorityBet(isExpanded ? null : bet.id)}
+                            style={{
+                              background: 'transparent', border: 'none',
+                              color: '#2dd4bf', fontSize: '0.8rem',
+                              cursor: 'pointer', padding: 0,
+                              display: 'flex', alignItems: 'center', gap: 4
+                            }}
+                          >
+                            <span style={{ fontSize: '0.7rem' }}>{isExpanded ? '▼' : '▶'}</span>
+                            {isExpanded ? 'Hide details' : 'Show details'}
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Work status */}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                        {!isStarted && !isCompleted && (
+                          <button
+                            onClick={() => markStarted && markStarted(bet.id)}
+                            style={{
+                              padding: '7px 16px',
+                              background: 'rgba(251,191,36,0.1)',
+                              border: '1px solid rgba(251,191,36,0.3)',
+                              borderRadius: 8, color: '#fbbf24',
+                              fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer'
+                            }}
+                          >
+                            Mark Started
+                          </button>
+                        )}
+                        {isStarted && !isCompleted && (
+                          <>
+                            <div style={{ color: '#64748b', fontSize: '0.75rem' }}>
+                              Started {new Date(bet.startedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </div>
+                            <button
+                              onClick={() => markCompleted && markCompleted(bet.id)}
+                              style={{
+                                padding: '7px 16px',
+                                background: 'rgba(34,197,94,0.1)',
+                                border: '1px solid rgba(34,197,94,0.3)',
+                                borderRadius: 8, color: '#22c55e',
+                                fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer'
+                              }}
+                            >
+                              Mark Completed
+                            </button>
+                          </>
+                        )}
+                        {isCompleted && (
+                          <>
+                            <div style={{ color: '#64748b', fontSize: '0.75rem' }}>
+                              Started {new Date(bet.startedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </div>
+                            <div style={{ color: '#64748b', fontSize: '0.75rem' }}>
+                              Completed {new Date(bet.completedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </div>
+                            <button
+                              onClick={() => setScreen('record_outcome')}
+                              style={{
+                                padding: '7px 16px',
+                                background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
+                                border: 'none',
+                                borderRadius: 8, color: '#0a0f1a',
+                                fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer'
+                              }}
+                            >
+                              Record Outcome →
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Expandable details — matching marketplace formatting */}
+                    {isExpanded && bet.scoringRationale && (
+                      <div style={{
+                        marginTop: 12,
+                        padding: 16,
+                        background: 'rgba(0,0,0,0.2)',
+                        borderRadius: 8,
+                        fontSize: '0.85rem',
+                        lineHeight: 1.6
+                      }}>
+                        <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                          <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            BET DETAILS
+                          </div>
+
+                          {bet.hypothesis && (
+                            <div style={{ marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                              <div style={{ color: '#64748b', marginBottom: 6, fontSize: '0.85rem' }}>Full Hypothesis:</div>
+                              <div style={{ color: '#f1f5f9', lineHeight: 1.6, fontSize: '0.95rem' }}>{bet.hypothesis}</div>
                             </div>
                           )}
-                          {bet.estimatedEffort && <div><span style={{ color: '#64748b' }}>Estimated Effort: </span><span style={{ color: '#94a3b8' }}>{bet.estimatedEffort}</span></div>}
-                        </div>
 
-                        {bet.assumptions && (
-                          <div>
-                            <div style={{ color: '#64748b', marginBottom: 4 }}>Assumptions:</div>
-                            <div style={{ color: '#94a3b8' }}>{bet.assumptions}</div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                            <div><span style={{ color: '#64748b' }}>Metric: </span><span style={{ color: '#2dd4bf' }}>{bet.metric}</span></div>
+                            <div><span style={{ color: '#64748b' }}>Prediction: </span><span style={{ color: '#94a3b8' }}>{bet.prediction}</span></div>
+                            {bet.baseline && <div><span style={{ color: '#64748b' }}>Baseline: </span><span style={{ color: '#94a3b8' }}>{bet.baseline}</span></div>}
+                            {bet.timeframe && <div><span style={{ color: '#64748b' }}>Timeframe: </span><span style={{ color: '#94a3b8' }}>{bet.timeframe} days</span></div>}
+                            {bet.confidence && <div><span style={{ color: '#64748b' }}>Confidence: </span><span style={{ color: '#fbbf24' }}>{bet.confidence}%</span></div>}
+                            {bet.strategicAlignment && (
+                              <div>
+                                <span style={{ color: '#64748b' }}>Strategic Alignment: </span>
+                                <span style={{ color: '#94a3b8' }}>
+                                  {bet.strategicAlignment === 'inner' ? 'Inner Ring' :
+                                   bet.strategicAlignment === 'outer' ? 'Outer Ring' :
+                                   bet.strategicAlignment === 'experimental' ? 'Experimental' : bet.strategicAlignment}
+                                </span>
+                              </div>
+                            )}
+                            {bet.estimatedEffort && <div><span style={{ color: '#64748b' }}>Estimated Effort: </span><span style={{ color: '#94a3b8' }}>{bet.estimatedEffort}</span></div>}
                           </div>
-                        )}
-                      </div>
 
-                      {/* Scoring rationale */}
-                      <div style={{ paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div style={{
-                          color: '#94a3b8',
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          marginBottom: 12,
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.05em',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 6
-                        }}>
-                          CHZCLOTH SCORING RATIONALE
-                          {isAIEnhanced && <span style={{ color: '#2dd4bf', fontWeight: 700 }}>• ENHANCED</span>}
+                          {bet.assumptions && (
+                            <div>
+                              <div style={{ color: '#64748b', marginBottom: 4 }}>Assumptions:</div>
+                              <div style={{ color: '#94a3b8' }}>{bet.assumptions}</div>
+                            </div>
+                          )}
                         </div>
-                        <div style={{ marginBottom: 8 }}>
-                          <span style={{ color: '#2dd4bf', fontWeight: 600 }}>Approach:</span>
-                          <span style={{ color: '#94a3b8', marginLeft: 8 }}>{bet.scoringRationale?.approach?.rationale}</span>
-                        </div>
-                        <div style={{ marginBottom: 8 }}>
-                          <span style={{ color: '#fbbf24', fontWeight: 600 }}>Potential:</span>
-                          <span style={{ color: '#94a3b8', marginLeft: 8 }}>{bet.scoringRationale?.potential?.rationale}</span>
-                        </div>
-                        <div>
-                          <span style={{ color: '#7dd3fc', fontWeight: 600 }}>Fit:</span>
-                          <span style={{ color: '#94a3b8', marginLeft: 8 }}>{bet.scoringRationale?.fit?.rationale}</span>
+
+                        <div style={{ paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                          <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: 6 }}>
+                            CHZCLOTH SCORING RATIONALE
+                            {isAIEnhanced && <span style={{ color: '#2dd4bf', fontWeight: 700 }}>• ENHANCED</span>}
+                          </div>
+                          <div style={{ marginBottom: 8 }}>
+                            <span style={{ color: '#2dd4bf', fontWeight: 600 }}>Approach:</span>
+                            <span style={{ color: '#94a3b8', marginLeft: 8 }}>{bet.scoringRationale?.approach?.rationale}</span>
+                          </div>
+                          <div style={{ marginBottom: 8 }}>
+                            <span style={{ color: '#fbbf24', fontWeight: 600 }}>Potential:</span>
+                            <span style={{ color: '#94a3b8', marginLeft: 8 }}>{bet.scoringRationale?.potential?.rationale}</span>
+                          </div>
+                          <div>
+                            <span style={{ color: '#7dd3fc', fontWeight: 600 }}>Fit:</span>
+                            <span style={{ color: '#94a3b8', marginLeft: 8 }}>{bet.scoringRationale?.fit?.rationale}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </>
   );
 })()}
 {screen === 'ideas_queue' && (
