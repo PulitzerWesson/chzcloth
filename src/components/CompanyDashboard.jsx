@@ -3,6 +3,296 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 
+// GoalEditForm MUST live outside CompanyDashboard.
+// When a component is defined inside another component, React treats it
+// as a brand-new component type on every render, so it unmounts and
+// remounts it — wiping all typed input. Moving it outside fixes this.
+function GoalEditForm({ goal, timePeriod, currentOrg, onSave, onCancel }) {
+  const [title, setTitle] = useState(goal?.title || '');
+  const [description, setDescription] = useState(goal?.description || '');
+  const [kpis, setKpis] = useState(() => {
+    if (goal?.kpis) {
+      return typeof goal.kpis === 'string' ? JSON.parse(goal.kpis) : goal.kpis;
+    }
+    return [{ metric: '', baseline: '', target: '' }];
+  });
+  const [priority, setPriority] = useState(goal?.priority || 1);
+  const [saving, setSaving] = useState(false);
+
+  const addKPI = () => setKpis([...kpis, { metric: '', baseline: '', target: '' }]);
+
+  const removeKPI = (index) => setKpis(kpis.filter((_, i) => i !== index));
+
+  const updateKPI = (index, field, value) => {
+    const updated = [...kpis];
+    updated[index][field] = value;
+    setKpis(updated);
+  };
+
+  const handleSave = async () => {
+    if (!title.trim()) {
+      alert('Please enter a goal title');
+      return;
+    }
+    setSaving(true);
+    try {
+      const goalData = {
+        org_id: currentOrg.orgId,
+        time_period: timePeriod.period,
+        year: timePeriod.year,
+        title: title.trim(),
+        description: description.trim() || null,
+        kpis: kpis.filter(k => k.metric && k.baseline && k.target),
+        priority: priority
+      };
+
+      if (goal) {
+        const { data, error } = await supabase
+          .from('company_goals')
+          .update(goalData)
+          .eq('id', goal.id)
+          .select()
+          .single();
+        if (error) throw error;
+        onSave(data);
+      } else {
+        const { data, error } = await supabase
+          .from('company_goals')
+          .insert(goalData)
+          .select()
+          .single();
+        if (error) throw error;
+        onSave(data);
+      }
+    } catch (error) {
+      console.error('Error saving goal:', error);
+      alert('Failed to save goal. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div>
+      {/* Priority */}
+      <div style={{ marginBottom: 20 }}>
+        <label style={{ display: 'block', color: '#94a3b8', marginBottom: 8, fontSize: '0.9rem' }}>
+          Priority
+        </label>
+        <select
+          value={priority}
+          onChange={(e) => setPriority(parseInt(e.target.value))}
+          style={{
+            width: '100%',
+            padding: '12px 16px',
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 8,
+            color: '#f1f5f9',
+            fontSize: '1rem',
+            cursor: 'pointer',
+            boxSizing: 'border-box'
+          }}
+        >
+          <option value="1">P1 (Must-hit)</option>
+          <option value="2">P2 (Important)</option>
+          <option value="3">P3 (Stretch)</option>
+        </select>
+      </div>
+
+      {/* Title */}
+      <div style={{ marginBottom: 20 }}>
+        <label style={{ display: 'block', color: '#94a3b8', marginBottom: 8, fontSize: '0.9rem' }}>
+          Goal Title *
+        </label>
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="e.g., Reach $200K MRR by end of Q1 2026"
+          style={{
+            width: '100%',
+            padding: '12px 16px',
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 8,
+            color: '#f1f5f9',
+            fontSize: '1rem',
+            outline: 'none',
+            boxSizing: 'border-box'
+          }}
+        />
+      </div>
+
+      {/* Description */}
+      <div style={{ marginBottom: 20 }}>
+        <label style={{ display: 'block', color: '#94a3b8', marginBottom: 8, fontSize: '0.9rem' }}>
+          Description (optional)
+        </label>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Describe how you'll achieve this goal..."
+          rows={3}
+          style={{
+            width: '100%',
+            padding: '12px 16px',
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 8,
+            color: '#f1f5f9',
+            fontSize: '1rem',
+            outline: 'none',
+            boxSizing: 'border-box',
+            resize: 'vertical'
+          }}
+        />
+      </div>
+
+      {/* KPIs */}
+      <div style={{ marginBottom: 24 }}>
+        <label style={{ display: 'block', color: '#94a3b8', marginBottom: 12, fontSize: '0.9rem' }}>
+          Key Metrics (KPIs)
+        </label>
+        {kpis.map((kpi, idx) => (
+          <div key={idx} style={{ marginBottom: 12 }}>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+              <input
+                type="text"
+                value={kpi.metric}
+                onChange={(e) => updateKPI(idx, 'metric', e.target.value)}
+                placeholder="Metric name (e.g., MRR)"
+                style={{
+                  flex: 1,
+                  padding: '10px 12px',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 8,
+                  color: '#f1f5f9',
+                  fontSize: '0.9rem',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  minWidth: 0
+                }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input
+                type="text"
+                value={kpi.baseline}
+                onChange={(e) => updateKPI(idx, 'baseline', e.target.value)}
+                placeholder="Baseline"
+                style={{
+                  flex: 1,
+                  padding: '10px 12px',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 8,
+                  color: '#f1f5f9',
+                  fontSize: '0.9rem',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  minWidth: 0
+                }}
+              />
+              <span style={{ color: '#64748b', fontSize: '1.2rem' }}>→</span>
+              <input
+                type="text"
+                value={kpi.target}
+                onChange={(e) => updateKPI(idx, 'target', e.target.value)}
+                placeholder="Target"
+                style={{
+                  flex: 1,
+                  padding: '10px 12px',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 8,
+                  color: '#f1f5f9',
+                  fontSize: '0.9rem',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  minWidth: 0
+                }}
+              />
+              <button
+                onClick={() => removeKPI(idx)}
+                disabled={kpis.length === 1}
+                style={{
+                  padding: '10px 14px',
+                  background: kpis.length === 1 ? 'rgba(255,255,255,0.02)' : 'rgba(239, 68, 68, 0.1)',
+                  border: kpis.length === 1 ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(239, 68, 68, 0.3)',
+                  borderRadius: 8,
+                  color: kpis.length === 1 ? '#475569' : '#ef4444',
+                  fontSize: '0.85rem',
+                  cursor: kpis.length === 1 ? 'not-allowed' : 'pointer',
+                  flexShrink: 0
+                }}
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        ))}
+        <button
+          onClick={addKPI}
+          style={{
+            padding: '8px 12px',
+            background: 'rgba(45, 212, 191, 0.1)',
+            border: '1px solid rgba(45, 212, 191, 0.3)',
+            borderRadius: 8,
+            color: '#2dd4bf',
+            fontSize: '0.85rem',
+            cursor: 'pointer',
+            marginTop: 8
+          }}
+        >
+          + Add KPI
+        </button>
+      </div>
+
+      {/* Buttons */}
+      <div style={{ display: 'flex', gap: 12 }}>
+        <button
+          onClick={onCancel}
+          disabled={saving}
+          style={{
+            flex: 1,
+            padding: '12px',
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 8,
+            color: '#94a3b8',
+            cursor: saving ? 'not-allowed' : 'pointer',
+            fontSize: '0.95rem'
+          }}
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSave}
+          disabled={saving || !title.trim()}
+          style={{
+            flex: 1,
+            padding: '12px',
+            background: (!title.trim() || saving) ? 'rgba(45, 212, 191, 0.3)' : '#2dd4bf',
+            border: 'none',
+            borderRadius: 8,
+            color: '#0f172a',
+            fontWeight: 600,
+            cursor: (!title.trim() || saving) ? 'not-allowed' : 'pointer',
+            fontSize: '0.95rem'
+          }}
+        >
+          {saving ? 'Saving...' : goal ? 'Update Goal' : 'Create Goal'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Main component
+// ============================================================
 export function CompanyDashboard({ currentOrg, isAdmin }) {
   const { user } = useAuth();
   const [goals, setGoals] = useState([]);
@@ -14,12 +304,10 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(null);
 
-  // FIX: Don't refetch while any modal is open — prevents loading state from destroying the modal
   useEffect(() => {
     if (!currentOrg?.orgId) return;
-    if (showEditModal || showDeleteConfirm || showRemoveConfirm) return;
     fetchData();
-  }, [currentOrg?.orgId, timePeriod, showEditModal, showDeleteConfirm, showRemoveConfirm]);
+  }, [currentOrg?.orgId, timePeriod]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -58,11 +346,7 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
 
   const handleDeleteGoal = async (goalId) => {
     try {
-      await supabase
-        .from('company_goals')
-        .delete()
-        .eq('id', goalId);
-
+      await supabase.from('company_goals').delete().eq('id', goalId);
       setGoals(goals.filter(g => g.id !== goalId));
       setShowDeleteConfirm(null);
     } catch (error) {
@@ -72,11 +356,7 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
 
   const handleRemoveMember = async (userOrgId) => {
     try {
-      await supabase
-        .from('user_organizations')
-        .delete()
-        .eq('id', userOrgId);
-
+      await supabase.from('user_organizations').delete().eq('id', userOrgId);
       setTeamMembers(teamMembers.filter(m => m.id !== userOrgId));
       setShowRemoveConfirm(null);
     } catch (error) {
@@ -84,315 +364,14 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
     }
   };
 
-  const handleEditGoal = (goal) => {
-    setEditingGoal(goal);
-    setShowEditModal(true);
-  };
-
-  const handleAddGoal = () => {
-    setEditingGoal(null);
-    setShowEditModal(true);
-  };
-
-  function GoalEditForm({ goal, timePeriod, currentOrg, onSave, onCancel }) {
-    const [title, setTitle] = useState(goal?.title || '');
-    const [description, setDescription] = useState(goal?.description || '');
-    const [kpis, setKpis] = useState(() => {
-      if (goal?.kpis) {
-        return typeof goal.kpis === 'string' ? JSON.parse(goal.kpis) : goal.kpis;
-      }
-      return [{ metric: '', baseline: '', target: '' }];
-    });
-    const [priority, setPriority] = useState(goal?.priority || 1);
-    const [saving, setSaving] = useState(false);
-
-    const addKPI = () => {
-      setKpis([...kpis, { metric: '', baseline: '', target: '' }]);
-    };
-
-    const removeKPI = (index) => {
-      setKpis(kpis.filter((_, i) => i !== index));
-    };
-
-    const updateKPI = (index, field, value) => {
-      const updated = [...kpis];
-      updated[index][field] = value;
-      setKpis(updated);
-    };
-
-    const handleSave = async () => {
-      if (!title.trim()) {
-        alert('Please enter a goal title');
-        return;
-      }
-
-      setSaving(true);
-      try {
-        const goalData = {
-          org_id: currentOrg.orgId,
-          time_period: timePeriod.period,
-          year: timePeriod.year,
-          title: title.trim(),
-          description: description.trim() || null,
-          kpis: kpis.filter(k => k.metric && k.baseline && k.target),
-          priority: priority
-        };
-
-        if (goal) {
-          const { data, error } = await supabase
-            .from('company_goals')
-            .update(goalData)
-            .eq('id', goal.id)
-            .select()
-            .single();
-
-          if (error) throw error;
-          onSave(data);
-        } else {
-          const { data, error } = await supabase
-            .from('company_goals')
-            .insert(goalData)
-            .select()
-            .single();
-
-          if (error) throw error;
-          onSave(data);
-        }
-      } catch (error) {
-        console.error('Error saving goal:', error);
-        alert('Failed to save goal. Please try again.');
-      } finally {
-        setSaving(false);
-      }
-    };
-
-    return (
-      <div>
-        <div style={{ marginBottom: 20 }}>
-          <label style={{ display: 'block', color: '#94a3b8', marginBottom: 8, fontSize: '0.9rem' }}>
-            Priority
-          </label>
-          <select
-            value={priority}
-            onChange={(e) => setPriority(parseInt(e.target.value))}
-            style={{
-              width: '100%',
-              padding: '12px 16px',
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 8,
-              color: '#f1f5f9',
-              fontSize: '1rem',
-              cursor: 'pointer',
-              boxSizing: 'border-box'
-            }}
-          >
-            <option value="1">P1 (Must-hit)</option>
-            <option value="2">P2 (Important)</option>
-            <option value="3">P3 (Stretch)</option>
-          </select>
-        </div>
-
-        <div style={{ marginBottom: 20 }}>
-          <label style={{ display: 'block', color: '#94a3b8', marginBottom: 8, fontSize: '0.9rem' }}>
-            Goal Title *
-          </label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g., Reach $200K MRR by end of Q1 2026"
-            style={{
-              width: '100%',
-              padding: '12px 16px',
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 8,
-              color: '#f1f5f9',
-              fontSize: '1rem',
-              outline: 'none',
-              boxSizing: 'border-box'
-            }}
-          />
-        </div>
-
-        <div style={{ marginBottom: 20 }}>
-          <label style={{ display: 'block', color: '#94a3b8', marginBottom: 8, fontSize: '0.9rem' }}>
-            Description (optional)
-          </label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Describe how you'll achieve this goal..."
-            rows={3}
-            style={{
-              width: '100%',
-              padding: '12px 16px',
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 8,
-              color: '#f1f5f9',
-              fontSize: '1rem',
-              outline: 'none',
-              boxSizing: 'border-box',
-              resize: 'vertical'
-            }}
-          />
-        </div>
-
-        <div style={{ marginBottom: 24 }}>
-          <label style={{ display: 'block', color: '#94a3b8', marginBottom: 12, fontSize: '0.9rem' }}>
-            Key Metrics (KPIs)
-          </label>
-          {kpis.map((kpi, idx) => (
-            <div key={idx} style={{ marginBottom: 12 }}>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                <input
-                  type="text"
-                  value={kpi.metric}
-                  onChange={(e) => updateKPI(idx, 'metric', e.target.value)}
-                  placeholder="Metric name (e.g., MRR)"
-                  style={{
-                    flex: 1,
-                    padding: '10px 12px',
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: 8,
-                    color: '#f1f5f9',
-                    fontSize: '0.9rem',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                    minWidth: 0
-                  }}
-                />
-              </div>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <input
-                  type="text"
-                  value={kpi.baseline}
-                  onChange={(e) => updateKPI(idx, 'baseline', e.target.value)}
-                  placeholder="Baseline"
-                  style={{
-                    flex: 1,
-                    padding: '10px 12px',
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: 8,
-                    color: '#f1f5f9',
-                    fontSize: '0.9rem',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                    minWidth: 0
-                  }}
-                />
-                <span style={{ color: '#64748b', fontSize: '1.2rem' }}>→</span>
-                <input
-                  type="text"
-                  value={kpi.target}
-                  onChange={(e) => updateKPI(idx, 'target', e.target.value)}
-                  placeholder="Target"
-                  style={{
-                    flex: 1,
-                    padding: '10px 12px',
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: 8,
-                    color: '#f1f5f9',
-                    fontSize: '0.9rem',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                    minWidth: 0
-                  }}
-                />
-                <button
-                  onClick={() => removeKPI(idx)}
-                  disabled={kpis.length === 1}
-                  style={{
-                    padding: '10px 14px',
-                    background: kpis.length === 1 ? 'rgba(255,255,255,0.02)' : 'rgba(239, 68, 68, 0.1)',
-                    border: kpis.length === 1 ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(239, 68, 68, 0.3)',
-                    borderRadius: 8,
-                    color: kpis.length === 1 ? '#475569' : '#ef4444',
-                    fontSize: '0.85rem',
-                    cursor: kpis.length === 1 ? 'not-allowed' : 'pointer',
-                    flexShrink: 0
-                  }}
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-          ))}
-          <button
-            onClick={addKPI}
-            style={{
-              padding: '8px 12px',
-              background: 'rgba(45, 212, 191, 0.1)',
-              border: '1px solid rgba(45, 212, 191, 0.3)',
-              borderRadius: 8,
-              color: '#2dd4bf',
-              fontSize: '0.85rem',
-              cursor: 'pointer',
-              marginTop: 8
-            }}
-          >
-            + Add KPI
-          </button>
-        </div>
-
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button
-            onClick={onCancel}
-            disabled={saving}
-            style={{
-              flex: 1,
-              padding: '12px',
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 8,
-              color: '#94a3b8',
-              cursor: saving ? 'not-allowed' : 'pointer',
-              fontSize: '0.95rem'
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving || !title.trim()}
-            style={{
-              flex: 1,
-              padding: '12px',
-              background: (!title.trim() || saving) ? 'rgba(45, 212, 191, 0.3)' : '#2dd4bf',
-              border: 'none',
-              borderRadius: 8,
-              color: '#0f172a',
-              fontWeight: 600,
-              cursor: (!title.trim() || saving) ? 'not-allowed' : 'pointer',
-              fontSize: '0.95rem'
-            }}
-          >
-            {saving ? 'Saving...' : goal ? 'Update Goal' : 'Create Goal'}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // FIX: Only show full loading screen on initial load (no data yet)
-  // During refetches, render normally so modals aren't destroyed
   if (loading && goals.length === 0 && teamMembers.length === 0) {
     return <div style={{ color: '#94a3b8', padding: 40 }}>Loading...</div>;
   }
 
   return (
     <div style={{ padding: '0 40px 40px 40px' }}>
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        marginBottom: 32
-      }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
         <h1 style={{ color: '#f1f5f9', fontSize: '1.8rem', fontWeight: 600, margin: 0 }}>
           Company Dashboard
         </h1>
@@ -400,12 +379,7 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
 
       {/* Goals Section */}
       <div style={{ marginBottom: 48 }}>
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          marginBottom: 24
-        }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <h2 style={{ color: '#f1f5f9', fontSize: '1.3rem', fontWeight: 600, margin: 0 }}>
             Company Goals
           </h2>
@@ -438,7 +412,7 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
 
             {isAdmin && (
               <button
-                onClick={handleAddGoal}
+                onClick={() => { setEditingGoal(null); setShowEditModal(true); }}
                 style={{
                   padding: '8px 16px',
                   background: 'rgba(45, 212, 191, 0.1)',
@@ -458,12 +432,9 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
 
         {goals.length === 0 ? (
           <div style={{
-            padding: 40,
-            textAlign: 'center',
-            background: 'rgba(255,255,255,0.02)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            borderRadius: 12,
-            color: '#64748b'
+            padding: 40, textAlign: 'center',
+            background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 12, color: '#64748b'
           }}>
             No goals set for {timePeriod.period.toUpperCase()} {timePeriod.year}
           </div>
@@ -474,25 +445,19 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
               const priorityColors = { 1: '#ef4444', 2: '#fbbf24', 3: '#3b82f6' };
 
               return (
-                <div
-                  key={goal.id}
-                  style={{
-                    padding: 24,
-                    background: 'rgba(255,255,255,0.02)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 12
-                  }}
-                >
+                <div key={goal.id} style={{
+                  padding: 24,
+                  background: 'rgba(255,255,255,0.02)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: 12
+                }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
                         <span style={{
                           background: priorityColors[goal.priority] || '#64748b',
-                          color: '#0f172a',
-                          padding: '4px 10px',
-                          borderRadius: 6,
-                          fontSize: '0.75rem',
-                          fontWeight: 700
+                          color: '#0f172a', padding: '4px 10px',
+                          borderRadius: 6, fontSize: '0.75rem', fontWeight: 700
                         }}>
                           P{goal.priority}
                         </span>
@@ -510,15 +475,11 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
                     {isAdmin && (
                       <div style={{ display: 'flex', gap: 8 }}>
                         <button
-                          onClick={() => handleEditGoal(goal)}
+                          onClick={() => { setEditingGoal(goal); setShowEditModal(true); }}
                           style={{
-                            padding: '6px 12px',
-                            background: 'rgba(255,255,255,0.05)',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            borderRadius: 6,
-                            color: '#94a3b8',
-                            fontSize: '0.8rem',
-                            cursor: 'pointer'
+                            padding: '6px 12px', background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6,
+                            color: '#94a3b8', fontSize: '0.8rem', cursor: 'pointer'
                           }}
                         >
                           Edit
@@ -526,13 +487,9 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
                         <button
                           onClick={() => setShowDeleteConfirm(goal.id)}
                           style={{
-                            padding: '6px 12px',
-                            background: 'rgba(239, 68, 68, 0.1)',
-                            border: '1px solid rgba(239, 68, 68, 0.3)',
-                            borderRadius: 6,
-                            color: '#ef4444',
-                            fontSize: '0.8rem',
-                            cursor: 'pointer'
+                            padding: '6px 12px', background: 'rgba(239, 68, 68, 0.1)',
+                            border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: 6,
+                            color: '#ef4444', fontSize: '0.8rem', cursor: 'pointer'
                           }}
                         >
                           Delete
@@ -543,9 +500,7 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
 
                   {kpis.length > 0 && (
                     <div>
-                      <div style={{ color: '#64748b', fontSize: '0.8rem', marginBottom: 8, fontWeight: 600 }}>
-                        KEY METRICS:
-                      </div>
+                      <div style={{ color: '#64748b', fontSize: '0.8rem', marginBottom: 8, fontWeight: 600 }}>KEY METRICS:</div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         {kpis.map((kpi, kpiIdx) => (
                           <div key={kpiIdx} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -570,49 +525,34 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
         <h2 style={{ color: '#f1f5f9', fontSize: '1.3rem', fontWeight: 600, marginBottom: 24 }}>
           Team Members
         </h2>
-
         <div style={{
-          background: 'rgba(255,255,255,0.02)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: 12,
-          overflow: 'hidden'
+          background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: 12, overflow: 'hidden'
         }}>
           {teamMembers.map((member, idx) => {
             const isCurrentUser = member.user_id === user.id;
             return (
-              <div
-                key={member.id}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '16px 24px',
-                  borderBottom: idx < teamMembers.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none'
-                }}
-              >
+              <div key={member.id} style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '16px 24px',
+                borderBottom: idx < teamMembers.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none'
+              }}>
                 <div>
                   <div style={{ color: '#f1f5f9', fontWeight: 500, marginBottom: 4 }}>
                     {member.users?.email || 'Unknown'}
-                    {isCurrentUser && (
-                      <span style={{ color: '#64748b', marginLeft: 8 }}>(you)</span>
-                    )}
+                    {isCurrentUser && <span style={{ color: '#64748b', marginLeft: 8 }}>(you)</span>}
                   </div>
                   <div style={{ color: '#64748b', fontSize: '0.85rem' }}>
                     {member.team_role === 'admin' ? 'Admin' : 'Member'}
                   </div>
                 </div>
-
                 {isAdmin && !isCurrentUser && (
                   <button
                     onClick={() => setShowRemoveConfirm(member.id)}
                     style={{
-                      padding: '6px 12px',
-                      background: 'rgba(239, 68, 68, 0.1)',
-                      border: '1px solid rgba(239, 68, 68, 0.3)',
-                      borderRadius: 6,
-                      color: '#ef4444',
-                      fontSize: '0.8rem',
-                      cursor: 'pointer'
+                      padding: '6px 12px', background: 'rgba(239, 68, 68, 0.1)',
+                      border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: 6,
+                      color: '#ef4444', fontSize: '0.8rem', cursor: 'pointer'
                     }}
                   >
                     Remove
@@ -624,7 +564,7 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
         </div>
       </div>
 
-      {/* Delete Goal Confirmation */}
+      {/* Delete Goal Confirmation Modal */}
       {showDeleteConfirm && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
@@ -648,7 +588,7 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
         </div>
       )}
 
-      {/* Remove Member Confirmation */}
+      {/* Remove Member Confirmation Modal */}
       {showRemoveConfirm && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
@@ -672,7 +612,7 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
         </div>
       )}
 
-      {/* Edit/Add Goal Modal */}
+      {/* Edit / Add Goal Modal */}
       {showEditModal && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
