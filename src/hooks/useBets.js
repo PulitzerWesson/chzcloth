@@ -82,6 +82,7 @@ export function useBets(orgId, orgMode) {
         return {
           id: bet.id,
           orgId: bet.org_id,
+          userId: bet.user_id,
           hypothesis: bet.hypothesis,
           metricDomain: bet.metric_domain,
           metric: bet.metric,
