@@ -3654,6 +3654,11 @@ const ideaEntry = {
     console.error('Error submitting to marketplace:', error);
     alert('Error submitting to marketplace. Please try again.');
   } else {
+    await supabase
+      .from('bets')
+      .update({ approval_status: 'pending_approval' })
+      .eq('id', currentBet.id);
+    refreshBets();
     alert('Bet added to marketplace!');
     setCurrentBet(null);
     setScreen('ideas_queue');
