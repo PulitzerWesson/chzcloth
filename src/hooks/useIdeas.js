@@ -273,6 +273,30 @@ const newIdea = {
     }
   }, [ideas, user])
 
+  const withdrawFromMarketplace = async (betId) => {
+  if (!user) return { error: { message: 'Not authenticated' } }
+  try {
+    // Find the idea that belongs to this bet
+    const idea = ideas.find(i => {
+      const bd = typeof i.bet_data === 'string' ? JSON.parse(i.bet_data) : i.bet_data;
+      return bd?.id === betId;
+    });
+    if (!idea) return { error: { message: 'Idea not found' } }
+    const { error } = await supabase
+      .from('ideas')
+      .delete()
+      .eq('id', idea.id)
+      .eq('submitted_by', user.id)
+    if (error) throw error
+    setIdeas(prev => prev.filter(i => i.id !== idea.id))
+    return { error: null }
+  } catch (err) {
+    console.error('Error withdrawing from marketplace:', err)
+    return { error: err }
+  }
+}
+  
+
   return {
     ideas,
     loading,
@@ -286,6 +310,7 @@ const newIdea = {
     getIdeasByStatus,
     getMyIdeas,
     getClaimedIdeas,
-    getStats
+    getStats,
+    withdrawFromMarketplace
   }
 }
