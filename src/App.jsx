@@ -23,39 +23,102 @@ import CompanyDashboard from './components/CompanyDashboard';
 // CHZCLOTH Free - Where Bets Get Smarter
 // ============================================
 
-// Add this after imports, before AppHeader
-const CHZCLOTHBadge = () => (
-  <svg 
-    width="14" 
-    height="14" 
-    viewBox="0 0 100 100"
-    title="CHZCLOTH AI Enhanced"
-    style={{ 
-      marginLeft: 6, 
-      cursor: 'help',
-      flexShrink: 0
-    }}
-  >
-    {/* Outer circle */}
-    <circle 
-      cx="50" 
-      cy="50" 
-      r="42" 
-      stroke="#2dd4bf" 
-      strokeWidth="8" 
-      fill="none"
-    />
-    
-    {/* C shape */}
-    <path 
-      d="M50,15 C30,15 15,30 15,50 C15,70 30,85 50,85" 
-      stroke="#2dd4bf" 
-      fill="none" 
-      strokeWidth="12"
-      strokeLinecap="round"
-    />
-  </svg>
-);
+onst StrategicAlignmentIcon = ({ alignment }) => {
+  const n = alignment?.toLowerCase();
+
+  if (n === 'inner' || n === 'inner_ring' || n === 'inner ring') {
+    return (
+      <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
+        <style>{`
+          @keyframes growFromDot {
+            0% { transform: scale(0); opacity: 0; }
+            22% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+          }
+          .grow-circle {
+            animation: growFromDot 9s ease-out infinite;
+            transform-origin: center;
+          }
+        `}</style>
+        <circle cx="14" cy="14" r="12" stroke="url(#tealGradient)" strokeWidth="2.5" fill="none"/>
+        <circle className="grow-circle" cx="14" cy="14" r="6" fill="url(#tealGradient)"/>
+        <defs>
+          <linearGradient id="tealGradient" x1="2" y1="2" x2="26" y2="26">
+            <stop offset="0%" stopColor="#2dd4bf"/>
+            <stop offset="100%" stopColor="#22d3ee"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    );
+  }
+
+  if (n === 'outer' || n === 'outer_ring' || n === 'outer ring') {
+    return (
+      <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
+        <style>{`
+          @keyframes draw {
+            0% { stroke-dashoffset: 75.4; }
+            30% { stroke-dashoffset: 0; }
+            100% { stroke-dashoffset: 0; }
+          }
+          .draw-circle {
+            stroke-dasharray: 75.4;
+            animation: draw 10s linear infinite;
+          }
+        `}</style>
+        <circle className="draw-circle" cx="14" cy="14" r="12" stroke="url(#tealGradient2)" strokeWidth="3" fill="none"/>
+        <circle cx="14" cy="14" r="6" fill="#1e293b"/>
+        <defs>
+          <linearGradient id="tealGradient2" x1="2" y1="2" x2="26" y2="26">
+            <stop offset="0%" stopColor="#2dd4bf"/>
+            <stop offset="100%" stopColor="#22d3ee"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    );
+  }
+
+  if (n === 'experimental') {
+    return (
+      <svg width="20" height="20" viewBox="0 0 24 28" fill="none">
+        <style>{`
+          @keyframes bubble1 {
+            0% { cy: 20; opacity: 0; }
+            20% { opacity: 1; }
+            100% { cy: 3; opacity: 0; }
+          }
+          @keyframes bubble2 {
+            0% { cy: 20; opacity: 0; }
+            20% { opacity: 1; }
+            100% { cy: 3.5; opacity: 0; }
+          }
+          @keyframes bubble3 {
+            0% { cy: 20; opacity: 0; }
+            20% { opacity: 1; }
+            100% { cy: 3; opacity: 0; }
+          }
+          .bubble1 { animation: bubble1 2.5s ease-in infinite; }
+          .bubble2 { animation: bubble2 2.5s ease-in infinite 0.8s; }
+          .bubble3 { animation: bubble3 2.5s ease-in infinite 1.6s; }
+        `}</style>
+        <path d="M8 2 L8 10 L4 22 C3.5 24 4.5 26 7 26 L17 26 C19.5 26 20.5 24 20 22 L16 10 L16 2" stroke="url(#beakerGradient)" strokeWidth="2" fill="none"/>
+        <line x1="8" y1="2" x2="16" y2="2" stroke="url(#beakerGradient)" strokeWidth="2"/>
+        <circle className="bubble1" cx="9" cy="20" r="2" fill="#2dd4bf" opacity="0"/>
+        <circle className="bubble2" cx="12" cy="20" r="1.8" fill="#22d3ee" opacity="0"/>
+        <circle className="bubble3" cx="15" cy="20" r="2" fill="#2dd4bf" opacity="0"/>
+        <defs>
+          <linearGradient id="beakerGradient" x1="4" y1="2" x2="20" y2="26">
+            <stop offset="0%" stopColor="#2dd4bf"/>
+            <stop offset="100%" stopColor="#22d3ee"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    );
+  }
+
+  return null;
+};
+
 
 
 function AppHeader({ isLoggedIn, onDashboardClick, onLogoClick, onNewBet, showTeamsBanner = true }) {
