@@ -136,6 +136,20 @@ if (normalized === 'experimental') {
   return null;
 };
 
+const LEVER_COLORS = {
+  Revenue:     { bg: 'rgba(34,197,94,0.15)',   border: 'rgba(34,197,94,0.3)',   text: '#22c55e' },
+  Retention:   { bg: 'rgba(45,212,191,0.15)',  border: 'rgba(45,212,191,0.3)',  text: '#2dd4bf' },
+  Acquisition: { bg: 'rgba(251,191,36,0.15)',  border: 'rgba(251,191,36,0.3)',  text: '#fbbf24' },
+  Efficiency:  { bg: 'rgba(125,211,252,0.15)', border: 'rgba(125,211,252,0.3)', text: '#7dd3fc' },
+  Platform:    { bg: 'rgba(167,139,250,0.15)', border: 'rgba(167,139,250,0.3)', text: '#a78bfa' },
+  Experience:  { bg: 'rgba(249,115,22,0.15)',  border: 'rgba(249,115,22,0.3)',  text: '#f97316' },
+  Risk:        { bg: 'rgba(239,68,68,0.15)',   border: 'rgba(239,68,68,0.3)',   text: '#ef4444' },
+};
+
+const leverColor = (lever) => LEVER_COLORS[lever] || { 
+  bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)', text: '#94a3b8' 
+};
+
 function IdeasQueue({ 
   ideas = [], 
   loading = false,
@@ -299,24 +313,24 @@ function IdeasQueue({
 
                   {/* Meta info with mode badge */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: '0.8rem', color: '#64748b', marginBottom: 16 }}>
-                    {currentOrg?.currentMode && (
-                      <span style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        padding: '4px 10px',
-                        background: 'rgba(45, 212, 191, 0.15)',
-                        border: '1px solid rgba(45, 212, 191, 0.3)',
-                        borderRadius: 6,
-                        color: '#2dd4bf',
-                        fontSize: '0.75rem',
-                        fontWeight: 600,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em'
-                      }}>
-                        {currentOrg.currentMode}
-                      </span>
-                    )}
-                    <span>•</span>
+                  {(idea.lever || betData?.lever) && (
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      padding: '4px 10px',
+                      background: leverColor(idea.lever || betData?.lever).bg,
+                      border: `1px solid ${leverColor(idea.lever || betData?.lever).border}`,
+                      borderRadius: 6,
+                      color: leverColor(idea.lever || betData?.lever).text,
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em'
+                    }}>
+                      {idea.lever || betData?.lever}
+                    </span>
+                  )}
+                  <span>•</span>
                     <span>Submitted by {idea.submittedByEmail}</span>
                     <span>•</span>
                     <span>{new Date(idea.createdAt).toLocaleDateString()}</span>
