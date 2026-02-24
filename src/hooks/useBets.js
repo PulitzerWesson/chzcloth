@@ -118,6 +118,7 @@ export function useBets(orgId, orgMode) {
           summary: bet.summary,
           product: bet.product,
           lever: bet.lever,
+          strategicAlignment: bet.strategic_alignment,
           aiEnhanced: bet.ai_enhanced,
           aiPredictedScore: bet.ai_predicted_score,
           originalHypothesis: bet.original_hypothesis,
