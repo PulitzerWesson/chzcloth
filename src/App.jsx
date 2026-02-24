@@ -3426,7 +3426,6 @@ function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEd
             maxWidth: 440, width: 'calc(100% - 32px)',
             border: '1px solid rgba(255,255,255,0.08)'
           }}>
-            <div style={{ fontSize: '2rem', marginBottom: 12 }}>🎉</div>
             <h3 style={{ color: '#f1f5f9', fontSize: '1.3rem', fontWeight: 600, marginBottom: 12, margin: '0 0 12px 0' }}>
               Bet Completed!
             </h3>
