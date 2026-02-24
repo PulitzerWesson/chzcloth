@@ -3699,6 +3699,32 @@ const ideaEntry = {
   }
 };
 
+  const handleAddToMarketplaceFromContributors = async (bet) => {
+  const overallScore = bet.aiPredictedScore
+    ? bet.aiPredictedScore
+    : Math.round((bet.approachScore + bet.potentialScore + bet.fitScore) / 3);
+
+  const ideaEntry = {
+    title: bet.title || bet.hypothesis?.substring(0, 100) || 'Untitled Bet',
+    summary: bet.summary,
+    description: `Hypothesis: ${bet.hypothesis}`,
+    entry_type: 'bet',
+    bet_data: { ...bet, aiEnhanced: bet.aiEnhanced || false, aiPredictedScore: bet.aiPredictedScore || null },
+    viability_score: bet.approachScore,
+    relevance_score: bet.fitScore,
+    overall_score: overallScore,
+    ai_enhanced: bet.aiEnhanced || false
+  };
+
+  const { error } = await submitIdea(ideaEntry);
+  if (error) {
+    alert('Error submitting to marketplace. Please try again.');
+  } else {
+    alert('Bet added to marketplace!');
+    setScreen('ideas_queue');
+  }
+};
+
   const handleRefineBet = () => {
   // User wants to refine their bet - go back to form with current data
   setScreen('bet');
@@ -4149,20 +4175,24 @@ const handleRejectBet = async (betId, reason) => {
       </div>
 
       {/* Content area swaps */}
-      {screen === 'dashboard' && (
-        <Dashboard 
-          profile={profile} 
-          bets={bets} 
-          currentOrg={currentOrg} 
-          organizations={organizations} 
-          onSwitchOrg={switchCurrentOrg} 
-          onAddOrg={() => setScreen('orgsetup')} 
-          onNewBet={handleNewBet} 
-          email={user?.email} 
-          onRecordOutcome={handleRecordOutcome}
-          setScreen={setScreen}
-            />
-          )}
+{screen === 'dashboard' && (
+  <Dashboard 
+    profile={profile} 
+    bets={bets} 
+    currentOrg={currentOrg} 
+    organizations={organizations} 
+    onSwitchOrg={switchCurrentOrg} 
+    onAddOrg={() => setScreen('orgsetup')} 
+    onNewBet={handleNewBet} 
+    email={user?.email}
+    currentUserId={user?.id}
+    onRecordOutcome={handleRecordOutcome}
+    onAddToMarketplace={handleAddToMarketplaceFromContributors}
+    markStarted={markStarted}
+    markCompleted={markCompleted}
+    setScreen={setScreen}
+  />
+)}
 
       {console.log('Current screen state:', screen)}
 
