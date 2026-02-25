@@ -135,7 +135,9 @@ export function useBets(orgId, orgMode) {
           ideaId: bet.idea_id,
           structuredBy: bet.structured_by,
           goalId: bet.goal_id,
-          selectedKpi: bet.selected_kpi
+          selectedKpi: bet.selected_kpi,
+          startBy: bet.start_by,
+          mustShipBy: bet.must_ship_by,
         }
       })
 
