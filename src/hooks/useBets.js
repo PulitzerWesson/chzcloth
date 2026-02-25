@@ -230,7 +230,9 @@ export function useBets(orgId, orgMode) {
           document_name: betData.documentName || null,
           document_type: betData.documentType || null,
           goal_id: betData.goalId || null,
-          selected_kpi: betData.selectedKPI || null
+          selected_kpi: betData.selectedKPI || null,
+          start_by: betData.startBy || null,
+          must_ship_by: betData.mustShipBy || null,
         })
         .select()
         .single()
