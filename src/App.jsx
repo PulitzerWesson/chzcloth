@@ -3113,20 +3113,15 @@ function BetCard({ bet, showAddToMarketplace, expandedBets, setExpandedBets, onR
               {lever}
             </span>
           )}
-          <span>•</span>
-
-          {/* Attribution — context-aware */}
-          {isYourBet ? (
-            // Your Bets: show sponsored by if applicable, otherwise nothing
-            bet.approvalStatus === 'approved' && bet.sponsoredByEmail && (
-              <span>sponsored by {bet.sponsoredByEmail}</span>
-            )
-          ) : (
-            // Sponsored by You: show who submitted it
-            bet.submittedByEmail && (
-              <span>by {bet.submittedByEmail}</span>
-            )
-          )}
+        {isYourBet ? (
+  bet.approvalStatus === 'approved' && bet.sponsoredByEmail && (
+    <><span>•</span><span>sponsored by {bet.sponsoredByEmail}</span></>
+  )
+) : (
+  bet.submittedByEmail && (
+    <><span>•</span><span>by {bet.submittedByEmail}</span></>
+  )
+)}
 
           {/* Date — contextual: started date takes priority, then submitted */}
           {isStarted ? (
