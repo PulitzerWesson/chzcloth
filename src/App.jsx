@@ -3015,6 +3015,8 @@ const LEVER_COLORS = {
   Risk:        { bg: 'rgba(239,68,68,0.15)',   border: 'rgba(239,68,68,0.3)',   text: '#ef4444' },
 };
 
+const fmt = (dateStr) => new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
 const getStatusBadge = (bet) => {
   const outcome = bet.status || bet.outcome;
   if (['succeeded', 'partial', 'failed', 'inconclusive', 'never_shipped'].includes(outcome)) {
@@ -3044,6 +3046,9 @@ function BetCard({ bet, showAddToMarketplace, expandedBets, setExpandedBets, onR
   const hasOutcome = ['succeeded', 'partial', 'failed', 'inconclusive', 'never_shipped'].includes(bet.status || bet.outcome);
   const lc = lever && LEVER_COLORS[lever] ? LEVER_COLORS[lever] : { bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)', text: '#94a3b8' };
   const statusBadge = getStatusBadge(bet);
+
+  // showAddToMarketplace === true means "Your Bets", false means "Sponsored by You"
+  const isYourBet = showAddToMarketplace;
 
   return (
     <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 20, display: 'flex', gap: 16, marginBottom: 12 }}>
@@ -3099,7 +3104,7 @@ function BetCard({ bet, showAddToMarketplace, expandedBets, setExpandedBets, onR
         )}
 
         {/* Meta row */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: '0.8rem', color: '#64748b', marginBottom: 16, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.8rem', color: '#64748b', marginBottom: 16, flexWrap: 'wrap' }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 10px', background: statusBadge.bg, border: `1px solid ${statusBadge.border}`, borderRadius: 6, color: statusBadge.text, fontSize: '0.75rem', fontWeight: 600 }}>
             {statusBadge.label}
           </span>
@@ -3109,23 +3114,37 @@ function BetCard({ bet, showAddToMarketplace, expandedBets, setExpandedBets, onR
             </span>
           )}
           <span>•</span>
-          <span>Submitted {new Date(bet.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-          {bet.approvalStatus === 'approved' && bet.approvedAt && (
+
+          {/* Attribution — context-aware */}
+          {isYourBet ? (
+            // Your Bets: show sponsored by if applicable, otherwise nothing
+            bet.approvalStatus === 'approved' && bet.sponsoredByEmail && (
+              <span>sponsored by {bet.sponsoredByEmail}</span>
+            )
+          ) : (
+            // Sponsored by You: show who submitted it
+            bet.submittedByEmail && (
+              <span>by {bet.submittedByEmail}</span>
+            )
+          )}
+
+          {/* Date — contextual: started date takes priority, then submitted */}
+          {isStarted ? (
             <>
               <span>•</span>
-              <span>Sponsored {new Date(bet.approvedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+              <span>Started {fmt(bet.startedAt)}</span>
             </>
-          )}
-          {isStarted && (
+          ) : (
             <>
               <span>•</span>
-              <span>Started {new Date(bet.startedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+              <span>Submitted {fmt(bet.createdAt)}</span>
             </>
           )}
+
           {isCompleted && (
             <>
               <span>•</span>
-              <span>Completed {new Date(bet.completedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+              <span>Completed {fmt(bet.completedAt)}</span>
             </>
           )}
         </div>
@@ -3143,7 +3162,6 @@ function BetCard({ bet, showAddToMarketplace, expandedBets, setExpandedBets, onR
           )}
 
           <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
-            {/* Draft — add to marketplace */}
             {showAddToMarketplace && bet.approvalStatus === 'draft' && (
               <button
                 onClick={() => onAddToMarketplace && onAddToMarketplace(bet)}
@@ -3152,7 +3170,6 @@ function BetCard({ bet, showAddToMarketplace, expandedBets, setExpandedBets, onR
                 Add to Marketplace
               </button>
             )}
-            {/* In Marketplace — withdraw */}
             {showAddToMarketplace && bet.approvalStatus === 'pending_approval' && (
               <button
                 onClick={() => onWithdrawFromMarketplace && onWithdrawFromMarketplace(bet)}
@@ -3161,7 +3178,6 @@ function BetCard({ bet, showAddToMarketplace, expandedBets, setExpandedBets, onR
                 Withdraw
               </button>
             )}
-            {/* Sponsored — mark started */}
             {bet.approvalStatus === 'approved' && !isStarted && !isCompleted && !hasOutcome && (
               <button
                 onClick={() => markStarted && markStarted(bet.id)}
@@ -3170,7 +3186,6 @@ function BetCard({ bet, showAddToMarketplace, expandedBets, setExpandedBets, onR
                 Mark Started
               </button>
             )}
-            {/* Started — mark completed (opens modal) */}
             {isStarted && !isCompleted && !hasOutcome && (
               <button
                 onClick={() => onMarkCompletedClick && onMarkCompletedClick(bet)}
@@ -3179,7 +3194,6 @@ function BetCard({ bet, showAddToMarketplace, expandedBets, setExpandedBets, onR
                 Mark Completed
               </button>
             )}
-            {/* Completed — record outcome */}
             {isCompleted && !hasOutcome && (
               <button
                 onClick={() => onRecordOutcome && onRecordOutcome(bet)}
@@ -3198,14 +3212,12 @@ function BetCard({ bet, showAddToMarketplace, expandedBets, setExpandedBets, onR
               <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 BET DETAILS
               </div>
-
               {bet.hypothesis && (
                 <div style={{ marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                   <div style={{ color: '#64748b', marginBottom: 6, fontSize: '0.85rem' }}>Full Hypothesis:</div>
                   <div style={{ color: '#f1f5f9', lineHeight: 1.6, fontSize: '0.95rem' }}>{bet.hypothesis}</div>
                 </div>
               )}
-
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
                 <div><span style={{ color: '#64748b' }}>Metric: </span><span style={{ color: '#2dd4bf' }}>{bet.metric}</span></div>
                 <div><span style={{ color: '#64748b' }}>Prediction: </span><span style={{ color: '#94a3b8' }}>{bet.prediction}</span></div>
@@ -3224,14 +3236,12 @@ function BetCard({ bet, showAddToMarketplace, expandedBets, setExpandedBets, onR
                 )}
                 {bet.estimatedEffort && <div><span style={{ color: '#64748b' }}>Estimated Effort: </span><span style={{ color: '#94a3b8' }}>{bet.estimatedEffort}</span></div>}
               </div>
-
               {bet.assumptions && (
                 <div>
                   <div style={{ color: '#64748b', marginBottom: 4 }}>Assumptions:</div>
                   <div style={{ color: '#94a3b8' }}>{bet.assumptions}</div>
                 </div>
               )}
-
               {hasOutcome && (
                 <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                   {bet.actualResult && <div style={{ marginBottom: 8 }}><span style={{ color: '#64748b' }}>Result: </span><span style={{ color: '#94a3b8' }}>{bet.actualResult}</span></div>}
@@ -3239,7 +3249,6 @@ function BetCard({ bet, showAddToMarketplace, expandedBets, setExpandedBets, onR
                 </div>
               )}
             </div>
-
             {bet.scoringRationale && (
               <div style={{ paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                 <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -3270,7 +3279,7 @@ function BetCard({ bet, showAddToMarketplace, expandedBets, setExpandedBets, onR
 function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEditMode, onAddOrg, onNewBet, email, currentUserId, onRecordOutcome, onAddToMarketplace, onWithdrawFromMarketplace, markStarted, markCompleted, setScreen }) {
   const safeBets = bets || [];
   const [expandedBets, setExpandedBets] = useState({});
-  const [completionModal, setCompletionModal] = useState(null); // holds the bet being completed
+  const [completionModal, setCompletionModal] = useState(null);
 
   const yourBets = safeBets.filter(b => b.userId === currentUserId || b.user_id === currentUserId);
   const sponsoredBets = safeBets.filter(b =>
@@ -3297,9 +3306,7 @@ function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEd
     });
   };
 
-  const handleMarkCompletedClick = (bet) => {
-    setCompletionModal(bet);
-  };
+  const handleMarkCompletedClick = (bet) => setCompletionModal(bet);
 
   const handleConfirmComplete = async () => {
     if (!completionModal) return;
@@ -3416,17 +3423,9 @@ function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEd
 
       {/* Completion Modal */}
       {completionModal && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.8)', display: 'flex',
-          alignItems: 'center', justifyContent: 'center', zIndex: 10000
-        }}>
-          <div style={{
-            background: '#1e293b', borderRadius: 16, padding: 32,
-            maxWidth: 440, width: 'calc(100% - 32px)',
-            border: '1px solid rgba(255,255,255,0.08)'
-          }}>
-            <h3 style={{ color: '#f1f5f9', fontSize: '1.3rem', fontWeight: 600, marginBottom: 12, margin: '0 0 12px 0' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000 }}>
+          <div style={{ background: '#1e293b', borderRadius: 16, padding: 32, maxWidth: 440, width: 'calc(100% - 32px)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <h3 style={{ color: '#f1f5f9', fontSize: '1.3rem', fontWeight: 600, margin: '0 0 12px 0' }}>
               Bet Completed!
             </h3>
             <p style={{ color: '#94a3b8', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: 8 }}>
@@ -3438,25 +3437,13 @@ function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEd
             <div style={{ display: 'flex', gap: 12 }}>
               <button
                 onClick={handleConfirmComplete}
-                style={{
-                  flex: 1, padding: '12px',
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 8, color: '#94a3b8',
-                  fontSize: '0.95rem', cursor: 'pointer'
-                }}
+                style={{ flex: 1, padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#94a3b8', fontSize: '0.95rem', cursor: 'pointer' }}
               >
                 Remind Me Later
               </button>
               <button
                 onClick={handleCompleteAndRecord}
-                style={{
-                  flex: 1, padding: '12px',
-                  background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
-                  border: 'none', borderRadius: 8,
-                  color: '#0a0f1a', fontWeight: 600,
-                  fontSize: '0.95rem', cursor: 'pointer'
-                }}
+                style={{ flex: 1, padding: '12px', background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)', border: 'none', borderRadius: 8, color: '#0a0f1a', fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer' }}
               >
                 Record Outcome →
               </button>
