@@ -4254,7 +4254,47 @@ const handleRejectBet = async (betId, reason) => {
     Risk:        { bg: 'rgba(239,68,68,0.15)',   border: 'rgba(239,68,68,0.3)',   text: '#ef4444' },
   };
 
-  const queueBets = bets?.filter(b => b.approvalStatus === 'approved' && !b.completedAt) || [];
+  // All approved bets — including completed
+  const queueBets = bets?.filter(b => b.approvalStatus === 'approved') || [];
+
+  const now = new Date();
+
+  const sortedQueueBets = [...queueBets].sort((a, b) => {
+    // Group 1: In Progress — always top
+    const aInProgress = !!a.startedAt && !a.completedAt;
+    const bInProgress = !!b.startedAt && !b.completedAt;
+    if (aInProgress && !bInProgress) return -1;
+    if (!aInProgress && bInProgress) return 1;
+
+    // Group 2: Completed — always bottom, most recent first
+    const aCompleted = !!a.completedAt;
+    const bCompleted = !!b.completedAt;
+    if (aCompleted && !bCompleted) return 1;
+    if (!aCompleted && bCompleted) return -1;
+    if (aCompleted && bCompleted) return new Date(b.completedAt) - new Date(a.completedAt);
+
+    // Group 3: Sponsored / Not Started
+    const aDeadline = a.mustShipBy ? new Date(a.mustShipBy) : null;
+    const bDeadline = b.mustShipBy ? new Date(b.mustShipBy) : null;
+
+    // Overdue first
+    const aOverdue = aDeadline && aDeadline < now;
+    const bOverdue = bDeadline && bDeadline < now;
+    if (aOverdue && !bOverdue) return -1;
+    if (!aOverdue && bOverdue) return 1;
+
+    // Then deadline within 30 days
+    const aSoon = aDeadline && !aOverdue && (aDeadline - now) < 30 * 24 * 60 * 60 * 1000;
+    const bSoon = bDeadline && !bOverdue && (bDeadline - now) < 30 * 24 * 60 * 60 * 1000;
+    if (aSoon && !bSoon) return -1;
+    if (!aSoon && bSoon) return 1;
+    if (aSoon && bSoon) return aDeadline - bDeadline;
+
+    // Then by total score descending
+    const aScore = (a.approachScore || 0) + (a.potentialScore || 0) + (a.fitScore || 0);
+    const bScore = (b.approachScore || 0) + (b.potentialScore || 0) + (b.fitScore || 0);
+    return bScore - aScore;
+  });
 
   return (
     <div>
@@ -4262,7 +4302,7 @@ const handleRejectBet = async (betId, reason) => {
         Priority Queue
       </h1>
       <p style={{ color: '#64748b', fontSize: '0.95rem', marginBottom: 32 }}>
-        Sponsored bets ready to execute. Vote on what gets built next.
+        Sponsored bets ready to execute. Sorted by urgency and score.
       </p>
 
       {queueBets.length === 0 ? (
@@ -4271,26 +4311,33 @@ const handleRejectBet = async (betId, reason) => {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {queueBets.map(bet => {
+          {sortedQueueBets.map(bet => {
             const isExpanded = expandedPriorityBet === bet.id;
             const isAIEnhanced = bet.aiEnhanced;
             const aiScore = bet.aiPredictedScore;
             const lever = bet.lever;
             const isStarted = !!bet.startedAt;
+            const isCompleted = !!bet.completedAt;
+            const hasOutcome = ['succeeded', 'partial', 'failed', 'inconclusive', 'never_shipped'].includes(bet.status || bet.outcome);
             const lc = lever && leverColors[lever]
               ? leverColors[lever]
               : { bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)', text: '#94a3b8' };
+
+            const deadline = bet.mustShipBy ? new Date(bet.mustShipBy) : null;
+            const isOverdue = deadline && deadline < now && !isCompleted;
+            const isSoon = deadline && !isOverdue && !isCompleted && (deadline - now) < 30 * 24 * 60 * 60 * 1000;
 
             return (
               <div
                 key={bet.id}
                 style={{
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.1)',
+                  background: isOverdue ? 'rgba(239,68,68,0.05)' : 'rgba(255,255,255,0.03)',
+                  border: isOverdue ? '1px solid rgba(239,68,68,0.3)' : isSoon ? '1px solid rgba(251,191,36,0.3)' : '1px solid rgba(255,255,255,0.1)',
                   borderRadius: 12,
                   padding: 20,
                   display: 'flex',
-                  gap: 16
+                  gap: 16,
+                  opacity: isCompleted ? 0.7 : 1
                 }}
               >
                 {/* Strategic Alignment Icon */}
@@ -4353,9 +4400,24 @@ const handleRejectBet = async (betId, reason) => {
                         {lever}
                       </span>
                     )}
-                    {isStarted && (
+                    {isCompleted && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 10px', background: 'rgba(45,212,191,0.1)', border: '1px solid rgba(45,212,191,0.3)', borderRadius: 6, color: '#2dd4bf', fontSize: '0.75rem', fontWeight: 600 }}>
+                        Completed
+                      </span>
+                    )}
+                    {isStarted && !isCompleted && (
                       <span style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 10px', background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: 6, color: '#fbbf24', fontSize: '0.75rem', fontWeight: 600 }}>
                         In Progress
+                      </span>
+                    )}
+                    {isOverdue && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 10px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 6, color: '#ef4444', fontSize: '0.75rem', fontWeight: 600 }}>
+                        Overdue
+                      </span>
+                    )}
+                    {isSoon && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 10px', background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: 6, color: '#fbbf24', fontSize: '0.75rem', fontWeight: 600 }}>
+                        Due soon
                       </span>
                     )}
                     <span>•</span>
@@ -4368,6 +4430,20 @@ const handleRejectBet = async (betId, reason) => {
                       <>
                         <span>•</span>
                         <span>Started {new Date(bet.startedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                      </>
+                    )}
+                    {isCompleted && (
+                      <>
+                        <span>•</span>
+                        <span>Completed {new Date(bet.completedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                      </>
+                    )}
+                    {bet.mustShipBy && !isCompleted && (
+                      <>
+                        <span>•</span>
+                        <span style={{ color: isOverdue ? '#ef4444' : isSoon ? '#fbbf24' : '#64748b' }}>
+                          Ship by {new Date(bet.mustShipBy).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </span>
                       </>
                     )}
                   </div>
@@ -4404,6 +4480,8 @@ const handleRejectBet = async (betId, reason) => {
                           {bet.baseline && <div><span style={{ color: '#64748b' }}>Baseline: </span><span style={{ color: '#94a3b8' }}>{bet.baseline}</span></div>}
                           {bet.timeframe && <div><span style={{ color: '#64748b' }}>Timeframe: </span><span style={{ color: '#94a3b8' }}>{bet.timeframe} days</span></div>}
                           {bet.confidence && <div><span style={{ color: '#64748b' }}>Confidence: </span><span style={{ color: '#fbbf24' }}>{bet.confidence}%</span></div>}
+                          {bet.mustShipBy && <div><span style={{ color: '#64748b' }}>Must ship by: </span><span style={{ color: isOverdue ? '#ef4444' : '#94a3b8' }}>{new Date(bet.mustShipBy).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span></div>}
+                          {bet.startBy && <div><span style={{ color: '#64748b' }}>Start by: </span><span style={{ color: '#94a3b8' }}>{new Date(bet.startBy).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span></div>}
                           {bet.strategicAlignment && (
                             <div>
                               <span style={{ color: '#64748b' }}>Strategic Alignment: </span>
