@@ -54,10 +54,12 @@ export function useBets(orgId, orgMode) {
       
       let query = supabase
         .from('bets')
-        .select(`
-          *,
-          outcomes (*)
-        `)
+.select(`
+  *,
+  outcomes (*),
+  submitter:profiles!bets_user_id_fkey (email),
+  sponsor:profiles!bets_sponsored_by_fkey (email)
+`)
         .or(`user_id.eq.${user.id},sponsored_by.eq.${user.id}`)
         .order('created_at', { ascending: false })
 
@@ -138,6 +140,8 @@ export function useBets(orgId, orgMode) {
           selectedKpi: bet.selected_kpi,
           startBy: bet.start_by,
           mustShipBy: bet.must_ship_by,
+          submittedByEmail: bet.submitter?.email || null,
+sponsoredByEmail: bet.sponsor?.email || null,
         }
       })
 
