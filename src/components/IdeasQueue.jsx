@@ -164,10 +164,15 @@ function IdeasQueue({
   const [expandedRationale, setExpandedRationale] = useState(null);
   
   // Only show unclaimed/unsponsored bets
-  const betIdeas = ideas.filter(i => 
-    (i.entry_type === 'bet' || !i.entry_type) && 
-    i.status === 'pending'
-  );
+const betIdeas = ideas
+  .filter(i => (i.entry_type === 'bet' || !i.entry_type) && i.status === 'pending')
+  .sort((a, b) => {
+    const aBetData = typeof a.bet_data === 'string' ? JSON.parse(a.bet_data) : a.bet_data;
+    const bBetData = typeof b.bet_data === 'string' ? JSON.parse(b.bet_data) : b.bet_data;
+    const aScore = (aBetData?.potentialScore || 0) + (a.relevance_score || 0);
+    const bScore = (bBetData?.potentialScore || 0) + (b.relevance_score || 0);
+    return bScore - aScore;
+  });
 
   if (loading) {
     return (
