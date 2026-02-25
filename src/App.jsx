@@ -3601,7 +3601,9 @@ const handleConfirmationContinue = async (userParams) => {
       confidence: userParams.confidence,
       strategicAlignment: userParams.strategicAlignment,
       estimatedEffort: userParams.estimatedEffort,
-      inactionImpact: userParams.inactionImpact
+      inactionImpact: userParams.inactionImpact,
+      startBy: userParams.startBy,
+      mustShipBy: userParams.mustShipBy
     };
     
     // Save bet (createBet will score it internally)
