@@ -3952,15 +3952,17 @@ const handleClaimAndStructure = async (idea) => {
     const { error: claimError } = await claimIdea(idea.id);
     if (claimError) throw claimError;
 
-    const { error } = await supabase
-      .from('bets')
-       .update({ 
+const { error, data } = await supabase
+  .from('bets')
+  .update({ 
     approval_status: 'approved',
     sponsored_by: user.id
   })
-      .eq('id', betData.id);
-    
-    if (error) throw error;
+  .eq('id', betData.id)
+  .select();
+
+console.log('UPDATE RESULT:', data, error);
+if (error) throw error;
     await refreshBets();
     
     alert('Bet approved and added to Priority Queue!');
