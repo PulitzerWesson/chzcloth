@@ -25,16 +25,15 @@ const handleSendInvite = async () => {
         teamRole: inviteRole
       })
     });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error);
-    setShowInviteModal(false);
-    setInviteEmail('');
-    setInviteRole('member');
-    alert(`Invite sent to ${inviteEmail}`);
-  } catch (error) {
-    alert(error.message || 'Failed to send invite');
-  }
-};
+const data = await response.json();
+if (!response.ok) throw new Error(data.error);
+setShowInviteModal(false);
+setInviteEmail('');
+setInviteRole('member');
+const message = data.existing 
+  ? `${inviteEmail} has been added to your organization.`
+  : `Invite sent to ${inviteEmail}.`;
+alert(message);
 
   if (!currentOrg) {
     return (
