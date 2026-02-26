@@ -3964,17 +3964,7 @@ const handleClaimAndStructure = async (idea) => {
     alert(`Error: ${error.message}`);
   }
 };
-if (error) throw error;
-    await refreshBets();
-    
-    alert('Bet approved and added to Priority Queue!');
-    setScreen('priority_queue');
-    
-  } catch (error) {
-    console.error('Full error:', error);
-    alert(`Error: ${error.message}`);
-  }
-};
+
       const handleApproveBet = async (betId) => {
   const { error } = await approveBet(betId);
   if (error) {
