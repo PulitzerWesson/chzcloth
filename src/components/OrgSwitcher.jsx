@@ -12,13 +12,29 @@ export function OrgSwitcher({
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole] = useState('member')
 
-  const handleSendInvite = async () => {
-    // TODO: Implement invite logic
-    console.log('Sending invite to:', inviteEmail, 'as', inviteRole)
-    setShowInviteModal(false)
-    setInviteEmail('')
-    setInviteRole('member')
+const handleSendInvite = async () => {
+  if (!inviteEmail) return;
+  try {
+    const response = await fetch('/api/invite-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: inviteEmail,
+        orgId: currentOrg.orgId,
+        role: 'member',
+        teamRole: inviteRole
+      })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error);
+    setShowInviteModal(false);
+    setInviteEmail('');
+    setInviteRole('member');
+    alert(`Invite sent to ${inviteEmail}`);
+  } catch (error) {
+    alert(error.message || 'Failed to send invite');
   }
+};
 
   if (!currentOrg) {
     return (
