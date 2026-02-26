@@ -4422,6 +4422,11 @@ const handleRejectBet = async (betId, reason) => {
                         In Progress
                       </span>
                     )}
+                    {!isStarted && !isCompleted && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#64748b', fontSize: '0.75rem', fontWeight: 600 }}>
+                        Not Started
+                      </span>
+                    )}
                     {isCompleted && !hasOutcome && (
                       <span style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 10px', background: 'rgba(100,116,139,0.15)', border: '1px solid rgba(100,116,139,0.3)', borderRadius: 6, color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600 }}>
                         Awaiting Outcome
