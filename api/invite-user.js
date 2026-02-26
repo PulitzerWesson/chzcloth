@@ -20,15 +20,16 @@ export default async function handler(req, res) {
   );
 
   try {
-    // Check if user already exists
-    const { data: existingUser, error: lookupError } = await supabase.auth.admin.getUserByEmail(email);
+    // Check if user already exists by listing and filtering
+    const { data: listData } = await supabase.auth.admin.listUsers();
+    const existingUser = listData?.users?.find(u => u.email === email);
 
-    if (existingUser?.user) {
+    if (existingUser) {
       // User exists — check if already in this org
       const { data: existingMembership } = await supabase
         .from('user_organizations')
         .select('id')
-        .eq('user_id', existingUser.user.id)
+        .eq('user_id', existingUser.id)
         .eq('org_id', orgId)
         .single();
 
@@ -40,7 +41,7 @@ export default async function handler(req, res) {
       const { error: insertError } = await supabase
         .from('user_organizations')
         .insert({
-          user_id: existingUser.user.id,
+          user_id: existingUser.id,
           org_id: orgId,
           role: role || 'member',
           team_role: teamRole || 'member',
