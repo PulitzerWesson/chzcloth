@@ -513,31 +513,67 @@ function Landing({ onStart }) {
   
   return (
     <div style={{ minHeight: '100vh', background: '#0a0f1a' }}>
-      <style>{`
-        @keyframes float1 {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          33% { transform: translate(-30px, 40px) scale(1.05); }
-          66% { transform: translate(20px, -20px) scale(0.95); }
-        }
-        @keyframes float2 {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          33% { transform: translate(40px, -30px) scale(1.08); }
-          66% { transform: translate(-20px, 20px) scale(0.92); }
-        }
-        @keyframes float3 {
-          0%, 100% { transform: translate(-50%, 0) scale(1); opacity: 0.6; }
-          50% { transform: translate(-50%, -40px) scale(1.1); opacity: 1; }
-        }
-      `}</style>
-      {/* Hero with animated background */}
-      <div style={{ position: 'relative', overflow: 'hidden', minHeight: 'calc(100vh - 140px)' }}>
-        {/* Orbs + grid */}
-        <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
-          <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(45,212,191,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(45,212,191,0.07) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
-          <div style={{ position: 'absolute', top: '-20%', right: '-10%', width: '60vw', height: '60vw', maxWidth: 800, maxHeight: 800, borderRadius: '50%', background: 'radial-gradient(circle, rgba(45,212,191,0.25) 0%, rgba(45,212,191,0.06) 40%, transparent 70%)', animation: 'float1 20s ease-in-out infinite' }} />
-          <div style={{ position: 'absolute', bottom: '-30%', left: '-15%', width: '50vw', height: '50vw', maxWidth: 700, maxHeight: 700, borderRadius: '50%', background: 'radial-gradient(circle, rgba(34,211,238,0.2) 0%, rgba(34,211,238,0.05) 40%, transparent 70%)', animation: 'float2 25s ease-in-out infinite' }} />
-          <div style={{ position: 'absolute', top: '40%', left: '50%', width: '40vw', height: '40vw', maxWidth: 500, maxHeight: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(251,191,36,0.15) 0%, transparent 50%)', animation: 'float3 18s ease-in-out infinite' }} />
-        </div>
+   <style>{`
+  @keyframes drift {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(-18px, 24px); }
+  }
+`}</style>
+{/* Hero with animated background */}
+<div style={{ position: 'relative', overflow: 'hidden', minHeight: 'calc(100vh - 140px)' }}>
+  {/* Background */}
+  <div style={{ position: 'absolute', inset: 0, zIndex: 0, overflow: 'hidden' }}>
+
+    {/* Primary teal glow — anchored top-right */}
+    <div style={{
+      position: 'absolute',
+      top: '-10%',
+      right: '-5%',
+      width: '55vw',
+      height: '55vw',
+      maxWidth: 720,
+      maxHeight: 720,
+      borderRadius: '50%',
+      background: 'radial-gradient(circle at 60% 40%, rgba(20,184,166,0.18) 0%, rgba(13,148,136,0.08) 35%, transparent 70%)',
+      animation: 'drift 28s ease-in-out infinite',
+      filter: 'blur(2px)'
+    }} />
+
+    {/* Secondary faint glow — bottom-left */}
+    <div style={{
+      position: 'absolute',
+      bottom: '-5%',
+      left: '5%',
+      width: '30vw',
+      height: '30vw',
+      maxWidth: 400,
+      maxHeight: 400,
+      borderRadius: '50%',
+      background: 'radial-gradient(circle, rgba(45,212,191,0.07) 0%, transparent 65%)',
+      filter: 'blur(1px)'
+    }} />
+
+    {/* Dot grid, faded at edges */}
+    <div style={{
+      position: 'absolute',
+      inset: 0,
+      backgroundImage: 'radial-gradient(rgba(45,212,191,0.18) 1px, transparent 1px)',
+      backgroundSize: '28px 28px',
+      maskImage: 'radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%)',
+      WebkitMaskImage: 'radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%)'
+    }} />
+
+    {/* Bottom vignette */}
+    <div style={{
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      height: '40%',
+      background: 'linear-gradient(to top, #0a0f1a 0%, transparent 100%)'
+    }} />
+
+  </div>
         {/* Hero content */}
         <div style={{ position: 'relative', zIndex: 1, maxWidth: 900, margin: '0 auto', padding: '80px 24px 60px', minHeight: 'calc(100vh - 140px)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
 {/* Animated icons - left-aligned, proportionate to text */}
