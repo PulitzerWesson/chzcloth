@@ -60,7 +60,6 @@ export function useBets(orgId, orgMode) {
   submitter:profiles!bets_user_id_fkey (email),
   sponsor:profiles!bets_sponsored_by_fkey (email)
 `)
-        .or(`user_id.eq.${user.id},sponsored_by.eq.${user.id}`)
         .order('created_at', { ascending: false })
 
       if (orgId) {
