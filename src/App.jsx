@@ -3933,17 +3933,10 @@ const handleIdeaSubmitted = async (ideaData) => {
 
 
 const handleClaimAndStructure = async (idea) => {
-  console.log('FULL IDEA:', idea);
-  console.log('BET_DATA TYPE:', typeof idea.bet_data);
-  console.log('BET_DATA:', idea.bet_data);
-  
   try {
     const betData = typeof idea.bet_data === 'string' 
       ? JSON.parse(idea.bet_data) 
       : idea.bet_data;
-    
-    console.log('PARSED BET_DATA:', betData);
-    console.log('BET ID:', betData?.id);
     
     if (!betData?.id) {
       throw new Error('No bet ID found in bet_data');
@@ -3952,16 +3945,25 @@ const handleClaimAndStructure = async (idea) => {
     const { error: claimError } = await claimIdea(idea.id);
     if (claimError) throw claimError;
 
-const { error, data } = await supabase
-  .from('bets')
-  .update({ 
-    approval_status: 'approved',
-    sponsored_by: user.id
-  })
-  .eq('id', betData.id)
-  .select();
-
-console.log('UPDATE RESULT:', data, error);
+    const { error } = await supabase
+      .from('bets')
+      .update({ 
+        approval_status: 'approved',
+        sponsored_by: user.id
+      })
+      .eq('id', betData.id);
+    
+    if (error) throw error;
+    await refreshBets();
+    
+    alert('Bet approved and added to Priority Queue!');
+    setScreen('priority_queue');
+    
+  } catch (error) {
+    console.error('Full error:', error);
+    alert(`Error: ${error.message}`);
+  }
+};
 if (error) throw error;
     await refreshBets();
     
