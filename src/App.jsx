@@ -4277,8 +4277,11 @@ const handleRejectBet = async (betId, reason) => {
 )}
 
 {screen === 'stats' && (
-  <div style={{ color: 'white', padding: 40 }}>Stats screen loaded</div>
-)}   
+  <StatsScreen
+    currentOrg={currentOrg}
+    isAdmin={isAdmin}
+  />
+)}  
           
 
 {screen === 'priority_queue' && (() => {
