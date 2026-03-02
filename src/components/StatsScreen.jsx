@@ -64,7 +64,6 @@ export function StatsScreen({ currentOrg, isAdmin }) {
   const { user } = useAuth();
   const [bets, setBets] = useState([]);
   const [members, setMembers] = useState([]);
-  const [outcomes, setOutcomes] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -75,13 +74,13 @@ export function StatsScreen({ currentOrg, isAdmin }) {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch all org bets with outcomes
-      const { data: betsData } = await supabase
+      const { data: betsData, error: betsError } = await supabase
         .from('bets')
         .select(`*, outcomes(*)`)
         .eq('org_id', currentOrg.orgId);
 
-      // Normalize outcome status onto each bet
+      if (betsError) throw betsError;
+
       const normalized = (betsData || []).map(bet => {
         const outcome = Array.isArray(bet.outcomes) ? bet.outcomes[0] : bet.outcomes;
         return {
@@ -94,13 +93,18 @@ export function StatsScreen({ currentOrg, isAdmin }) {
       });
       setBets(normalized);
 
-      // Fetch members with profiles
-      const { data: membersData } = await supabase
+      const { data: membersData, error: membersError } = await supabase
         .from('user_organizations')
-        .select(`id, user_id, team_role, profiles(email)`)
+        .select(`
+          id,
+          user_id,
+          team_role,
+          users:user_id (email)
+        `)
         .eq('org_id', currentOrg.orgId)
         .order('created_at', { ascending: true });
 
+      if (membersError) throw membersError;
       setMembers(membersData || []);
     } catch (err) {
       console.error('Stats fetch error:', err);
@@ -110,7 +114,11 @@ export function StatsScreen({ currentOrg, isAdmin }) {
   };
 
   if (loading) {
-    return <div style={{ color: '#64748b', padding: 40 }}>Loading stats...</div>;
+    return (
+      <div style={{ color: '#64748b', padding: 40, textAlign: 'center' }}>
+        Loading stats...
+      </div>
+    );
   }
 
   // Company-wide aggregates
@@ -120,45 +128,36 @@ export function StatsScreen({ currentOrg, isAdmin }) {
   const allCompleted = bets.filter(b => b.completed_at);
   const allOutcomes = allCompleted.filter(b => OUTCOME_STATUSES.includes(b.status || b.outcome));
   const allLearnings = allOutcomes.filter(b => b.learned);
-  const companyOutcomeBreakdown = {
+  const companyBreakdown = {
     succeeded: allOutcomes.filter(b => (b.status || b.outcome) === 'succeeded').length,
     partial: allOutcomes.filter(b => (b.status || b.outcome) === 'partial').length,
     failed: allOutcomes.filter(b => (b.status || b.outcome) === 'failed').length,
     inconclusive: allOutcomes.filter(b => ['inconclusive', 'never_shipped'].includes(b.status || b.outcome)).length,
   };
 
-  // Members to show — admin sees all, member sees only themselves
   const visibleMembers = isAdmin
     ? members
-    : members.filter(m => m.user_id === user.id);
+    : members.filter(m => m.user_id === user?.id);
 
-  const thCell = (label, width) => (
-    <th style={{
-      padding: '12px 16px',
-      color: '#64748b',
-      fontSize: '0.75rem',
-      fontWeight: 600,
-      textTransform: 'uppercase',
-      letterSpacing: '0.05em',
-      textAlign: 'left',
-      whiteSpace: 'nowrap',
-      width: width || 'auto',
-      borderBottom: '1px solid rgba(255,255,255,0.08)'
-    }}>
-      {label}
-    </th>
-  );
+  const thStyle = {
+    padding: '12px 16px',
+    color: '#64748b',
+    fontSize: '0.75rem',
+    fontWeight: 600,
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    textAlign: 'left',
+    whiteSpace: 'nowrap',
+    borderBottom: '1px solid rgba(255,255,255,0.08)',
+    background: 'rgba(255,255,255,0.02)'
+  };
 
-  const tdCell = (content, color) => (
-    <td style={{
-      padding: '14px 16px',
-      color: color || '#94a3b8',
-      fontSize: '0.9rem',
-      borderBottom: '1px solid rgba(255,255,255,0.04)'
-    }}>
-      {content}
-    </td>
-  );
+  const tdStyle = {
+    padding: '14px 16px',
+    color: '#94a3b8',
+    fontSize: '0.9rem',
+    borderBottom: '1px solid rgba(255,255,255,0.04)'
+  };
 
   return (
     <div>
@@ -171,15 +170,15 @@ export function StatsScreen({ currentOrg, isAdmin }) {
 
       {/* Company aggregate */}
       <div style={{ marginBottom: 48 }}>
-        <h2 style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
+        <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
           Company Overview
-        </h2>
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12, marginBottom: 16 }}>
           <StatCard label="Submitted" value={allSubmitted.length} />
           <StatCard label="Sponsored" value={allSponsored.length} color="#a78bfa" />
           <StatCard label="In Progress" value={allInProgress.length} color="#fbbf24" />
           <StatCard label="Completed" value={allCompleted.length} color="#2dd4bf" />
-          <StatCard label="Outcomes Recorded" value={allOutcomes.length} color="#22c55e" />
+          <StatCard label="Outcomes" value={allOutcomes.length} color="#22c55e" />
           <StatCard label="Learnings" value={allLearnings.length} color="#7dd3fc" />
         </div>
         {allOutcomes.length > 0 && (
@@ -190,64 +189,67 @@ export function StatsScreen({ currentOrg, isAdmin }) {
             borderRadius: 10,
             display: 'flex',
             gap: 24,
-            fontSize: '0.85rem'
+            fontSize: '0.85rem',
+            flexWrap: 'wrap'
           }}>
             <span style={{ color: '#64748b' }}>Outcomes:</span>
-            {companyOutcomeBreakdown.succeeded > 0 && <span style={{ color: '#22c55e' }}>{companyOutcomeBreakdown.succeeded} Succeeded</span>}
-            {companyOutcomeBreakdown.partial > 0 && <span style={{ color: '#fbbf24' }}>{companyOutcomeBreakdown.partial} Partial</span>}
-            {companyOutcomeBreakdown.failed > 0 && <span style={{ color: '#ef4444' }}>{companyOutcomeBreakdown.failed} Failed</span>}
-            {companyOutcomeBreakdown.inconclusive > 0 && <span style={{ color: '#94a3b8' }}>{companyOutcomeBreakdown.inconclusive} Inconclusive</span>}
+            {companyBreakdown.succeeded > 0 && <span style={{ color: '#22c55e' }}>{companyBreakdown.succeeded} Succeeded</span>}
+            {companyBreakdown.partial > 0 && <span style={{ color: '#fbbf24' }}>{companyBreakdown.partial} Partial</span>}
+            {companyBreakdown.failed > 0 && <span style={{ color: '#ef4444' }}>{companyBreakdown.failed} Failed</span>}
+            {companyBreakdown.inconclusive > 0 && <span style={{ color: '#94a3b8' }}>{companyBreakdown.inconclusive} Inconclusive</span>}
           </div>
         )}
       </div>
 
       {/* Per-user table */}
       <div>
-        <h2 style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
+        <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
           {isAdmin ? 'By Team Member' : 'Your Stats'}
-        </h2>
+        </div>
         <div style={{
           background: 'rgba(255,255,255,0.02)',
           border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: 12,
-          overflow: 'hidden'
+          overflow: 'auto'
         }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
-                {thCell('Member')}
-                {thCell('Role')}
-                {thCell('Submitted')}
-                {thCell('Of Those, Sponsored')}
-                {isAdmin && thCell('Sponsored by Them')}
-                {thCell('Completed')}
-                {thCell('Outcomes')}
-                {thCell('Outcomes Breakdown')}
-                {thCell('Learnings')}
+              <tr>
+                <th style={thStyle}>Member</th>
+                <th style={thStyle}>Role</th>
+                <th style={thStyle}>Submitted</th>
+                <th style={thStyle}>Of Those, Sponsored</th>
+                {isAdmin && <th style={thStyle}>Sponsored by Them</th>}
+                <th style={thStyle}>Completed</th>
+                <th style={thStyle}>Outcomes</th>
+                <th style={thStyle}>Breakdown</th>
+                <th style={thStyle}>Learnings</th>
               </tr>
             </thead>
             <tbody>
               {visibleMembers.map(member => {
                 const stats = computeUserStats(bets, member.user_id);
-                const isCurrentUser = member.user_id === user.id;
+                const isCurrentUser = member.user_id === user?.id;
                 const isAdminMember = member.team_role === 'admin';
                 return (
-                  <tr key={member.id} style={{ background: isCurrentUser ? 'rgba(45,212,191,0.03)' : 'transparent' }}>
-                    {tdCell(
-                      <span>
-                        {member.profiles?.email || 'Unknown'}
-                        {isCurrentUser && <span style={{ color: '#64748b', fontSize: '0.8rem', marginLeft: 6 }}>(you)</span>}
-                      </span>,
-                      '#f1f5f9'
+                  <tr
+                    key={member.id}
+                    style={{ background: isCurrentUser ? 'rgba(45,212,191,0.03)' : 'transparent' }}
+                  >
+                    <td style={{ ...tdStyle, color: '#f1f5f9' }}>
+                      {member.users?.email || 'Unknown'}
+                      {isCurrentUser && <span style={{ color: '#64748b', fontSize: '0.8rem', marginLeft: 6 }}>(you)</span>}
+                    </td>
+                    <td style={tdStyle}>{isAdminMember ? 'Admin' : 'Member'}</td>
+                    <td style={tdStyle}>{stats.submitted || '—'}</td>
+                    <td style={tdStyle}>{stats.submitted > 0 ? (stats.ofSubmittedSponsored || '—') : '—'}</td>
+                    {isAdmin && (
+                      <td style={tdStyle}>{isAdminMember ? (stats.sponsoredByThem || '—') : 'N/A'}</td>
                     )}
-                    {tdCell(isAdminMember ? 'Admin' : 'Member')}
-                    {tdCell(stats.submitted || '—')}
-                    {tdCell(stats.submitted > 0 ? stats.ofSubmittedSponsored : '—')}
-                    {isAdmin && tdCell(isAdminMember ? (stats.sponsoredByThem || '—') : 'N/A')}
-                    {tdCell(stats.completed || '—')}
-                    {tdCell(stats.outcomesRecorded || '—')}
-                    {tdCell(outcomeTag(stats.outcomeBreakdown))}
-                    {tdCell(stats.learnings || '—')}
+                    <td style={tdStyle}>{stats.completed || '—'}</td>
+                    <td style={tdStyle}>{stats.outcomesRecorded || '—'}</td>
+                    <td style={tdStyle}>{outcomeTag(stats.outcomeBreakdown)}</td>
+                    <td style={tdStyle}>{stats.learnings || '—'}</td>
                   </tr>
                 );
               })}
