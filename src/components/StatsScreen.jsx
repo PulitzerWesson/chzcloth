@@ -5,6 +5,12 @@ import { useAuth } from '../hooks/useAuth';
 
 const OUTCOME_STATUSES = ['succeeded', 'partial', 'failed', 'inconclusive', 'never_shipped'];
 
+const ALIGNMENT_LABELS = {
+  inner: 'Inner Ring',
+  outer: 'Outer Ring',
+  experimental: 'Experimental',
+};
+
 function avgDays(pairs) {
   const valid = pairs.filter(([a, b]) => a && b);
   if (!valid.length) return null;
@@ -12,35 +18,53 @@ function avgDays(pairs) {
   return Math.round(total / valid.length / (1000 * 60 * 60 * 24));
 }
 
-function pct(num, denom) {
-  if (!denom) return '—';
-  return Math.round((num / denom) * 100) + '%';
+function SectionLabel({ children }) {
+  return (
+    <div style={{
+      color: '#94a3b8',
+      fontSize: '0.75rem',
+      fontWeight: 600,
+      textTransform: 'uppercase',
+      letterSpacing: '0.05em',
+      marginBottom: 16
+    }}>
+      {children}
+    </div>
+  );
 }
 
-function FunnelStep({ label, value, conversion, isLast }) {
+function StatRow({ label, value, color, sub }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 0, flex: 1 }}>
-      <div style={{
-        flex: 1,
-        background: 'rgba(255,255,255,0.03)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: 12,
-        padding: '20px 16px',
-        textAlign: 'center'
-      }}>
-        <div style={{ color: '#f1f5f9', fontSize: '2rem', fontWeight: 800, marginBottom: 4 }}>
-          {value}
-        </div>
-        <div style={{ color: '#64748b', fontSize: '0.8rem' }}>{label}</div>
-        {conversion && (
-          <div style={{ color: '#2dd4bf', fontSize: '0.75rem', marginTop: 6, fontWeight: 600 }}>
-            {conversion} conversion
-          </div>
-        )}
+    <div style={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: '10px 0',
+      borderBottom: '1px solid rgba(255,255,255,0.04)'
+    }}>
+      <div>
+        <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>{label}</span>
+        {sub && <span style={{ color: '#475569', fontSize: '0.8rem', marginLeft: 8 }}>{sub}</span>}
       </div>
-      {!isLast && (
-        <div style={{ color: '#334155', fontSize: '1.2rem', padding: '0 8px', flexShrink: 0 }}>→</div>
-      )}
+      <span style={{ color: color || '#f1f5f9', fontSize: '1rem', fontWeight: 600 }}>{value}</span>
+    </div>
+  );
+}
+
+function FunnelBlock({ label, value }) {
+  return (
+    <div style={{
+      flex: 1,
+      background: 'rgba(255,255,255,0.03)',
+      border: '1px solid rgba(255,255,255,0.08)',
+      borderRadius: 12,
+      padding: '20px 16px',
+      textAlign: 'center'
+    }}>
+      <div style={{ color: '#f1f5f9', fontSize: '2rem', fontWeight: 800, marginBottom: 4 }}>
+        {value}
+      </div>
+      <div style={{ color: '#64748b', fontSize: '0.8rem' }}>{label}</div>
     </div>
   );
 }
@@ -64,24 +88,13 @@ function computeUserStats(bets, userId) {
   const sponsored = submitted.filter(b => b.approval_status === 'approved');
   const shipped = submitted.filter(b => b.completed_at);
   const outcomesRecorded = shipped.filter(b => OUTCOME_STATUSES.includes(b.outcome));
-
   const outcomeBreakdown = {
     succeeded: outcomesRecorded.filter(b => b.outcome === 'succeeded').length,
     partial: outcomesRecorded.filter(b => b.outcome === 'partial').length,
     failed: outcomesRecorded.filter(b => b.outcome === 'failed').length,
     inconclusive: outcomesRecorded.filter(b => ['inconclusive', 'never_shipped'].includes(b.outcome)).length,
   };
-
   return { submitted: submitted.length, sponsored: sponsored.length, shipped: shipped.length, outcomesRecorded: outcomesRecorded.length, outcomeBreakdown };
-}
-
-function outcomeChips(breakdown) {
-  const chips = [];
-  if (breakdown.succeeded) chips.push({ label: `${breakdown.succeeded}S`, color: '#22c55e' });
-  if (breakdown.partial) chips.push({ label: `${breakdown.partial}P`, color: '#fbbf24' });
-  if (breakdown.failed) chips.push({ label: `${breakdown.failed}F`, color: '#ef4444' });
-  if (breakdown.inconclusive) chips.push({ label: `${breakdown.inconclusive}I`, color: '#94a3b8' });
-  return chips;
 }
 
 export function StatsScreen({ currentOrg, isAdmin }) {
@@ -110,7 +123,6 @@ export function StatsScreen({ currentOrg, isAdmin }) {
         return {
           ...bet,
           outcome: outcome?.status || null,
-          completed_at: bet.completed_at || null,
         };
       });
       setBets(normalized);
@@ -140,13 +152,27 @@ export function StatsScreen({ currentOrg, isAdmin }) {
   const allShipped = bets.filter(b => b.completed_at);
   const allOutcomes = allShipped.filter(b => OUTCOME_STATUSES.includes(b.outcome));
 
-  // Avg time calculations
-  const avgSubmitToSponsored = avgDays(
-    allSponsored.map(b => [b.created_at, b.approved_at])
-  );
-  const avgSponsoredToShipped = avgDays(
-    allShipped.filter(b => b.approved_at).map(b => [b.approved_at, b.completed_at])
-  );
+  // Avg time
+  const avgSubmitToSponsored = avgDays(allSponsored.map(b => [b.created_at, b.approved_at]));
+  const avgSponsoredToShipped = avgDays(allShipped.filter(b => b.approved_at).map(b => [b.approved_at, b.completed_at]));
+
+  // Outcomes breakdown
+  const outcomeBreakdown = {
+    succeeded: allOutcomes.filter(b => b.outcome === 'succeeded').length,
+    partial: allOutcomes.filter(b => b.outcome === 'partial').length,
+    failed: allOutcomes.filter(b => b.outcome === 'failed').length,
+    inconclusive: allOutcomes.filter(b => ['inconclusive', 'never_shipped'].includes(b.outcome)).length,
+  };
+
+  // By strategic alignment
+  const alignments = ['inner', 'outer', 'experimental'];
+  const alignmentStats = alignments.map(alignment => {
+    const group = allSubmitted.filter(b => b.strategic_alignment === alignment);
+    const groupSponsored = group.filter(b => b.approval_status === 'approved');
+    const groupShipped = group.filter(b => b.completed_at);
+    const groupOutcomes = groupShipped.filter(b => OUTCOME_STATUSES.includes(b.outcome));
+    return { alignment, submitted: group.length, sponsored: groupSponsored.length, shipped: groupShipped.length, outcomes: groupOutcomes.length };
+  }).filter(s => s.submitted > 0);
 
   const visibleMembers = isAdmin
     ? members
@@ -154,36 +180,29 @@ export function StatsScreen({ currentOrg, isAdmin }) {
 
   return (
     <div>
-      <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#f1f5f9', marginBottom: 8 }}>
-        Stats
-      </h1>
-      <p style={{ color: '#64748b', fontSize: '0.95rem', marginBottom: 32 }}>
+      <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#f1f5f9', marginBottom: 8 }}>Stats</h1>
+      <p style={{ color: '#64748b', fontSize: '0.95rem', marginBottom: 40 }}>
         How your team is betting — and how those bets are landing.
       </p>
 
-      {/* Company funnel */}
+      {/* Company Funnel */}
       <div style={{ marginBottom: 48 }}>
-        <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
-          Company Funnel
-        </div>
-        <div style={{ display: 'flex', alignItems: 'stretch', gap: 0, marginBottom: 16 }}>
-          <FunnelStep label="Submitted" value={allSubmitted.length} />
-          <FunnelStep label="Sponsored" value={allSponsored.length} conversion={pct(allSponsored.length, allSubmitted.length)} />
-          <FunnelStep label="Shipped" value={allShipped.length} conversion={pct(allShipped.length, allSponsored.length)} />
-          <FunnelStep label="Outcome Recorded" value={allOutcomes.length} conversion={pct(allOutcomes.length, allShipped.length)} isLast />
+        <SectionLabel>Company Funnel</SectionLabel>
+        <div style={{ display: 'flex', alignItems: 'stretch', gap: 8, marginBottom: 16 }}>
+          <FunnelBlock label="Submitted" value={allSubmitted.length} />
+          <div style={{ display: 'flex', alignItems: 'center', color: '#334155', fontSize: '1.2rem', padding: '0 4px' }}>→</div>
+          <FunnelBlock label="Sponsored" value={allSponsored.length} />
+          <div style={{ display: 'flex', alignItems: 'center', color: '#334155', fontSize: '1.2rem', padding: '0 4px' }}>→</div>
+          <FunnelBlock label="Shipped" value={allShipped.length} />
+          <div style={{ display: 'flex', alignItems: 'center', color: '#334155', fontSize: '1.2rem', padding: '0 4px' }}>→</div>
+          <FunnelBlock label="Outcome Recorded" value={allOutcomes.length} />
         </div>
 
-        {/* Avg time row */}
         {(avgSubmitToSponsored || avgSponsoredToShipped) && (
           <div style={{
-            display: 'flex',
-            gap: 24,
-            padding: '12px 20px',
-            background: 'rgba(255,255,255,0.02)',
-            border: '1px solid rgba(255,255,255,0.06)',
-            borderRadius: 10,
-            fontSize: '0.85rem',
-            flexWrap: 'wrap'
+            display: 'flex', gap: 32, padding: '12px 20px',
+            background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
+            borderRadius: 10, fontSize: '0.85rem', flexWrap: 'wrap', alignItems: 'center'
           }}>
             <span style={{ color: '#64748b' }}>Avg time:</span>
             {avgSubmitToSponsored && (
@@ -200,17 +219,84 @@ export function StatsScreen({ currentOrg, isAdmin }) {
         )}
       </div>
 
-      {/* Per-user cards */}
-      <div>
-        <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
-          {isAdmin ? 'By Team Member' : 'Your Stats'}
+      {/* Outcomes */}
+      {allOutcomes.length > 0 && (
+        <div style={{ marginBottom: 48 }}>
+          <SectionLabel>Outcomes</SectionLabel>
+          <div style={{
+            background: 'rgba(255,255,255,0.02)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 12,
+            padding: '4px 24px'
+          }}>
+            <StatRow label="Total Recorded" value={allOutcomes.length} color="#f1f5f9" />
+            <StatRow label="Succeeded" value={outcomeBreakdown.succeeded} color="#22c55e" />
+            <StatRow label="Partial Win" value={outcomeBreakdown.partial} color="#fbbf24" />
+            <StatRow label="Failed" value={outcomeBreakdown.failed} color="#ef4444" />
+            <StatRow label="Inconclusive / Never Shipped" value={outcomeBreakdown.inconclusive} color="#64748b" />
+          </div>
         </div>
+      )}
+
+      {/* By Strategic Alignment */}
+      {alignmentStats.length > 0 && (
+        <div style={{ marginBottom: 48 }}>
+          <SectionLabel>By Strategic Alignment</SectionLabel>
+          <div style={{
+            background: 'rgba(255,255,255,0.02)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 12,
+            overflow: 'hidden'
+          }}>
+            {/* Header */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr repeat(4, 80px)',
+              gap: 0,
+              padding: '10px 24px',
+              borderBottom: '1px solid rgba(255,255,255,0.08)',
+              background: 'rgba(255,255,255,0.02)'
+            }}>
+              {['', 'Submitted', 'Sponsored', 'Shipped', 'Outcomes'].map((h, i) => (
+                <div key={i} style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 600, textAlign: i === 0 ? 'left' : 'center' }}>
+                  {h}
+                </div>
+              ))}
+            </div>
+            {alignmentStats.map((s, idx) => (
+              <div
+                key={s.alignment}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr repeat(4, 80px)',
+                  gap: 0,
+                  padding: '14px 24px',
+                  borderBottom: idx < alignmentStats.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                  alignItems: 'center'
+                }}
+              >
+                <div style={{ color: '#f1f5f9', fontSize: '0.9rem', fontWeight: 500 }}>
+                  {ALIGNMENT_LABELS[s.alignment] || s.alignment}
+                </div>
+                <div style={{ color: '#94a3b8', fontSize: '0.95rem', textAlign: 'center' }}>{s.submitted}</div>
+                <div style={{ color: '#a78bfa', fontSize: '0.95rem', textAlign: 'center' }}>{s.sponsored || '—'}</div>
+                <div style={{ color: '#2dd4bf', fontSize: '0.95rem', textAlign: 'center' }}>{s.shipped || '—'}</div>
+                <div style={{ color: '#22c55e', fontSize: '0.95rem', textAlign: 'center' }}>{s.outcomes || '—'}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* By Team Member */}
+      <div>
+        <SectionLabel>{isAdmin ? 'By Team Member' : 'Your Stats'}</SectionLabel>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {visibleMembers.map(member => {
             const stats = computeUserStats(bets, member.user_id);
             const isCurrentUser = member.user_id === user?.id;
             const isAdminMember = member.team_role === 'admin';
-            const chips = outcomeChips(stats.outcomeBreakdown);
+            const hasOutcomes = stats.outcomesRecorded > 0;
 
             return (
               <div
@@ -226,50 +312,34 @@ export function StatsScreen({ currentOrg, isAdmin }) {
                   flexWrap: 'wrap'
                 }}
               >
-                {/* Member info */}
                 <div style={{ flex: '1 1 160px', minWidth: 0 }}>
-                  <div style={{
-                    color: '#f1f5f9', fontWeight: 500, fontSize: '0.9rem', marginBottom: 2,
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
-                  }}>
+                  <div style={{ color: '#f1f5f9', fontWeight: 500, fontSize: '0.9rem', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {member.users?.email || 'Unknown'}
                     {isCurrentUser && <span style={{ color: '#64748b', fontSize: '0.75rem', marginLeft: 6 }}>(you)</span>}
                   </div>
-                  <div style={{ color: '#64748b', fontSize: '0.75rem' }}>
-                    {isAdminMember ? 'Admin' : 'Member'}
-                  </div>
+                  <div style={{ color: '#64748b', fontSize: '0.75rem' }}>{isAdminMember ? 'Admin' : 'Member'}</div>
                 </div>
 
                 <div style={{ width: 1, height: 36, background: 'rgba(255,255,255,0.06)', flexShrink: 0 }} />
 
-                {/* Personal funnel */}
                 <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
                   <MiniStat label="Submitted" value={stats.submitted} />
-                  <span style={{ color: '#334155', fontSize: '0.9rem' }}>→</span>
+                  <span style={{ color: '#334155' }}>→</span>
                   <MiniStat label="Sponsored" value={stats.sponsored} color="#a78bfa" />
-                  <span style={{ color: '#334155', fontSize: '0.9rem' }}>→</span>
+                  <span style={{ color: '#334155' }}>→</span>
                   <MiniStat label="Shipped" value={stats.shipped} color="#2dd4bf" />
-                  <span style={{ color: '#334155', fontSize: '0.9rem' }}>→</span>
+                  <span style={{ color: '#334155' }}>→</span>
                   <MiniStat label="Outcome" value={stats.outcomesRecorded} color="#22c55e" />
                 </div>
 
-                {/* Outcome breakdown */}
-                {chips.length > 0 && (
+                {hasOutcomes && (
                   <>
                     <div style={{ width: 1, height: 36, background: 'rgba(255,255,255,0.06)', flexShrink: 0 }} />
-                    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                      {chips.map((c, i) => (
-                        <span key={i} style={{
-                          color: c.color,
-                          fontSize: '0.85rem',
-                          fontWeight: 700,
-                          background: c.color + '18',
-                          padding: '3px 8px',
-                          borderRadius: 6
-                        }}>
-                          {c.label}
-                        </span>
-                      ))}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.8rem' }}>
+                      {stats.outcomeBreakdown.succeeded > 0 && <span style={{ color: '#22c55e' }}>{stats.outcomeBreakdown.succeeded} Succeeded</span>}
+                      {stats.outcomeBreakdown.partial > 0 && <span style={{ color: '#fbbf24' }}>{stats.outcomeBreakdown.partial} Partial</span>}
+                      {stats.outcomeBreakdown.failed > 0 && <span style={{ color: '#ef4444' }}>{stats.outcomeBreakdown.failed} Failed</span>}
+                      {stats.outcomeBreakdown.inconclusive > 0 && <span style={{ color: '#64748b' }}>{stats.outcomeBreakdown.inconclusive} Inconclusive</span>}
                     </div>
                   </>
                 )}
