@@ -36,11 +36,11 @@ function computeUserStats(bets, userId) {
 
 function outcomeTag(breakdown) {
   const parts = [];
-  if (breakdown.succeeded) parts.push(`${breakdown.succeeded}S`);
-  if (breakdown.partial) parts.push(`${breakdown.partial}P`);
-  if (breakdown.failed) parts.push(`${breakdown.failed}F`);
-  if (breakdown.inconclusive) parts.push(`${breakdown.inconclusive}I`);
-  return parts.length ? parts.join(' · ') : '—';
+  if (breakdown.succeeded) parts.push({ label: `${breakdown.succeeded}S`, color: '#22c55e' });
+  if (breakdown.partial) parts.push({ label: `${breakdown.partial}P`, color: '#fbbf24' });
+  if (breakdown.failed) parts.push({ label: `${breakdown.failed}F`, color: '#ef4444' });
+  if (breakdown.inconclusive) parts.push({ label: `${breakdown.inconclusive}I`, color: '#94a3b8' });
+  return parts;
 }
 
 function StatCard({ label, value, color }) {
@@ -56,6 +56,17 @@ function StatCard({ label, value, color }) {
         {value}
       </div>
       <div style={{ color: '#64748b', fontSize: '0.8rem' }}>{label}</div>
+    </div>
+  );
+}
+
+function MiniStat({ label, value, color }) {
+  return (
+    <div style={{ textAlign: 'center', minWidth: 60 }}>
+      <div style={{ color: color || '#f1f5f9', fontSize: '1.3rem', fontWeight: 700, lineHeight: 1 }}>
+        {value === 0 ? '—' : value}
+      </div>
+      <div style={{ color: '#64748b', fontSize: '0.7rem', marginTop: 4, whiteSpace: 'nowrap' }}>{label}</div>
     </div>
   );
 }
@@ -95,12 +106,7 @@ export function StatsScreen({ currentOrg, isAdmin }) {
 
       const { data: membersData, error: membersError } = await supabase
         .from('user_organizations')
-        .select(`
-          id,
-          user_id,
-          team_role,
-          users:user_id (email)
-        `)
+        .select(`id, user_id, team_role, users:user_id (email)`)
         .eq('org_id', currentOrg.orgId)
         .order('created_at', { ascending: true });
 
@@ -114,11 +120,7 @@ export function StatsScreen({ currentOrg, isAdmin }) {
   };
 
   if (loading) {
-    return (
-      <div style={{ color: '#64748b', padding: 40, textAlign: 'center' }}>
-        Loading stats...
-      </div>
-    );
+    return <div style={{ color: '#64748b', padding: 40, textAlign: 'center' }}>Loading stats...</div>;
   }
 
   // Company-wide aggregates
@@ -139,26 +141,6 @@ export function StatsScreen({ currentOrg, isAdmin }) {
     ? members
     : members.filter(m => m.user_id === user?.id);
 
-  const thStyle = {
-    padding: '12px 16px',
-    color: '#64748b',
-    fontSize: '0.75rem',
-    fontWeight: 600,
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-    textAlign: 'left',
-    whiteSpace: 'nowrap',
-    borderBottom: '1px solid rgba(255,255,255,0.08)',
-    background: 'rgba(255,255,255,0.02)'
-  };
-
-  const tdStyle = {
-    padding: '14px 16px',
-    color: '#94a3b8',
-    fontSize: '0.9rem',
-    borderBottom: '1px solid rgba(255,255,255,0.04)'
-  };
-
   return (
     <div>
       <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#f1f5f9', marginBottom: 8 }}>
@@ -170,7 +152,7 @@ export function StatsScreen({ currentOrg, isAdmin }) {
 
       {/* Company aggregate */}
       <div style={{ marginBottom: 48 }}>
-        <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
+        <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
           Company Overview
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12, marginBottom: 16 }}>
@@ -190,7 +172,8 @@ export function StatsScreen({ currentOrg, isAdmin }) {
             display: 'flex',
             gap: 24,
             fontSize: '0.85rem',
-            flexWrap: 'wrap'
+            flexWrap: 'wrap',
+            alignItems: 'center'
           }}>
             <span style={{ color: '#64748b' }}>Outcomes:</span>
             {companyBreakdown.succeeded > 0 && <span style={{ color: '#22c55e' }}>{companyBreakdown.succeeded} Succeeded</span>}
@@ -201,60 +184,74 @@ export function StatsScreen({ currentOrg, isAdmin }) {
         )}
       </div>
 
-      {/* Per-user table */}
+      {/* Per-user cards */}
       <div>
-        <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
+        <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
           {isAdmin ? 'By Team Member' : 'Your Stats'}
         </div>
-        <div style={{
-          background: 'rgba(255,255,255,0.02)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: 12,
-          overflow: 'auto'
-        }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr>
-                <th style={thStyle}>Member</th>
-                <th style={thStyle}>Role</th>
-                <th style={thStyle}>Submitted</th>
-                <th style={thStyle}>Of Those, Sponsored</th>
-                {isAdmin && <th style={thStyle}>Sponsored by Them</th>}
-                <th style={thStyle}>Completed</th>
-                <th style={thStyle}>Outcomes</th>
-                <th style={thStyle}>Breakdown</th>
-                <th style={thStyle}>Learnings</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibleMembers.map(member => {
-                const stats = computeUserStats(bets, member.user_id);
-                const isCurrentUser = member.user_id === user?.id;
-                const isAdminMember = member.team_role === 'admin';
-                return (
-                  <tr
-                    key={member.id}
-                    style={{ background: isCurrentUser ? 'rgba(45,212,191,0.03)' : 'transparent' }}
-                  >
-                    <td style={{ ...tdStyle, color: '#f1f5f9' }}>
-                      {member.users?.email || 'Unknown'}
-                      {isCurrentUser && <span style={{ color: '#64748b', fontSize: '0.8rem', marginLeft: 6 }}>(you)</span>}
-                    </td>
-                    <td style={tdStyle}>{isAdminMember ? 'Admin' : 'Member'}</td>
-                    <td style={tdStyle}>{stats.submitted || '—'}</td>
-                    <td style={tdStyle}>{stats.submitted > 0 ? (stats.ofSubmittedSponsored || '—') : '—'}</td>
-                    {isAdmin && (
-                      <td style={tdStyle}>{isAdminMember ? (stats.sponsoredByThem || '—') : 'N/A'}</td>
-                    )}
-                    <td style={tdStyle}>{stats.completed || '—'}</td>
-                    <td style={tdStyle}>{stats.outcomesRecorded || '—'}</td>
-                    <td style={tdStyle}>{outcomeTag(stats.outcomeBreakdown)}</td>
-                    <td style={tdStyle}>{stats.learnings || '—'}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {visibleMembers.map(member => {
+            const stats = computeUserStats(bets, member.user_id);
+            const isCurrentUser = member.user_id === user?.id;
+            const isAdminMember = member.team_role === 'admin';
+            const outcomes = outcomeTag(stats.outcomeBreakdown);
+
+            return (
+              <div
+                key={member.id}
+                style={{
+                  background: isCurrentUser ? 'rgba(45,212,191,0.03)' : 'rgba(255,255,255,0.02)',
+                  border: isCurrentUser ? '1px solid rgba(45,212,191,0.15)' : '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: 12,
+                  padding: '16px 24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 24,
+                  flexWrap: 'wrap'
+                }}
+              >
+                {/* Member info */}
+                <div style={{ flex: '1 1 180px', minWidth: 0 }}>
+                  <div style={{ color: '#f1f5f9', fontWeight: 500, fontSize: '0.9rem', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {member.users?.email || 'Unknown'}
+                    {isCurrentUser && <span style={{ color: '#64748b', fontSize: '0.75rem', marginLeft: 6 }}>(you)</span>}
+                  </div>
+                  <div style={{ color: '#64748b', fontSize: '0.75rem' }}>
+                    {isAdminMember ? 'Admin' : 'Member'}
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div style={{ width: 1, height: 40, background: 'rgba(255,255,255,0.06)', flexShrink: 0 }} />
+
+                {/* Stats */}
+                <div style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <MiniStat label="Submitted" value={stats.submitted} />
+                  <MiniStat label="Sponsored" value={stats.ofSubmittedSponsored} color="#a78bfa" />
+                  {isAdminMember && (
+                    <MiniStat label="Sponsored by Them" value={stats.sponsoredByThem} color="#7dd3fc" />
+                  )}
+                  <MiniStat label="Completed" value={stats.completed} color="#2dd4bf" />
+                  <MiniStat label="Outcomes" value={stats.outcomesRecorded} color="#22c55e" />
+                  <MiniStat label="Learnings" value={stats.learnings} color="#7dd3fc" />
+
+                  {/* Outcome breakdown */}
+                  {outcomes.length > 0 && (
+                    <>
+                      <div style={{ width: 1, height: 32, background: 'rgba(255,255,255,0.06)', flexShrink: 0 }} />
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        {outcomes.map((o, i) => (
+                          <span key={i} style={{ color: o.color, fontSize: '0.85rem', fontWeight: 600 }}>
+                            {o.label}
+                          </span>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
