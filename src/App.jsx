@@ -18,7 +18,7 @@ import { getOrgLearnings } from './utils/orgLearnings';
 import { supabase } from './lib/supabase';
 import BetConfirmation from './components/BetConfirmation';
 import CompanyDashboard from './components/CompanyDashboard';
-import { StatsScreen } from './StatsScreen';
+import { StatsScreen } from './components/StatsScreen';
 
 // ============================================
 // CHZCLOTH Free - Where Bets Get Smarter
