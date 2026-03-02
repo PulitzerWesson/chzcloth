@@ -18,6 +18,7 @@ import { getOrgLearnings } from './utils/orgLearnings';
 import { supabase } from './lib/supabase';
 import BetConfirmation from './components/BetConfirmation';
 import CompanyDashboard from './components/CompanyDashboard';
+import { StatsScreen } from './StatsScreen';
 
 // ============================================
 // CHZCLOTH Free - Where Bets Get Smarter
@@ -4201,6 +4202,27 @@ const handleRejectBet = async (betId, reason) => {
             <span style={{ color: screen === 'ideas_queue' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>◎</span>
             Marketplace
           </button>
+
+          <button
+  onClick={() => setScreen('stats')}
+  style={{
+    background: 'transparent',
+    border: 'none',
+    borderBottom: screen === 'stats' ? '2px solid #7dd3fc' : '2px solid transparent',
+    padding: '16px 0',
+    color: screen === 'stats' ? '#e0e0e0' : '#666',
+    fontSize: '0.9rem',
+    fontWeight: 500,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
+  }}
+>
+  <span style={{ color: screen === 'stats' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>▦</span>
+  Stats
+</button>
           <button
   onClick={() => setScreen('company')}
   style={{
@@ -4253,6 +4275,14 @@ const handleRejectBet = async (betId, reason) => {
     isAdmin={isAdmin}
   />
 )}
+
+      {screen === 'stats' && (
+  <StatsScreen
+    currentOrg={currentOrg}
+    isAdmin={isAdmin}
+  />
+)}
+      
           
 
 {screen === 'priority_queue' && (() => {
