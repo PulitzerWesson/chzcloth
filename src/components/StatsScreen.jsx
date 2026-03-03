@@ -76,6 +76,7 @@ export function StatsScreen({ currentOrg, isAdmin }) {
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
+  const [expandedOutcomes, setExpandedOutcomes] = useState({});
 
   useEffect(() => {
     if (!currentOrg?.orgId) return;
@@ -297,17 +298,28 @@ export function StatsScreen({ currentOrg, isAdmin }) {
                   <span style={{ color: '#334155' }}>→</span>
                   <MiniStat label="Outcome" value={stats.outcomesRecorded} color="#22c55e" />
                 </div>
-                {hasOutcomes && (
-                  <>
-                    <div style={{ width: 1, height: 36, background: 'rgba(255,255,255,0.06)', flexShrink: 0 }} />
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.8rem' }}>
-                      {stats.outcomeBreakdown.succeeded > 0 && <span style={{ color: '#22c55e' }}>{stats.outcomeBreakdown.succeeded} Succeeded</span>}
-                      {stats.outcomeBreakdown.partial > 0 && <span style={{ color: '#fbbf24' }}>{stats.outcomeBreakdown.partial} Partial</span>}
-                      {stats.outcomeBreakdown.failed > 0 && <span style={{ color: '#ef4444' }}>{stats.outcomeBreakdown.failed} Failed</span>}
-                      {stats.outcomeBreakdown.inconclusive > 0 && <span style={{ color: '#64748b' }}>{stats.outcomeBreakdown.inconclusive} Inconclusive</span>}
-                    </div>
-                  </>
-                )}
+                    {hasOutcomes && (
+                      <>
+                        <div style={{ width: 1, height: 36, background: 'rgba(255,255,255,0.06)', flexShrink: 0 }} />
+                        <div>
+                          <button
+                            onClick={() => setExpandedOutcomes(prev => ({ ...prev, [member.id]: !prev[member.id] }))}
+                            style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '0.8rem', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 4 }}
+                          >
+                            <span style={{ fontSize: '0.65rem' }}>{expandedOutcomes[member.id] ? '▼' : '▶'}</span>
+                            {stats.outcomesRecorded} outcome{stats.outcomesRecorded !== 1 ? 's' : ''}
+                          </button>
+                          {expandedOutcomes[member.id] && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.8rem', marginTop: 8 }}>
+                              {stats.outcomeBreakdown.succeeded > 0 && <span style={{ color: '#22c55e' }}>{stats.outcomeBreakdown.succeeded} Succeeded</span>}
+                              {stats.outcomeBreakdown.partial > 0 && <span style={{ color: '#fbbf24' }}>{stats.outcomeBreakdown.partial} Partial</span>}
+                              {stats.outcomeBreakdown.failed > 0 && <span style={{ color: '#ef4444' }}>{stats.outcomeBreakdown.failed} Failed</span>}
+                              {stats.outcomeBreakdown.inconclusive > 0 && <span style={{ color: '#64748b' }}>{stats.outcomeBreakdown.inconclusive} Inconclusive</span>}
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
               </div>
             );
           })}
