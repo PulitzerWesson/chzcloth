@@ -6,6 +6,73 @@ import { useAuth } from '../hooks/useAuth';
 const OUTCOME_STATUSES = ['succeeded', 'partial', 'failed', 'inconclusive', 'never_shipped'];
 const ALIGNMENT_LABELS = { inner: 'Inner Ring', outer: 'Outer Ring', experimental: 'Experimental' };
 
+const StrategicAlignmentIcon = ({ alignment }) => {
+  const normalized = alignment?.toLowerCase();
+  if (normalized === 'inner' || normalized === 'inner_ring' || normalized === 'inner ring') {
+    return (
+      <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
+        <style>{`
+          @keyframes growFromDot {
+            0% { transform: scale(0); opacity: 0; }
+            22% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+          }
+          .grow-circle { animation: growFromDot 9s ease-out infinite; transform-origin: center; }
+        `}</style>
+        <circle cx="14" cy="14" r="12" stroke="url(#tealGradientS1)" strokeWidth="2.5" fill="none"/>
+        <circle className="grow-circle" cx="14" cy="14" r="6" fill="url(#tealGradientS1)"/>
+        <defs>
+          <linearGradient id="tealGradientS1" x1="2" y1="2" x2="26" y2="26">
+            <stop offset="0%" stopColor="#2dd4bf"/><stop offset="100%" stopColor="#22d3ee"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    );
+  }
+  if (normalized === 'outer' || normalized === 'outer_ring' || normalized === 'outer ring') {
+    return (
+      <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
+        <style>{`
+          @keyframes drawS { 0% { stroke-dashoffset: 75.4; } 30% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 0; } }
+          .draw-circle-s { stroke-dasharray: 75.4; animation: drawS 10s linear infinite; }
+        `}</style>
+        <circle className="draw-circle-s" cx="14" cy="14" r="12" stroke="url(#tealGradientS2)" strokeWidth="3" fill="none"/>
+        <circle cx="14" cy="14" r="6" fill="#1e293b"/>
+        <defs>
+          <linearGradient id="tealGradientS2" x1="2" y1="2" x2="26" y2="26">
+            <stop offset="0%" stopColor="#2dd4bf"/><stop offset="100%" stopColor="#22d3ee"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    );
+  }
+  if (normalized === 'experimental') {
+    return (
+      <svg width="20" height="20" viewBox="0 0 24 28" fill="none">
+        <style>{`
+          @keyframes bubble1s { 0% { cy: 20; opacity: 0; } 20% { opacity: 1; } 100% { cy: 3; opacity: 0; } }
+          @keyframes bubble2s { 0% { cy: 20; opacity: 0; } 20% { opacity: 1; } 100% { cy: 3.5; opacity: 0; } }
+          @keyframes bubble3s { 0% { cy: 20; opacity: 0; } 20% { opacity: 1; } 100% { cy: 3; opacity: 0; } }
+          .bubble1s { animation: bubble1s 2.5s ease-in infinite; }
+          .bubble2s { animation: bubble2s 2.5s ease-in infinite 0.8s; }
+          .bubble3s { animation: bubble3s 2.5s ease-in infinite 1.6s; }
+        `}</style>
+        <path d="M8 2 L8 10 L4 22 C3.5 24 4.5 26 7 26 L17 26 C19.5 26 20.5 24 20 22 L16 10 L16 2" stroke="url(#beakerGradientS)" strokeWidth="2" fill="none"/>
+        <line x1="8" y1="2" x2="16" y2="2" stroke="url(#beakerGradientS)" strokeWidth="2"/>
+        <circle className="bubble1s" cx="9" cy="20" r="2" fill="#2dd4bf" opacity="0"/>
+        <circle className="bubble2s" cx="12" cy="20" r="1.8" fill="#22d3ee" opacity="0"/>
+        <circle className="bubble3s" cx="15" cy="20" r="2" fill="#2dd4bf" opacity="0"/>
+        <defs>
+          <linearGradient id="beakerGradientS" x1="4" y1="2" x2="20" y2="26">
+            <stop offset="0%" stopColor="#2dd4bf"/><stop offset="100%" stopColor="#22d3ee"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    );
+  }
+  return null;
+};
+
 function avgDays(pairs) {
   const valid = pairs.filter(([a, b]) => a && b);
   if (!valid.length) return null;
@@ -30,10 +97,10 @@ function StatRow({ label, value, color }) {
   );
 }
 
-function FunnelBlock({ label, value }) {
+function FunnelBlock({ label, value, color }) {
   return (
     <div style={{ flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '20px 16px', textAlign: 'center' }}>
-      <div style={{ color: '#f1f5f9', fontSize: '2rem', fontWeight: 800, marginBottom: 4 }}>{value}</div>
+      <div style={{ color: color || '#f1f5f9', fontSize: '2rem', fontWeight: 800, marginBottom: 4 }}>{value}</div>
       <div style={{ color: '#64748b', fontSize: '0.8rem' }}>{label}</div>
     </div>
   );
@@ -125,19 +192,13 @@ export function StatsScreen({ currentOrg, isAdmin }) {
       if (membersError) throw membersError;
       setMembers(membersData || []);
 
-      // Build payload for AI summary
       const submitted = normalized.filter(b => ['pending_approval', 'approved'].includes(b.approval_status));
       const sponsored = normalized.filter(b => b.approval_status === 'approved');
       const shipped = normalized.filter(b => b.completed_at);
       const outcomes = shipped.filter(b => OUTCOME_STATUSES.includes(b.outcome));
 
       fetchSummary({
-        funnel: {
-          submitted: submitted.length,
-          sponsored: sponsored.length,
-          shipped: shipped.length,
-          outcomesRecorded: outcomes.length
-        },
+        funnel: { submitted: submitted.length, sponsored: sponsored.length, shipped: shipped.length, outcomesRecorded: outcomes.length },
         outcomeBreakdown: {
           succeeded: outcomes.filter(b => b.outcome === 'succeeded').length,
           partial: outcomes.filter(b => b.outcome === 'partial').length,
@@ -164,7 +225,6 @@ export function StatsScreen({ currentOrg, isAdmin }) {
     return <div style={{ color: '#64748b', padding: 40, textAlign: 'center' }}>Loading stats...</div>;
   }
 
-  // Compute display values
   const allSubmitted = bets.filter(b => ['pending_approval', 'approved'].includes(b.approval_status));
   const allSponsored = bets.filter(b => b.approval_status === 'approved');
   const allShipped = bets.filter(b => b.completed_at);
@@ -195,16 +255,7 @@ export function StatsScreen({ currentOrg, isAdmin }) {
       </p>
 
       {/* AI Summary */}
-      <div style={{
-        marginBottom: 40,
-        padding: '16px 20px',
-        background: 'rgba(125,211,252,0.05)',
-        border: '1px solid rgba(125,211,252,0.15)',
-        borderRadius: 12,
-        minHeight: 52,
-        display: 'flex',
-        alignItems: 'center'
-      }}>
+      <div style={{ marginBottom: 40, padding: '16px 20px', background: 'rgba(125,211,252,0.05)', border: '1px solid rgba(125,211,252,0.15)', borderRadius: 12, minHeight: 52, display: 'flex', alignItems: 'center' }}>
         {summaryLoading ? (
           <span style={{ color: '#475569', fontSize: '0.9rem' }}>Analyzing your data...</span>
         ) : summary ? (
@@ -216,13 +267,13 @@ export function StatsScreen({ currentOrg, isAdmin }) {
       <div style={{ marginBottom: 48 }}>
         <SectionLabel>Company Funnel</SectionLabel>
         <div style={{ display: 'flex', alignItems: 'stretch', gap: 8, marginBottom: 16 }}>
-          <FunnelBlock label="Submitted" value={allSubmitted.length} />
+          <FunnelBlock label="Submitted" value={allSubmitted.length} color="#f1f5f9" />
           <div style={{ display: 'flex', alignItems: 'center', color: '#334155', fontSize: '1.2rem', padding: '0 4px' }}>→</div>
-          <FunnelBlock label="Sponsored" value={allSponsored.length} />
+          <FunnelBlock label="Sponsored" value={allSponsored.length} color="#a78bfa" />
           <div style={{ display: 'flex', alignItems: 'center', color: '#334155', fontSize: '1.2rem', padding: '0 4px' }}>→</div>
-          <FunnelBlock label="Shipped" value={allShipped.length} />
+          <FunnelBlock label="Shipped" value={allShipped.length} color="#2dd4bf" />
           <div style={{ display: 'flex', alignItems: 'center', color: '#334155', fontSize: '1.2rem', padding: '0 4px' }}>→</div>
-          <FunnelBlock label="Outcome Recorded" value={allOutcomes.length} />
+          <FunnelBlock label="Outcome Recorded" value={allOutcomes.length} color="#22c55e" />
         </div>
         {(avgSubmitToSponsored || avgSponsoredToShipped) && (
           <div style={{ display: 'flex', gap: 32, padding: '12px 20px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, fontSize: '0.85rem', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -259,7 +310,10 @@ export function StatsScreen({ currentOrg, isAdmin }) {
             </div>
             {alignmentStats.map((s, idx) => (
               <div key={s.alignment} style={{ display: 'grid', gridTemplateColumns: '1fr repeat(4, 80px)', padding: '14px 24px', borderBottom: idx < alignmentStats.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none', alignItems: 'center' }}>
-                <div style={{ color: '#f1f5f9', fontSize: '0.9rem', fontWeight: 500 }}>{ALIGNMENT_LABELS[s.alignment] || s.alignment}</div>
+                <div style={{ color: '#f1f5f9', fontSize: '0.9rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <StrategicAlignmentIcon alignment={s.alignment} />
+                  {ALIGNMENT_LABELS[s.alignment] || s.alignment}
+                </div>
                 <div style={{ color: '#94a3b8', fontSize: '0.95rem', textAlign: 'center' }}>{s.submitted}</div>
                 <div style={{ color: '#a78bfa', fontSize: '0.95rem', textAlign: 'center' }}>{s.sponsored || '—'}</div>
                 <div style={{ color: '#2dd4bf', fontSize: '0.95rem', textAlign: 'center' }}>{s.shipped || '—'}</div>
@@ -279,47 +333,76 @@ export function StatsScreen({ currentOrg, isAdmin }) {
             const isCurrentUser = member.user_id === user?.id;
             const isAdminMember = member.team_role === 'admin';
             const hasOutcomes = stats.outcomesRecorded > 0;
+            const isExpanded = expandedOutcomes[member.id];
+
             return (
-              <div key={member.id} style={{ background: isCurrentUser ? 'rgba(45,212,191,0.03)' : 'rgba(255,255,255,0.02)', border: isCurrentUser ? '1px solid rgba(45,212,191,0.15)' : '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
-                <div style={{ flex: '1 1 160px', minWidth: 0 }}>
-                  <div style={{ color: '#f1f5f9', fontWeight: 500, fontSize: '0.9rem', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {member.users?.email || 'Unknown'}
-                    {isCurrentUser && <span style={{ color: '#64748b', fontSize: '0.75rem', marginLeft: 6 }}>(you)</span>}
+              <div key={member.id} style={{
+                background: isCurrentUser ? 'rgba(45,212,191,0.03)' : 'rgba(255,255,255,0.02)',
+                border: isCurrentUser ? '1px solid rgba(45,212,191,0.15)' : '1px solid rgba(255,255,255,0.08)',
+                borderRadius: 12,
+                overflow: 'hidden'
+              }}>
+                {/* Main row */}
+                <div style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
+                  <div style={{ flex: '1 1 160px', minWidth: 0 }}>
+                    <div style={{ color: '#f1f5f9', fontWeight: 500, fontSize: '0.9rem', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {member.users?.email || 'Unknown'}
+                      {isCurrentUser && <span style={{ color: '#64748b', fontSize: '0.75rem', marginLeft: 6 }}>(you)</span>}
+                    </div>
+                    <div style={{ color: '#64748b', fontSize: '0.75rem' }}>{isAdminMember ? 'Admin' : 'Member'}</div>
                   </div>
-                  <div style={{ color: '#64748b', fontSize: '0.75rem' }}>{isAdminMember ? 'Admin' : 'Member'}</div>
+                  <div style={{ width: 1, height: 36, background: 'rgba(255,255,255,0.06)', flexShrink: 0 }} />
+                  <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+                    <MiniStat label="Submitted" value={stats.submitted} />
+                    <span style={{ color: '#334155' }}>→</span>
+                    <MiniStat label="Sponsored" value={stats.sponsored} color="#a78bfa" />
+                    <span style={{ color: '#334155' }}>→</span>
+                    <MiniStat label="Shipped" value={stats.shipped} color="#2dd4bf" />
+                    <span style={{ color: '#334155' }}>→</span>
+                    <MiniStat label="Outcome" value={stats.outcomesRecorded} color="#22c55e" />
+                  </div>
                 </div>
-                <div style={{ width: 1, height: 36, background: 'rgba(255,255,255,0.06)', flexShrink: 0 }} />
-                <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
-                  <MiniStat label="Submitted" value={stats.submitted} />
-                  <span style={{ color: '#334155' }}>→</span>
-                  <MiniStat label="Sponsored" value={stats.sponsored} color="#a78bfa" />
-                  <span style={{ color: '#334155' }}>→</span>
-                  <MiniStat label="Shipped" value={stats.shipped} color="#2dd4bf" />
-                  <span style={{ color: '#334155' }}>→</span>
-                  <MiniStat label="Outcome" value={stats.outcomesRecorded} color="#22c55e" />
-                </div>
-                    {hasOutcomes && (
-                      <>
-                        <div style={{ width: 1, height: 36, background: 'rgba(255,255,255,0.06)', flexShrink: 0 }} />
-                        <div>
-                          <button
-                            onClick={() => setExpandedOutcomes(prev => ({ ...prev, [member.id]: !prev[member.id] }))}
-                            style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '0.8rem', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 4 }}
-                          >
-                            <span style={{ fontSize: '0.65rem' }}>{expandedOutcomes[member.id] ? '▼' : '▶'}</span>
-                            {stats.outcomesRecorded} outcome{stats.outcomesRecorded !== 1 ? 's' : ''}
-                          </button>
-                          {expandedOutcomes[member.id] && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.8rem', marginTop: 8 }}>
-                              {stats.outcomeBreakdown.succeeded > 0 && <span style={{ color: '#22c55e' }}>{stats.outcomeBreakdown.succeeded} Succeeded</span>}
-                              {stats.outcomeBreakdown.partial > 0 && <span style={{ color: '#fbbf24' }}>{stats.outcomeBreakdown.partial} Partial</span>}
-                              {stats.outcomeBreakdown.failed > 0 && <span style={{ color: '#ef4444' }}>{stats.outcomeBreakdown.failed} Failed</span>}
-                              {stats.outcomeBreakdown.inconclusive > 0 && <span style={{ color: '#64748b' }}>{stats.outcomeBreakdown.inconclusive} Inconclusive</span>}
-                            </div>
-                          )}
-                        </div>
-                      </>
+
+                {/* Expandable outcomes */}
+                {hasOutcomes && (
+                  <>
+                    <button
+                      onClick={() => setExpandedOutcomes(prev => ({ ...prev, [member.id]: !prev[member.id] }))}
+                      style={{ width: '100%', background: 'none', border: 'none', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '10px 24px', color: '#64748b', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, textAlign: 'left' }}
+                    >
+                      <span style={{ fontSize: '0.65rem' }}>{isExpanded ? '▼' : '▶'}</span>
+                      {stats.outcomesRecorded} outcome{stats.outcomesRecorded !== 1 ? 's' : ''}
+                    </button>
+                    {isExpanded && (
+                      <div style={{ padding: '4px 24px 12px 24px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                        {stats.outcomeBreakdown.succeeded > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                            <span style={{ color: '#22c55e', fontSize: '0.9rem' }}>Succeeded</span>
+                            <span style={{ color: '#22c55e', fontWeight: 600 }}>{stats.outcomeBreakdown.succeeded}</span>
+                          </div>
+                        )}
+                        {stats.outcomeBreakdown.partial > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                            <span style={{ color: '#fbbf24', fontSize: '0.9rem' }}>Partial Win</span>
+                            <span style={{ color: '#fbbf24', fontWeight: 600 }}>{stats.outcomeBreakdown.partial}</span>
+                          </div>
+                        )}
+                        {stats.outcomeBreakdown.failed > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                            <span style={{ color: '#ef4444', fontSize: '0.9rem' }}>Failed</span>
+                            <span style={{ color: '#ef4444', fontWeight: 600 }}>{stats.outcomeBreakdown.failed}</span>
+                          </div>
+                        )}
+                        {stats.outcomeBreakdown.inconclusive > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
+                            <span style={{ color: '#64748b', fontSize: '0.9rem' }}>Inconclusive / Never Shipped</span>
+                            <span style={{ color: '#64748b', fontWeight: 600 }}>{stats.outcomeBreakdown.inconclusive}</span>
+                          </div>
+                        )}
+                      </div>
                     )}
+                  </>
+                )}
               </div>
             );
           })}
