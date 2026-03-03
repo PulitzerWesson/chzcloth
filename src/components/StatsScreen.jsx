@@ -120,11 +120,13 @@ function MiniStat({ label, value, color }) {
 function computeUserStats(bets, userId) {
   const submitted = bets.filter(b => b.user_id === userId && ['pending_approval', 'approved'].includes(b.approval_status));
   const sponsored = submitted.filter(b => b.approval_status === 'approved');
+  const inProgress = submitted.filter(b => b.started_at && !b.completed_at);
   const shipped = submitted.filter(b => b.completed_at);
   const outcomesRecorded = shipped.filter(b => OUTCOME_STATUSES.includes(b.outcome));
   return {
     submitted: submitted.length,
     sponsored: sponsored.length,
+    inProgress: inProgress.length,
     shipped: shipped.length,
     outcomesRecorded: outcomesRecorded.length,
     outcomeBreakdown: {
@@ -194,11 +196,18 @@ export function StatsScreen({ currentOrg, isAdmin }) {
 
       const submitted = normalized.filter(b => ['pending_approval', 'approved'].includes(b.approval_status));
       const sponsored = normalized.filter(b => b.approval_status === 'approved');
+      const inProgress = normalized.filter(b => b.started_at && !b.completed_at);
       const shipped = normalized.filter(b => b.completed_at);
       const outcomes = shipped.filter(b => OUTCOME_STATUSES.includes(b.outcome));
 
       fetchSummary({
-        funnel: { submitted: submitted.length, sponsored: sponsored.length, shipped: shipped.length, outcomesRecorded: outcomes.length },
+        funnel: {
+          submitted: submitted.length,
+          sponsored: sponsored.length,
+          inProgress: inProgress.length,
+          shipped: shipped.length,
+          outcomesRecorded: outcomes.length
+        },
         outcomeBreakdown: {
           succeeded: outcomes.filter(b => b.outcome === 'succeeded').length,
           partial: outcomes.filter(b => b.outcome === 'partial').length,
@@ -227,6 +236,7 @@ export function StatsScreen({ currentOrg, isAdmin }) {
 
   const allSubmitted = bets.filter(b => ['pending_approval', 'approved'].includes(b.approval_status));
   const allSponsored = bets.filter(b => b.approval_status === 'approved');
+  const allInProgress = bets.filter(b => b.started_at && !b.completed_at);
   const allShipped = bets.filter(b => b.completed_at);
   const allOutcomes = allShipped.filter(b => OUTCOME_STATUSES.includes(b.outcome));
   const avgSubmitToSponsored = avgDays(allSponsored.map(b => [b.created_at, b.approved_at]));
@@ -266,13 +276,11 @@ export function StatsScreen({ currentOrg, isAdmin }) {
       {/* Company Funnel */}
       <div style={{ marginBottom: 48 }}>
         <SectionLabel>Company Funnel</SectionLabel>
-        <div style={{ display: 'flex', alignItems: 'stretch', gap: 8, marginBottom: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 16 }}>
           <FunnelBlock label="Submitted" value={allSubmitted.length} color="#f1f5f9" />
-          <div style={{ display: 'flex', alignItems: 'center', color: '#334155', fontSize: '1.2rem', padding: '0 4px' }}>→</div>
           <FunnelBlock label="Sponsored" value={allSponsored.length} color="#a78bfa" />
-          <div style={{ display: 'flex', alignItems: 'center', color: '#334155', fontSize: '1.2rem', padding: '0 4px' }}>→</div>
+          <FunnelBlock label="In Progress" value={allInProgress.length} color="#fbbf24" />
           <FunnelBlock label="Shipped" value={allShipped.length} color="#2dd4bf" />
-          <div style={{ display: 'flex', alignItems: 'center', color: '#334155', fontSize: '1.2rem', padding: '0 4px' }}>→</div>
           <FunnelBlock label="Outcome Recorded" value={allOutcomes.length} color="#22c55e" />
         </div>
         {(avgSubmitToSponsored || avgSponsoredToShipped) && (
@@ -342,7 +350,6 @@ export function StatsScreen({ currentOrg, isAdmin }) {
                 borderRadius: 12,
                 overflow: 'hidden'
               }}>
-                {/* Main row */}
                 <div style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
                   <div style={{ flex: '1 1 160px', minWidth: 0 }}>
                     <div style={{ color: '#f1f5f9', fontWeight: 500, fontSize: '0.9rem', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -354,16 +361,13 @@ export function StatsScreen({ currentOrg, isAdmin }) {
                   <div style={{ width: 1, height: 36, background: 'rgba(255,255,255,0.06)', flexShrink: 0 }} />
                   <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
                     <MiniStat label="Submitted" value={stats.submitted} />
-                    <span style={{ color: '#334155' }}>→</span>
                     <MiniStat label="Sponsored" value={stats.sponsored} color="#a78bfa" />
-                    <span style={{ color: '#334155' }}>→</span>
+                    <MiniStat label="In Progress" value={stats.inProgress} color="#fbbf24" />
                     <MiniStat label="Shipped" value={stats.shipped} color="#2dd4bf" />
-                    <span style={{ color: '#334155' }}>→</span>
                     <MiniStat label="Outcome" value={stats.outcomesRecorded} color="#22c55e" />
                   </div>
                 </div>
 
-                {/* Expandable outcomes */}
                 {hasOutcomes && (
                   <>
                     <button
