@@ -1,164 +1,155 @@
 import React, { useState } from 'react';
 import { FilterBar, applyFilters, defaultFilters } from './FilterBar';
 
-// CHZCLOTH Badge component
-const CHZCLOTHBadge = () => (
-  <span 
-    style={{
-      display: 'inline-flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: 18,
-      height: 18,
-      background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
-      borderRadius: '50%',
-      fontSize: '0.65rem',
-      fontWeight: 700,
-      color: '#0a0f1a',
-      marginLeft: 6
-    }}
-    title="AI-Enhanced by CHZCLOTH"
-  >
-    C
-  </span>
-);
-
 const StrategicAlignmentIcon = ({ alignment }) => {
   const normalized = alignment?.toLowerCase();
-  
   if (normalized === 'inner' || normalized === 'inner_ring' || normalized === 'inner ring') {
     return (
       <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
         <style>{`
-          @keyframes growFromDot {
-            0% { transform: scale(0); opacity: 0; }
-            22% { transform: scale(1); opacity: 1; }
-            100% { transform: scale(1); opacity: 1; }
-          }
-          .grow-circle { 
-            animation: growFromDot 9s ease-out infinite;
-            transform-origin: center;
-          }
+          @keyframes growFromDot { 0% { transform: scale(0); opacity: 0; } 22% { transform: scale(1); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+          .grow-circle { animation: growFromDot 9s ease-out infinite; transform-origin: center; }
         `}</style>
-        <circle cx="14" cy="14" r="12" stroke="url(#tealGradient)" strokeWidth="2.5" fill="none"/>
-        <circle className="grow-circle" cx="14" cy="14" r="6" fill="url(#tealGradient)"/>
-        <defs>
-          <linearGradient id="tealGradient" x1="2" y1="2" x2="26" y2="26">
-            <stop offset="0%" stopColor="#2dd4bf"/>
-            <stop offset="100%" stopColor="#22d3ee"/>
-          </linearGradient>
-        </defs>
+        <circle cx="14" cy="14" r="12" stroke="url(#tealGradientIQ1)" strokeWidth="2.5" fill="none"/>
+        <circle className="grow-circle" cx="14" cy="14" r="6" fill="url(#tealGradientIQ1)"/>
+        <defs><linearGradient id="tealGradientIQ1" x1="2" y1="2" x2="26" y2="26"><stop offset="0%" stopColor="#2dd4bf"/><stop offset="100%" stopColor="#22d3ee"/></linearGradient></defs>
       </svg>
     );
   }
-  
   if (normalized === 'outer' || normalized === 'outer_ring' || normalized === 'outer ring') {
     return (
       <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
         <style>{`
-          @keyframes draw {
-            0% { stroke-dashoffset: 75.4; }
-            30% { stroke-dashoffset: 0; }
-            100% { stroke-dashoffset: 0; }
-          }
-          .draw-circle { 
-            stroke-dasharray: 75.4;
-            animation: draw 10s linear infinite;
-          }
+          @keyframes drawIQ { 0% { stroke-dashoffset: 75.4; } 30% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 0; } }
+          .draw-circle-iq { stroke-dasharray: 75.4; animation: drawIQ 10s linear infinite; }
         `}</style>
-        <circle 
-          className="draw-circle"
-          cx="14" 
-          cy="14" 
-          r="12" 
-          stroke="url(#tealGradient2)" 
-          strokeWidth="3" 
-          fill="none"
-        />
+        <circle className="draw-circle-iq" cx="14" cy="14" r="12" stroke="url(#tealGradientIQ2)" strokeWidth="3" fill="none"/>
         <circle cx="14" cy="14" r="6" fill="#1e293b"/>
-        <defs>
-          <linearGradient id="tealGradient2" x1="2" y1="2" x2="26" y2="26">
-            <stop offset="0%" stopColor="#2dd4bf"/>
-            <stop offset="100%" stopColor="#22d3ee"/>
-          </linearGradient>
-        </defs>
+        <defs><linearGradient id="tealGradientIQ2" x1="2" y1="2" x2="26" y2="26"><stop offset="0%" stopColor="#2dd4bf"/><stop offset="100%" stopColor="#22d3ee"/></linearGradient></defs>
       </svg>
     );
   }
-  
   if (normalized === 'experimental') {
     return (
       <svg width="20" height="20" viewBox="0 0 24 28" fill="none">
         <style>{`
-          @keyframes bubble1 {
-            0% { cy: 20; opacity: 0; }
-            20% { opacity: 1; }
-            100% { cy: 3; opacity: 0; }
-          }
-          @keyframes bubble2 {
-            0% { cy: 20; opacity: 0; }
-            20% { opacity: 1; }
-            100% { cy: 3.5; opacity: 0; }
-          }
-          @keyframes bubble3 {
-            0% { cy: 20; opacity: 0; }
-            20% { opacity: 1; }
-            100% { cy: 3; opacity: 0; }
-          }
-          .bubble1 { animation: bubble1 2.5s ease-in infinite; }
-          .bubble2 { animation: bubble2 2.5s ease-in infinite 0.8s; }
-          .bubble3 { animation: bubble3 2.5s ease-in infinite 1.6s; }
+          @keyframes b1iq { 0% { cy: 20; opacity: 0; } 20% { opacity: 1; } 100% { cy: 3; opacity: 0; } }
+          @keyframes b2iq { 0% { cy: 20; opacity: 0; } 20% { opacity: 1; } 100% { cy: 3.5; opacity: 0; } }
+          @keyframes b3iq { 0% { cy: 20; opacity: 0; } 20% { opacity: 1; } 100% { cy: 3; opacity: 0; } }
+          .b1iq { animation: b1iq 2.5s ease-in infinite; }
+          .b2iq { animation: b2iq 2.5s ease-in infinite 0.8s; }
+          .b3iq { animation: b3iq 2.5s ease-in infinite 1.6s; }
         `}</style>
-        <path 
-          d="M8 2 L8 10 L4 22 C3.5 24 4.5 26 7 26 L17 26 C19.5 26 20.5 24 20 22 L16 10 L16 2" 
-          stroke="url(#beakerGradient)" 
-          strokeWidth="2" 
-          fill="none"
-        />
-        <line x1="8" y1="2" x2="16" y2="2" stroke="url(#beakerGradient)" strokeWidth="2"/>
-        <circle className="bubble1" cx="9" cy="20" r="2" fill="#2dd4bf" opacity="0"/>
-        <circle className="bubble2" cx="12" cy="20" r="1.8" fill="#22d3ee" opacity="0"/>
-        <circle className="bubble3" cx="15" cy="20" r="2" fill="#2dd4bf" opacity="0"/>
-        <defs>
-          <linearGradient id="beakerGradient" x1="4" y1="2" x2="20" y2="26">
-            <stop offset="0%" stopColor="#2dd4bf"/>
-            <stop offset="100%" stopColor="#22d3ee"/>
-          </linearGradient>
-        </defs>
+        <path d="M8 2 L8 10 L4 22 C3.5 24 4.5 26 7 26 L17 26 C19.5 26 20.5 24 20 22 L16 10 L16 2" stroke="url(#beakerIQ)" strokeWidth="2" fill="none"/>
+        <line x1="8" y1="2" x2="16" y2="2" stroke="url(#beakerIQ)" strokeWidth="2"/>
+        <circle className="b1iq" cx="9" cy="20" r="2" fill="#2dd4bf" opacity="0"/>
+        <circle className="b2iq" cx="12" cy="20" r="1.8" fill="#22d3ee" opacity="0"/>
+        <circle className="b3iq" cx="15" cy="20" r="2" fill="#2dd4bf" opacity="0"/>
+        <defs><linearGradient id="beakerIQ" x1="4" y1="2" x2="20" y2="26"><stop offset="0%" stopColor="#2dd4bf"/><stop offset="100%" stopColor="#22d3ee"/></linearGradient></defs>
       </svg>
     );
   }
-  
   return null;
 };
 
 const LEVER_COLORS = {
-  Revenue:     { bg: 'rgba(34,197,94,0.15)',   border: 'rgba(34,197,94,0.3)',   text: '#22c55e' },
-  Retention:   { bg: 'rgba(45,212,191,0.15)',  border: 'rgba(45,212,191,0.3)',  text: '#2dd4bf' },
-  Acquisition: { bg: 'rgba(251,191,36,0.15)',  border: 'rgba(251,191,36,0.3)',  text: '#fbbf24' },
-  Efficiency:  { bg: 'rgba(125,211,252,0.15)', border: 'rgba(125,211,252,0.3)', text: '#7dd3fc' },
-  Platform:    { bg: 'rgba(167,139,250,0.15)', border: 'rgba(167,139,250,0.3)', text: '#a78bfa' },
-  Experience:  { bg: 'rgba(249,115,22,0.15)',  border: 'rgba(249,115,22,0.3)',  text: '#f97316' },
-  Risk:        { bg: 'rgba(239,68,68,0.15)',   border: 'rgba(239,68,68,0.3)',   text: '#ef4444' },
+  Revenue:     { bg: 'rgba(34,197,94,0.15)',   border: 'rgba(34,197,94,0.3)',   text: '#22c55e',  solid: '#22c55e' },
+  Retention:   { bg: 'rgba(45,212,191,0.15)',  border: 'rgba(45,212,191,0.3)',  text: '#2dd4bf',  solid: '#2dd4bf' },
+  Acquisition: { bg: 'rgba(251,191,36,0.15)',  border: 'rgba(251,191,36,0.3)',  text: '#fbbf24',  solid: '#fbbf24' },
+  Efficiency:  { bg: 'rgba(125,211,252,0.15)', border: 'rgba(125,211,252,0.3)', text: '#7dd3fc',  solid: '#7dd3fc' },
+  Platform:    { bg: 'rgba(167,139,250,0.15)', border: 'rgba(167,139,250,0.3)', text: '#a78bfa',  solid: '#a78bfa' },
+  Experience:  { bg: 'rgba(249,115,22,0.15)',  border: 'rgba(249,115,22,0.3)',  text: '#f97316',  solid: '#f97316' },
+  Risk:        { bg: 'rgba(239,68,68,0.15)',   border: 'rgba(239,68,68,0.3)',   text: '#ef4444',  solid: '#ef4444' },
 };
 
-const leverColor = (lever) => LEVER_COLORS[lever] || { 
-  bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)', text: '#94a3b8' 
-};
+const leverColor = (lever) => LEVER_COLORS[lever] || { bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)', text: '#94a3b8', solid: '#94a3b8' };
 
-function IdeasQueue({ 
-  ideas = [], 
-  loading = false,
-  currentOrg, 
-  currentUser, 
-  onClaimIdea, 
-  onUnclaimIdea,
-  onClaimAndStructure, 
-  onStructureBet, 
-  setScreen
-}) {
+function LeverTreemap({ bets }) {
+  const counts = {};
+  bets.forEach(bet => {
+    const betData = typeof bet.bet_data === 'string' ? JSON.parse(bet.bet_data) : bet.bet_data;
+    const lever = bet.lever || betData?.lever;
+    if (lever && LEVER_COLORS[lever]) counts[lever] = (counts[lever] || 0) + 1;
+  });
+
+  const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  if (entries.length === 0) return null;
+  const total = entries.reduce((s, [, c]) => s + c, 0);
+
+  return (
+    <div style={{ display: 'flex', height: 48, borderRadius: 8, overflow: 'hidden', gap: 2 }}>
+      {entries.map(([lever, count]) => {
+        const pct = (count / total) * 100;
+        const lc = leverColor(lever);
+        return (
+          <div
+            key={lever}
+            title={`${lever}: ${count}`}
+            style={{
+              flex: `${pct} 0 0`,
+              background: lc.solid,
+              opacity: 0.7,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexDirection: 'column',
+              minWidth: pct > 12 ? 'auto' : 0,
+              overflow: 'hidden',
+              cursor: 'default',
+              transition: 'opacity 0.15s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.opacity = 1}
+            onMouseLeave={e => e.currentTarget.style.opacity = 0.7}
+          >
+            {pct > 12 && (
+              <>
+                <span style={{ color: '#0a0f1a', fontSize: '0.7rem', fontWeight: 700, lineHeight: 1 }}>{lever}</span>
+                <span style={{ color: '#0a0f1a', fontSize: '0.85rem', fontWeight: 800 }}>{count}</span>
+              </>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function QuestionModal({ email, onClose }) {
+  return (
+    <div
+      onClick={onClose}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000 }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{ background: '#1e293b', borderRadius: 16, padding: 28, maxWidth: 380, width: 'calc(100% - 32px)', border: '1px solid rgba(255,255,255,0.08)' }}
+      >
+        <div style={{ color: '#f1f5f9', fontWeight: 600, fontSize: '1rem', marginBottom: 10 }}>Questions about this bet?</div>
+        <p style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 20 }}>
+          Reach out directly to the submitter with any questions or comments.
+        </p>
+        <a
+          href={`mailto:${email}`}
+          style={{ display: 'block', textAlign: 'center', padding: '10px 20px', background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)', borderRadius: 8, color: '#0a0f1a', fontWeight: 600, fontSize: '0.9rem', textDecoration: 'none' }}
+        >
+          Email {email}
+        </a>
+        <button
+          onClick={onClose}
+          style={{ marginTop: 12, width: '100%', background: 'none', border: 'none', color: '#475569', fontSize: '0.85rem', cursor: 'pointer', padding: '6px 0' }}
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function IdeasQueue({ ideas = [], loading = false, currentOrg, currentUser, onClaimIdea, onUnclaimIdea, onClaimAndStructure, onStructureBet, setScreen }) {
   const [expandedRationale, setExpandedRationale] = useState(null);
   const [filters, setFilters] = useState(defaultFilters);
+  const [summaryExpanded, setSummaryExpanded] = useState(false);
+  const [questionModal, setQuestionModal] = useState(null);
 
   const betIdeas = ideas
     .filter(i => (i.entry_type === 'bet' || !i.entry_type) && i.status === 'pending')
@@ -170,7 +161,6 @@ function IdeasQueue({
       return bScore - aScore;
     });
 
-  // Normalize ideas for applyFilters — it expects bet-style fields
   const normalizedForFilter = betIdeas.map(idea => {
     const betData = typeof idea.bet_data === 'string' ? JSON.parse(idea.bet_data) : idea.bet_data;
     return {
@@ -178,40 +168,79 @@ function IdeasQueue({
       lever: idea.lever || betData?.lever,
       strategicAlignment: betData?.strategicAlignment,
       aiPredictedScore: betData?.aiPredictedScore || null,
-     approachScore: idea.viability_score || betData?.approachScore || 0,
-    potentialScore: betData?.potentialScore || 0,
-    fitScore: idea.relevance_score || betData?.fitScore || 0,
+      approachScore: idea.viability_score || betData?.approachScore || 0,
+      potentialScore: betData?.potentialScore || 0,
+      fitScore: idea.relevance_score || betData?.fitScore || 0,
     };
   });
 
   const filteredIdeas = applyFilters(normalizedForFilter, filters, null);
 
   if (loading) {
-    return (
-      <div style={{ padding: '60px 24px', textAlign: 'center', color: '#64748b' }}>
-        Loading marketplace...
-      </div>
-    );
+    return <div style={{ padding: '60px 24px', textAlign: 'center', color: '#64748b' }}>Loading marketplace...</div>;
   }
 
   return (
     <>
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#f1f5f9', marginBottom: 8 }}>
-          Marketplace
-        </h1>
-        <p style={{ color: '#64748b', fontSize: '0.95rem', marginBottom: 24 }}>
-          Bets waiting for a sponsor. Claim one to add it to your queue.
-        </p>
+        <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#f1f5f9', marginBottom: 8 }}>Marketplace</h1>
 
-        <FilterBar
-          filters={filters}
-          onChange={setFilters}
-          showStatus={false}
-          statusOptions={[]}
-        />
+        {/* Collapsible summary */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+            <p style={{ color: '#64748b', fontSize: '0.95rem', margin: 0 }}>
+              Bets waiting for a sponsor to claim and move to the Priority Queue.
+            </p>
+            {!summaryExpanded && (
+              <button
+                onClick={() => setSummaryExpanded(true)}
+                style={{ background: 'none', border: 'none', color: '#2dd4bf', fontSize: '0.8rem', cursor: 'pointer', padding: 0, whiteSpace: 'nowrap', textDecoration: 'underline' }}
+              >
+                How it works
+              </button>
+            )}
+          </div>
+          {summaryExpanded && (
+            <div style={{ marginTop: 12, padding: '14px 16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, color: '#94a3b8', fontSize: '0.875rem', lineHeight: 1.7 }}>
+              <p style={{ margin: '0 0 8px 0' }}>
+                When a team member submits a bet, it lands here in the Marketplace waiting for a sponsor — typically a manager, lead, or stakeholder — to claim it. Once sponsored, the bet moves to the Priority Queue where it gets prioritized alongside other active work with stakeholders and engineering.
+              </p>
+              <p style={{ margin: '0 0 8px 0' }}>
+                Each bet includes a score (Approach, Potential, Fit) and details about the lever it moves, the hypothesis, predicted outcome, and AI rationale. Use the filters above to find bets that match your strategic priorities.
+              </p>
+              <p style={{ margin: 0 }}>
+                Have a question about a specific bet? Click the <strong style={{ color: '#f1f5f9' }}>?</strong> icon on any card to contact the submitter directly.
+              </p>
+              <button
+                onClick={() => setSummaryExpanded(false)}
+                style={{ marginTop: 10, background: 'none', border: 'none', color: '#475569', fontSize: '0.78rem', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
+              >
+                Show less
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Stats bar */}
+        {betIdeas.length > 0 && (
+          <div style={{ display: 'flex', gap: 12, marginBottom: 20, alignItems: 'stretch' }}>
+            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '12px 20px', textAlign: 'center', minWidth: 90, flexShrink: 0 }}>
+              <div style={{ color: '#f1f5f9', fontSize: '1.75rem', fontWeight: 800, lineHeight: 1 }}>{betIdeas.length}</div>
+              <div style={{ color: '#64748b', fontSize: '0.75rem', marginTop: 4 }}>Total Bets</div>
+            </div>
+            <div style={{ flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '12px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6 }}>
+              <div style={{ color: '#64748b', fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>By Lever</div>
+              <LeverTreemap bets={betIdeas} />
+            </div>
+          </div>
+        )}
+
+        <FilterBar filters={filters} onChange={setFilters} showStatus={false} statusOptions={[]} />
       </div>
+
+      {/* Question modal */}
+      {questionModal && <QuestionModal email={questionModal} onClose={() => setQuestionModal(null)} />}
 
       {/* Entries list */}
       {betIdeas.length === 0 ? (
@@ -229,25 +258,13 @@ function IdeasQueue({
             const betData = typeof idea.bet_data === 'string' ? JSON.parse(idea.bet_data) : idea.bet_data;
             const isAIEnhanced = betData?.aiEnhanced || idea.ai_enhanced;
             const aiScore = betData?.aiPredictedScore || null;
-            
+
             return (
-              <div
-                key={idea.id}
-                style={{
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 12,
-                  padding: 20,
-                  display: 'flex',
-                  gap: 16
-                }}
-              >
-                {/* Strategic Alignment Icon */}
+              <div key={idea.id} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 20, display: 'flex', gap: 16 }}>
                 <div style={{ flexShrink: 0, paddingTop: 4 }}>
                   <StrategicAlignmentIcon alignment={betData?.strategicAlignment} />
                 </div>
 
-                {/* Card Content */}
                 <div style={{ flex: 1 }}>
                   {/* Title + Scores Row */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
@@ -257,19 +274,16 @@ function IdeasQueue({
                           {idea.product || betData?.product}
                         </div>
                       )}
-                      <h3 style={{ color: '#f1f5f9', fontSize: '1.05rem', fontWeight: 600, margin: 0, lineHeight: 1.4 }}>
-                        {idea.title}
-                      </h3>
+                      <h3 style={{ color: '#f1f5f9', fontSize: '1.05rem', fontWeight: 600, margin: 0, lineHeight: 1.4 }}>{idea.title}</h3>
                     </div>
 
                     <div style={{ display: 'flex', gap: 0, flexShrink: 0, alignItems: 'center' }}>
                       {isAIEnhanced && aiScore ? (
                         <div style={{ textAlign: 'center', paddingRight: 8 }}>
-                          <div style={{ fontSize: '0.7rem', color: '#2dd4bf', marginBottom: 2, fontWeight: 700, letterSpacing: '0.05em', textShadow: '0 0 10px rgba(45, 212, 191, 0.6)' }}>CHZ</div>
-                          <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#2dd4bf', textShadow: '0 0 15px rgba(45, 212, 191, 0.8)' }}>{aiScore}</div>
+                          <div style={{ fontSize: '0.7rem', color: '#2dd4bf', marginBottom: 2, fontWeight: 700, letterSpacing: '0.05em', textShadow: '0 0 10px rgba(45,212,191,0.6)' }}>CHZ</div>
+                          <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#2dd4bf', textShadow: '0 0 15px rgba(45,212,191,0.8)' }}>{aiScore}</div>
                         </div>
                       ) : null}
-
                       {(idea.viability_score || idea.relevance_score) && (
                         <div style={{ display: 'flex', gap: 8, flexShrink: 0, paddingLeft: 8, borderLeft: '1px solid rgba(255,255,255,0.1)' }}>
                           <div style={{ textAlign: 'center' }}>
@@ -295,15 +309,10 @@ function IdeasQueue({
                     </div>
                   )}
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: '0.8rem', color: '#64748b', marginBottom: 16 }}>
+                  {/* Meta row */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.8rem', color: '#64748b', marginBottom: 16, flexWrap: 'wrap' }}>
                     {(idea.lever || betData?.lever) && (
-                      <span style={{
-                        display: 'inline-flex', alignItems: 'center', padding: '4px 10px',
-                        background: leverColor(idea.lever || betData?.lever).bg,
-                        border: `1px solid ${leverColor(idea.lever || betData?.lever).border}`,
-                        borderRadius: 6, color: leverColor(idea.lever || betData?.lever).text,
-                        fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em'
-                      }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 10px', background: leverColor(idea.lever || betData?.lever).bg, border: `1px solid ${leverColor(idea.lever || betData?.lever).border}`, borderRadius: 6, color: leverColor(idea.lever || betData?.lever).text, fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                         {idea.lever || betData?.lever}
                       </span>
                     )}
@@ -311,8 +320,18 @@ function IdeasQueue({
                     <span>Submitted by {idea.submittedByEmail}</span>
                     <span>•</span>
                     <span>{new Date(idea.createdAt).toLocaleDateString()}</span>
+                    <span>•</span>
+                    {/* Question mark */}
+                    <button
+                      onClick={() => setQuestionModal(idea.submittedByEmail)}
+                      title="Contact submitter"
+                      style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '50%', width: 20, height: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b', fontSize: '0.7rem', fontWeight: 700, padding: 0, flexShrink: 0 }}
+                    >
+                      ?
+                    </button>
                   </div>
 
+                  {/* Expandable details */}
                   {betData?.scoringRationale && (
                     <div style={{ marginBottom: 16 }}>
                       <button
@@ -343,8 +362,7 @@ function IdeasQueue({
                                 <div>
                                   <span style={{ color: '#64748b' }}>Strategic Alignment: </span>
                                   <span style={{ color: '#94a3b8' }}>
-                                    {betData.strategicAlignment === 'inner' ? 'Inner Ring' :
-                                     betData.strategicAlignment === 'outer' ? 'Outer Ring' : 'Experimental'}
+                                    {betData.strategicAlignment === 'inner' ? 'Inner Ring' : betData.strategicAlignment === 'outer' ? 'Outer Ring' : 'Experimental'}
                                   </span>
                                 </div>
                               )}
@@ -362,18 +380,9 @@ function IdeasQueue({
                               CHZCLOTH SCORING RATIONALE
                               {isAIEnhanced && <span style={{ color: '#2dd4bf', fontWeight: 700 }}>• ENHANCED</span>}
                             </div>
-                            <div style={{ marginBottom: 8 }}>
-                              <span style={{ color: '#2dd4bf', fontWeight: 600 }}>Approach:</span>
-                              <span style={{ color: '#94a3b8', marginLeft: 8 }}>{betData?.scoringRationale?.approach?.rationale}</span>
-                            </div>
-                            <div style={{ marginBottom: 8 }}>
-                              <span style={{ color: '#fbbf24', fontWeight: 600 }}>Potential:</span>
-                              <span style={{ color: '#94a3b8', marginLeft: 8 }}>{betData?.scoringRationale?.potential?.rationale}</span>
-                            </div>
-                            <div>
-                              <span style={{ color: '#7dd3fc', fontWeight: 600 }}>Fit:</span>
-                              <span style={{ color: '#94a3b8', marginLeft: 8 }}>{betData?.scoringRationale?.fit?.rationale}</span>
-                            </div>
+                            <div style={{ marginBottom: 8 }}><span style={{ color: '#2dd4bf', fontWeight: 600 }}>Approach:</span><span style={{ color: '#94a3b8', marginLeft: 8 }}>{betData?.scoringRationale?.approach?.rationale}</span></div>
+                            <div style={{ marginBottom: 8 }}><span style={{ color: '#fbbf24', fontWeight: 600 }}>Potential:</span><span style={{ color: '#94a3b8', marginLeft: 8 }}>{betData?.scoringRationale?.potential?.rationale}</span></div>
+                            <div><span style={{ color: '#7dd3fc', fontWeight: 600 }}>Fit:</span><span style={{ color: '#94a3b8', marginLeft: 8 }}>{betData?.scoringRationale?.fit?.rationale}</span></div>
                           </div>
                         </div>
                       )}
