@@ -3364,58 +3364,39 @@ function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEd
   return (
     <>
       {/* Stats row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
-        <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
-          <div style={{ color: '#f1f5f9', fontSize: '2.5rem', fontWeight: 800 }}>{safeBets.length}</div>
-          <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Total Bets</div>
-        </div>
-        <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
-          <div style={{ color: '#22c55e', fontSize: '2.5rem', fontWeight: 800 }}>
-            {safeBets.filter(b => b.approvalStatus === 'approved').length}
-          </div>
-          <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Sponsored</div>
-        </div>
-        <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
-          <div style={{ color: '#fbbf24', fontSize: '2.5rem', fontWeight: 800 }}>
-            {safeBets.filter(b => b.startedAt && !b.completedAt).length}
-          </div>
-          <div style={{ color: '#64748b', fontSize: '0.85rem' }}>In Progress</div>
-        </div>
-        <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
-          <div style={{ color: '#2dd4bf', fontSize: '2.5rem', fontWeight: 800 }}>{totalCompleted}</div>
-          <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Completed</div>
-        </div>
-      </div>
+<div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginBottom: 24 }}>
+  <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
+    <div style={{ color: '#f1f5f9', fontSize: '2.5rem', fontWeight: 800 }}>
+      {yourBets.length}
+    </div>
+    <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Submitted</div>
+  </div>
+  <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
+    <div style={{ color: '#a78bfa', fontSize: '2.5rem', fontWeight: 800 }}>
+      {yourBets.filter(b => b.approvalStatus === 'approved').length}
+    </div>
+    <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Sponsored</div>
+  </div>
+  <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
+    <div style={{ color: '#fbbf24', fontSize: '2.5rem', fontWeight: 800 }}>
+      {yourBets.filter(b => b.startedAt && !b.completedAt).length}
+    </div>
+    <div style={{ color: '#64748b', fontSize: '0.85rem' }}>In Progress</div>
+  </div>
+  <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
+    <div style={{ color: '#2dd4bf', fontSize: '2.5rem', fontWeight: 800 }}>
+      {yourBets.filter(b => b.completedAt).length}
+    </div>
+    <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Shipped</div>
+  </div>
+  <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
+    <div style={{ color: '#22c55e', fontSize: '2.5rem', fontWeight: 800 }}>
+      {yourBets.filter(b => ['succeeded', 'partial', 'failed', 'inconclusive', 'never_shipped'].includes(b.outcome || b.status)).length}
+    </div>
+    <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Outcome Recorded</div>
+  </div>
+</div>
 
-      {/* Accuracy split */}
-      {(ownAccuracy !== null || othersAccuracy !== null) && (
-        <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 12, padding: 20, marginBottom: 40, border: '1px solid rgba(255,255,255,0.05)' }}>
-          <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: 16, fontWeight: 600 }}>Accuracy by Idea Source</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                <span style={{ color: '#2dd4bf', fontSize: '1.75rem', fontWeight: 700 }}>{ownAccuracy !== null ? `${ownAccuracy}%` : '—'}</span>
-                <span style={{ color: '#64748b', fontSize: '0.8rem' }}>({ownIdeas.length} bets)</span>
-              </div>
-              <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Your ideas</div>
-            </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                <span style={{ color: '#fbbf24', fontSize: '1.75rem', fontWeight: 700 }}>{othersAccuracy !== null ? `${othersAccuracy}%` : '—'}</span>
-                <span style={{ color: '#64748b', fontSize: '0.8rem' }}>({othersIdeas.length} bets)</span>
-              </div>
-              <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Others' ideas you tracked</div>
-            </div>
-          </div>
-          {ownAccuracy !== null && othersAccuracy !== null && ownAccuracy > othersAccuracy && (
-            <div style={{ marginTop: 16, padding: 12, background: 'rgba(45,212,191,0.1)', borderRadius: 8 }}>
-              <span style={{ color: '#2dd4bf', fontSize: '0.85rem' }}>
-                Your ideas succeed {ownAccuracy - othersAccuracy}% more often than ideas you execute for others.
-              </span>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Your Bets */}
       {yourBets.length > 0 && (
