@@ -178,6 +178,9 @@ function IdeasQueue({
       lever: idea.lever || betData?.lever,
       strategicAlignment: betData?.strategicAlignment,
       aiPredictedScore: betData?.aiPredictedScore || null,
+     approachScore: idea.viability_score || betData?.approachScore || 0,
+    potentialScore: betData?.potentialScore || 0,
+    fitScore: idea.relevance_score || betData?.fitScore || 0,
     };
   });
 
