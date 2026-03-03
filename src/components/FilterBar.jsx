@@ -287,11 +287,13 @@ export function applyFilters(bets, filters, getStatusFn) {
       const status = getStatusFn(bet);
       if (!filters.statuses.includes(status)) return false;
     }
-    if (filters.minScore > 0) {
-      const score = bet.aiPredictedScore || bet.ai_predicted_score ||
-        ((bet.approachScore || 0) + (bet.potentialScore || 0) + (bet.fitScore || 0)) / 3 || 0;
-      if (score < filters.minScore) return false;
-    }
+      if (filters.minScore > 0) {
+        const total = (bet.approachScore || bet.viability_score || 0) +
+                      (bet.potentialScore || 0) +
+                      (bet.fitScore || bet.relevance_score || 0);
+        const avg = total / 3;
+        if (avg < filters.minScore) return false;
+      }
     return true;
   });
 }
