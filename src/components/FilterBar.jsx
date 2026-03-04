@@ -16,6 +16,62 @@ const ALIGNMENTS = ['inner', 'outer', 'experimental'];
 const ALIGNMENT_LABELS = { inner: 'Inner Ring', outer: 'Outer Ring', experimental: 'Experimental' };
 const SCORES = [{ label: 'Any', value: 0 }, { label: '60+', value: 60 }, { label: '70+', value: 70 }, { label: '80+', value: 80 }];
 
+// Lever icons — simple SVGs, 14x14
+const LeverIcon = ({ lever, color }) => {
+  const c = color || '#94a3b8';
+  const s = { width: 14, height: 14, flexShrink: 0 };
+  switch (lever) {
+    case 'Revenue': return (
+      <svg {...s} viewBox="0 0 14 14" fill="none">
+        <polyline points="1,10 4,6 7,8 10,3 13,1" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+        <polyline points="10,1 13,1 13,4" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+      </svg>
+    );
+    case 'Retention': return (
+      <svg {...s} viewBox="0 0 14 14" fill="none">
+        <path d="M7 12 C7 12 2 8.5 2 5.5 C2 3.5 3.5 2 5.5 2 C6.3 2 7 2.5 7 2.5 C7 2.5 7.7 2 8.5 2 C10.5 2 12 3.5 12 5.5 C12 8.5 7 12 7 12Z" stroke={c} strokeWidth="1.6" fill="none" strokeLinejoin="round"/>
+      </svg>
+    );
+    case 'Acquisition': return (
+      <svg {...s} viewBox="0 0 14 14" fill="none">
+        <circle cx="5.5" cy="5.5" r="3.5" stroke={c} strokeWidth="1.6" fill="none"/>
+        <line x1="8.5" y1="8.5" x2="12.5" y2="12.5" stroke={c} strokeWidth="1.8" strokeLinecap="round"/>
+        <line x1="11" y1="2" x2="11" y2="6" stroke={c} strokeWidth="1.6" strokeLinecap="round"/>
+        <line x1="9" y1="4" x2="13" y2="4" stroke={c} strokeWidth="1.6" strokeLinecap="round"/>
+      </svg>
+    );
+    case 'Efficiency': return (
+      <svg {...s} viewBox="0 0 14 14" fill="none">
+        <polygon points="7,1 8.5,5.5 13,5.5 9.5,8.5 11,13 7,10 3,13 4.5,8.5 1,5.5 5.5,5.5" stroke={c} strokeWidth="1.4" fill="none" strokeLinejoin="round"/>
+      </svg>
+    );
+    case 'Platform': return (
+      <svg {...s} viewBox="0 0 14 14" fill="none">
+        <rect x="1" y="1" width="5" height="5" rx="1" stroke={c} strokeWidth="1.5" fill="none"/>
+        <rect x="8" y="1" width="5" height="5" rx="1" stroke={c} strokeWidth="1.5" fill="none"/>
+        <rect x="1" y="8" width="5" height="5" rx="1" stroke={c} strokeWidth="1.5" fill="none"/>
+        <rect x="8" y="8" width="5" height="5" rx="1" stroke={c} strokeWidth="1.5" fill="none"/>
+      </svg>
+    );
+    case 'Experience': return (
+      <svg {...s} viewBox="0 0 14 14" fill="none">
+        <circle cx="7" cy="7" r="5.5" stroke={c} strokeWidth="1.5" fill="none"/>
+        <path d="M4.5 8.5 C5 9.5 6 10 7 10 C8 10 9 9.5 9.5 8.5" stroke={c} strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+        <circle cx="5" cy="6" r="0.8" fill={c}/>
+        <circle cx="9" cy="6" r="0.8" fill={c}/>
+      </svg>
+    );
+    case 'Risk': return (
+      <svg {...s} viewBox="0 0 14 14" fill="none">
+        <path d="M7 1 L13 12 L1 12 Z" stroke={c} strokeWidth="1.5" strokeLinejoin="round" fill="none"/>
+        <line x1="7" y1="5" x2="7" y2="8.5" stroke={c} strokeWidth="1.5" strokeLinecap="round"/>
+        <circle cx="7" cy="10.5" r="0.7" fill={c}/>
+      </svg>
+    );
+    default: return null;
+  }
+};
+
 const AlignmentIcon = ({ alignment }) => {
   const n = alignment?.toLowerCase();
   if (n === 'inner') return (
@@ -77,13 +133,13 @@ function Dropdown({ children, onClear, showClear }) {
   );
 }
 
-function OptionPill({ label, active, onClick, color, bg, border, icon }) {
+function OptionPill({ label, active, onClick, color, bg, border, icon, count }) {
   return (
     <button
       onClick={onClick}
       style={{
         display: 'inline-flex', alignItems: 'center', gap: 5,
-        padding: '4px 10px', borderRadius: 16, cursor: 'pointer', transition: 'all 0.15s',
+        padding: '5px 10px', borderRadius: 16, cursor: 'pointer', transition: 'all 0.15s',
         border: active ? `1px solid ${border || 'rgba(45,212,191,0.5)'}` : '1px solid rgba(255,255,255,0.08)',
         background: active ? (bg || 'rgba(45,212,191,0.1)') : 'rgba(255,255,255,0.03)',
         color: active ? (color || '#2dd4bf') : '#64748b',
@@ -92,6 +148,17 @@ function OptionPill({ label, active, onClick, color, bg, border, icon }) {
     >
       {icon}
       {label}
+      {count !== undefined && count !== null && (
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          minWidth: 16, height: 16, borderRadius: 8, padding: '0 4px',
+          background: active ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.06)',
+          color: active ? (color || '#2dd4bf') : '#475569',
+          fontSize: '0.68rem', fontWeight: 700,
+        }}>
+          {count}
+        </span>
+      )}
     </button>
   );
 }
@@ -128,10 +195,13 @@ export function FilterBar({ filters, onChange, showStatus = true, showLever = tr
                   const lc = LEVER_COLORS[lever];
                   return (
                     <OptionPill
-                      key={lever} label={lever}
+                      key={lever}
+                      label={lever}
+                      count={counts.levers?.[lever]}
                       active={filters.levers.includes(lever)}
                       onClick={() => toggle('levers', lever)}
                       color={lc.text} bg={lc.bg} border={lc.border}
+                      icon={<LeverIcon lever={lever} color={filters.levers.includes(lever) ? lc.text : '#475569'} />}
                     />
                   );
                 })}
@@ -149,7 +219,9 @@ export function FilterBar({ filters, onChange, showStatus = true, showLever = tr
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {ALIGNMENTS.map(a => (
                   <OptionPill
-                    key={a} label={ALIGNMENT_LABELS[a]}
+                    key={a}
+                    label={ALIGNMENT_LABELS[a]}
+                    count={counts.alignments?.[a]}
                     active={filters.alignments.includes(a)}
                     onClick={() => toggle('alignments', a)}
                     icon={<AlignmentIcon alignment={a} />}
@@ -169,7 +241,9 @@ export function FilterBar({ filters, onChange, showStatus = true, showLever = tr
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {statusOptions.map(s => (
                   <OptionPill
-                    key={s} label={s}
+                    key={s}
+                    label={s}
+                    count={counts.statuses?.[s]}
                     active={filters.statuses.includes(s)}
                     onClick={() => toggle('statuses', s)}
                   />
@@ -188,7 +262,8 @@ export function FilterBar({ filters, onChange, showStatus = true, showLever = tr
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {SCORES.map(({ label, value }) => (
                   <OptionPill
-                    key={value} label={label}
+                    key={value}
+                    label={label}
                     active={filters.minScore === value}
                     onClick={() => { onChange({ ...filters, minScore: value }); setOpenPanel(null); }}
                   />
