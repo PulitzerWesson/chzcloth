@@ -78,20 +78,12 @@ const StrategicAlignmentIcon = ({ alignment }) => {
     return (
       <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
         <style>{`
-          @keyframes growFromDot {
-            0% { transform: scale(0); opacity: 0; }
-            22% { transform: scale(1); opacity: 1; }
-            100% { transform: scale(1); opacity: 1; }
-          }
+          @keyframes growFromDot { 0% { transform: scale(0); opacity: 0; } 22% { transform: scale(1); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
           .grow-circle { animation: growFromDot 9s ease-out infinite; transform-origin: center; }
         `}</style>
         <circle cx="14" cy="14" r="12" stroke="url(#tealGradientS1)" strokeWidth="2.5" fill="none"/>
         <circle className="grow-circle" cx="14" cy="14" r="6" fill="url(#tealGradientS1)"/>
-        <defs>
-          <linearGradient id="tealGradientS1" x1="2" y1="2" x2="26" y2="26">
-            <stop offset="0%" stopColor="#2dd4bf"/><stop offset="100%" stopColor="#22d3ee"/>
-          </linearGradient>
-        </defs>
+        <defs><linearGradient id="tealGradientS1" x1="2" y1="2" x2="26" y2="26"><stop offset="0%" stopColor="#2dd4bf"/><stop offset="100%" stopColor="#22d3ee"/></linearGradient></defs>
       </svg>
     );
   }
@@ -104,11 +96,7 @@ const StrategicAlignmentIcon = ({ alignment }) => {
         `}</style>
         <circle className="draw-circle-s" cx="14" cy="14" r="12" stroke="url(#tealGradientS2)" strokeWidth="3" fill="none"/>
         <circle cx="14" cy="14" r="6" fill="#1e293b"/>
-        <defs>
-          <linearGradient id="tealGradientS2" x1="2" y1="2" x2="26" y2="26">
-            <stop offset="0%" stopColor="#2dd4bf"/><stop offset="100%" stopColor="#22d3ee"/>
-          </linearGradient>
-        </defs>
+        <defs><linearGradient id="tealGradientS2" x1="2" y1="2" x2="26" y2="26"><stop offset="0%" stopColor="#2dd4bf"/><stop offset="100%" stopColor="#22d3ee"/></linearGradient></defs>
       </svg>
     );
   }
@@ -128,16 +116,34 @@ const StrategicAlignmentIcon = ({ alignment }) => {
         <circle className="bubble1s" cx="9" cy="20" r="2" fill="#2dd4bf" opacity="0"/>
         <circle className="bubble2s" cx="12" cy="20" r="1.8" fill="#22d3ee" opacity="0"/>
         <circle className="bubble3s" cx="15" cy="20" r="2" fill="#2dd4bf" opacity="0"/>
-        <defs>
-          <linearGradient id="beakerGradientS" x1="4" y1="2" x2="20" y2="26">
-            <stop offset="0%" stopColor="#2dd4bf"/><stop offset="100%" stopColor="#22d3ee"/>
-          </linearGradient>
-        </defs>
+        <defs><linearGradient id="beakerGradientS" x1="4" y1="2" x2="20" y2="26"><stop offset="0%" stopColor="#2dd4bf"/><stop offset="100%" stopColor="#22d3ee"/></linearGradient></defs>
       </svg>
     );
   }
   return null;
 };
+
+// Mini outcome dots: e.g. "2✓ · 1✗"
+function OutcomePips({ breakdown }) {
+  const { succeeded, partial, failed, inconclusive } = breakdown;
+  const total = succeeded + partial + failed + inconclusive;
+  if (total === 0) return <span style={{ color: '#334155' }}>—</span>;
+  const parts = [];
+  if (succeeded > 0) parts.push(<span key="s" style={{ color: '#22c55e' }}>{succeeded}✓</span>);
+  if (partial > 0) parts.push(<span key="p" style={{ color: '#fbbf24' }}>{partial}◐</span>);
+  if (failed > 0) parts.push(<span key="f" style={{ color: '#ef4444' }}>{failed}✗</span>);
+  if (inconclusive > 0) parts.push(<span key="i" style={{ color: '#475569' }}>{inconclusive}?</span>);
+  return (
+    <div style={{ display: 'flex', gap: 5, justifyContent: 'center', fontSize: '0.78rem', fontWeight: 600 }}>
+      {parts.map((p, i) => (
+        <React.Fragment key={i}>
+          {i > 0 && <span style={{ color: '#334155' }}>·</span>}
+          {p}
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
 
 function avgDays(pairs) {
   const valid = pairs.filter(([a, b]) => a && b);
@@ -186,20 +192,22 @@ function MiniStat({ label, value, color }) {
 function StatsTable({ rows, renderLabel }) {
   return (
     <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, overflow: 'hidden' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr repeat(4, 80px)', padding: '10px 24px', borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr repeat(4, 90px)', padding: '10px 24px', borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
         {['', 'Submitted', 'Sponsored', 'Shipped', 'Outcomes'].map((h, i) => (
           <div key={i} style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 600, textAlign: i === 0 ? 'left' : 'center' }}>{h}</div>
         ))}
       </div>
       {rows.map((s, idx) => (
-        <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr repeat(4, 80px)', padding: '14px 24px', borderBottom: idx < rows.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none', alignItems: 'center' }}>
+        <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr repeat(4, 90px)', padding: '14px 24px', borderBottom: idx < rows.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none', alignItems: 'center' }}>
           <div style={{ fontSize: '0.9rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8 }}>
             {renderLabel(s)}
           </div>
           <div style={{ color: '#94a3b8', fontSize: '0.95rem', textAlign: 'center' }}>{s.submitted}</div>
           <div style={{ color: '#a78bfa', fontSize: '0.95rem', textAlign: 'center' }}>{s.sponsored || '—'}</div>
           <div style={{ color: '#2dd4bf', fontSize: '0.95rem', textAlign: 'center' }}>{s.shipped || '—'}</div>
-          <div style={{ color: '#22c55e', fontSize: '0.95rem', textAlign: 'center' }}>{s.outcomes || '—'}</div>
+          <div style={{ textAlign: 'center' }}>
+            <OutcomePips breakdown={s.outcomeBreakdown} />
+          </div>
         </div>
       ))}
     </div>
@@ -227,6 +235,11 @@ function computeUserStats(bets, userId) {
   };
 }
 
+function getLever(b) {
+  const bd = typeof b.bet_data === 'string' ? JSON.parse(b.bet_data) : b.bet_data;
+  return b.lever || bd?.lever;
+}
+
 export function StatsScreen({ currentOrg, isAdmin }) {
   const { user } = useAuth();
   const [bets, setBets] = useState([]);
@@ -234,7 +247,6 @@ export function StatsScreen({ currentOrg, isAdmin }) {
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
-  const [expandedOutcomes, setExpandedOutcomes] = useState({});
 
   useEffect(() => {
     if (!currentOrg?.orgId) return;
@@ -265,7 +277,6 @@ export function StatsScreen({ currentOrg, isAdmin }) {
         .from('bets')
         .select(`*, outcomes(*)`)
         .eq('org_id', currentOrg.orgId);
-
       if (betsError) throw betsError;
 
       const normalized = (betsData || []).map(bet => {
@@ -279,7 +290,6 @@ export function StatsScreen({ currentOrg, isAdmin }) {
         .select(`id, user_id, team_role, users:user_id (email)`)
         .eq('org_id', currentOrg.orgId)
         .order('created_at', { ascending: true });
-
       if (membersError) throw membersError;
       setMembers(membersData || []);
 
@@ -332,33 +342,36 @@ export function StatsScreen({ currentOrg, isAdmin }) {
     inconclusive: allOutcomes.filter(b => ['inconclusive', 'never_shipped'].includes(b.outcome)).length,
   };
 
-  const alignmentStats = ['inner', 'outer', 'experimental'].map(alignment => ({
-    alignment,
-    submitted: allSubmitted.filter(b => b.strategic_alignment === alignment).length,
-    sponsored: allSponsored.filter(b => b.strategic_alignment === alignment).length,
-    shipped: allShipped.filter(b => b.strategic_alignment === alignment).length,
-    outcomes: allOutcomes.filter(b => b.strategic_alignment === alignment).length,
-  })).filter(s => s.submitted > 0);
+  const getOutcomeBreakdown = (betsSubset) => ({
+    succeeded: betsSubset.filter(b => b.outcome === 'succeeded').length,
+    partial: betsSubset.filter(b => b.outcome === 'partial').length,
+    failed: betsSubset.filter(b => b.outcome === 'failed').length,
+    inconclusive: betsSubset.filter(b => ['inconclusive', 'never_shipped'].includes(b.outcome)).length,
+  });
 
-const leverStats = LEVERS.map(lever => ({
-  lever,
-  submitted: allSubmitted.filter(b => {
-    const bd = typeof b.bet_data === 'string' ? JSON.parse(b.bet_data) : b.bet_data;
-    return (b.lever || bd?.lever) === lever;
-  }).length,
-  sponsored: allSponsored.filter(b => {
-    const bd = typeof b.bet_data === 'string' ? JSON.parse(b.bet_data) : b.bet_data;
-    return (b.lever || bd?.lever) === lever;
-  }).length,
-  shipped: allShipped.filter(b => {
-    const bd = typeof b.bet_data === 'string' ? JSON.parse(b.bet_data) : b.bet_data;
-    return (b.lever || bd?.lever) === lever;
-  }).length,
-  outcomes: allOutcomes.filter(b => {
-    const bd = typeof b.bet_data === 'string' ? JSON.parse(b.bet_data) : b.bet_data;
-    return (b.lever || bd?.lever) === lever;
-  }).length,
-})).filter(s => s.submitted > 0);
+  const alignmentStats = ['inner', 'outer', 'experimental'].map(alignment => {
+    const shipped = allShipped.filter(b => b.strategic_alignment === alignment);
+    const outcomes = shipped.filter(b => OUTCOME_STATUSES.includes(b.outcome));
+    return {
+      alignment,
+      submitted: allSubmitted.filter(b => b.strategic_alignment === alignment).length,
+      sponsored: allSponsored.filter(b => b.strategic_alignment === alignment).length,
+      shipped: shipped.length,
+      outcomeBreakdown: getOutcomeBreakdown(outcomes),
+    };
+  }).filter(s => s.submitted > 0);
+
+  const leverStats = LEVERS.map(lever => {
+    const shipped = allShipped.filter(b => getLever(b) === lever);
+    const outcomes = shipped.filter(b => OUTCOME_STATUSES.includes(b.outcome));
+    return {
+      lever,
+      submitted: allSubmitted.filter(b => getLever(b) === lever).length,
+      sponsored: allSponsored.filter(b => getLever(b) === lever).length,
+      shipped: shipped.length,
+      outcomeBreakdown: getOutcomeBreakdown(outcomes),
+    };
+  }).filter(s => s.submitted > 0);
 
   const visibleMembers = isAdmin ? members : members.filter(m => m.user_id === user?.id);
 
@@ -451,15 +464,12 @@ const leverStats = LEVERS.map(lever => ({
             const stats = computeUserStats(bets, member.user_id);
             const isCurrentUser = member.user_id === user?.id;
             const isAdminMember = member.team_role === 'admin';
-            const hasOutcomes = stats.outcomesRecorded > 0;
-            const isExpanded = expandedOutcomes[member.id];
 
             return (
               <div key={member.id} style={{
                 background: isCurrentUser ? 'rgba(45,212,191,0.03)' : 'rgba(255,255,255,0.02)',
                 border: isCurrentUser ? '1px solid rgba(45,212,191,0.15)' : '1px solid rgba(255,255,255,0.08)',
-                borderRadius: 12,
-                overflow: 'hidden'
+                borderRadius: 12, overflow: 'hidden'
               }}>
                 <div style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
                   <div style={{ flex: '1 1 160px', minWidth: 0 }}>
@@ -475,48 +485,28 @@ const leverStats = LEVERS.map(lever => ({
                     <MiniStat label="Sponsored" value={stats.sponsored} color="#a78bfa" />
                     <MiniStat label="In Progress" value={stats.inProgress} color="#fbbf24" />
                     <MiniStat label="Shipped" value={stats.shipped} color="#2dd4bf" />
-                    <MiniStat label="Outcome" value={stats.outcomesRecorded} color="#22c55e" />
                   </div>
                 </div>
 
-                {hasOutcomes && (
-                  <>
-                    <button
-                      onClick={() => setExpandedOutcomes(prev => ({ ...prev, [member.id]: !prev[member.id] }))}
-                      style={{ width: '100%', background: 'none', border: 'none', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '10px 24px', color: '#64748b', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, textAlign: 'left' }}
-                    >
-                      <span style={{ fontSize: '0.65rem' }}>{isExpanded ? '▼' : '▶'}</span>
-                      {stats.outcomesRecorded} outcome{stats.outcomesRecorded !== 1 ? 's' : ''}
-                    </button>
-                    {isExpanded && (
-                      <div style={{ padding: '4px 24px 12px 24px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-                        {stats.outcomeBreakdown.succeeded > 0 && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                            <span style={{ color: '#22c55e', fontSize: '0.9rem' }}>Succeeded</span>
-                            <span style={{ color: '#22c55e', fontWeight: 600 }}>{stats.outcomeBreakdown.succeeded}</span>
-                          </div>
-                        )}
-                        {stats.outcomeBreakdown.partial > 0 && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                            <span style={{ color: '#fbbf24', fontSize: '0.9rem' }}>Partial Win</span>
-                            <span style={{ color: '#fbbf24', fontWeight: 600 }}>{stats.outcomeBreakdown.partial}</span>
-                          </div>
-                        )}
-                        {stats.outcomeBreakdown.failed > 0 && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                            <span style={{ color: '#ef4444', fontSize: '0.9rem' }}>Failed</span>
-                            <span style={{ color: '#ef4444', fontWeight: 600 }}>{stats.outcomeBreakdown.failed}</span>
-                          </div>
-                        )}
-                        {stats.outcomeBreakdown.inconclusive > 0 && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
-                            <span style={{ color: '#64748b', fontSize: '0.9rem' }}>Inconclusive / Never Shipped</span>
-                            <span style={{ color: '#64748b', fontWeight: 600 }}>{stats.outcomeBreakdown.inconclusive}</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </>
+                {/* Outcomes — always visible if any */}
+                {stats.outcomesRecorded > 0 && (
+                  <div style={{ padding: '10px 24px 14px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div style={{ color: '#475569', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Outcomes</div>
+                    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                      {stats.outcomeBreakdown.succeeded > 0 && (
+                        <span style={{ color: '#22c55e', fontSize: '0.85rem', fontWeight: 600 }}>{stats.outcomeBreakdown.succeeded} Succeeded</span>
+                      )}
+                      {stats.outcomeBreakdown.partial > 0 && (
+                        <span style={{ color: '#fbbf24', fontSize: '0.85rem', fontWeight: 600 }}>{stats.outcomeBreakdown.partial} Partial</span>
+                      )}
+                      {stats.outcomeBreakdown.failed > 0 && (
+                        <span style={{ color: '#ef4444', fontSize: '0.85rem', fontWeight: 600 }}>{stats.outcomeBreakdown.failed} Failed</span>
+                      )}
+                      {stats.outcomeBreakdown.inconclusive > 0 && (
+                        <span style={{ color: '#475569', fontSize: '0.85rem', fontWeight: 600 }}>{stats.outcomeBreakdown.inconclusive} Inconclusive</span>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
             );
