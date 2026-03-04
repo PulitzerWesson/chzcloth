@@ -134,7 +134,7 @@ function IdeasQueue({ ideas = [], loading = false, currentOrg, currentUser, onCl
         <div style={{ marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
             <p style={{ color: '#64748b', fontSize: '0.95rem', margin: 0 }}>
-              Bets waiting for a sponsor to claim and move to the Priority Queue.
+              Bets waiting for to be sponsored and moved to the Priority Queue.
             </p>
             {!summaryExpanded && (
               <button onClick={() => setSummaryExpanded(true)} style={{ background: 'none', border: 'none', color: '#2dd4bf', fontSize: '0.8rem', cursor: 'pointer', padding: 0, whiteSpace: 'nowrap', textDecoration: 'underline' }}>
@@ -145,7 +145,7 @@ function IdeasQueue({ ideas = [], loading = false, currentOrg, currentUser, onCl
           {summaryExpanded && (
             <div style={{ marginTop: 12, padding: '14px 16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, color: '#94a3b8', fontSize: '0.875rem', lineHeight: 1.7 }}>
               <p style={{ margin: '0 0 8px 0' }}>
-                When a team member submits a bet, it lands here in the Marketplace waiting for a sponsor — typically a manager, lead, or stakeholder — to claim it. Once sponsored, the bet moves to the Priority Queue where it gets prioritized alongside other active work with stakeholders and engineering.
+                When a team member submits a bet, it lands here in the Marketplace waiting for a sponsor — typically a manager, lead, or stakeholder. Once sponsored, the bet moves to the Priority Queue where it gets prioritized alongside other active work with stakeholders and engineering.
               </p>
               <p style={{ margin: '0 0 8px 0' }}>
                 Each bet includes a score (Approach, Potential, Fit) and details about the lever it moves, the hypothesis, predicted outcome, and AI rationale. Use the filters above to find bets that match your strategic priorities.
