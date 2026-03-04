@@ -9,18 +9,18 @@ import { useOrganizations } from './hooks/useOrganizations';
 import { OrganizationSetup, ContextCheck, shouldShowContextCheck, OrgSwitcher } from './components';
 import IdeaSubmission from './components/IdeaSubmission';
 import IdeasQueue from './components/IdeasQueue';
-import BetSubmissionNarrative from './components/BetSubmissionNarrative';
 import SponsorReview from './components/SponsorReview';
 import EntryTypeChooser from './components/EntryTypeChooser';
 import SignalSubmission from './components/SignalSubmission';
 import SuggestionCard from './components/SuggestionCard';
 import { getOrgLearnings } from './utils/orgLearnings';
 import { supabase } from './lib/supabase';
-import BetConfirmation from './components/BetConfirmation';
 import CompanyDashboard from './components/CompanyDashboard';
 import { StatsScreen } from './components/StatsScreen';
 import PriorityQueue from './components/PriorityQueue';
 import { FilterBar, applyFilters, computeCounts, defaultFilters } from './components/FilterBar';
+import BetSubmission from './components/BetSubmission';
+
 
 // ============================================
 // CHZCLOTH Free - Where Bets Get Smarter
@@ -2814,7 +2814,6 @@ const { ideas, loading: ideasLoading, updateIdeaStatus, claimIdea, submitIdea, u
   const [emailSent, setEmailSent] = useState(false);
   const [betToReplace, setBetToReplace] = useState(null);
   const [pendingBet, setPendingBet] = useState(null);
-  const [pendingConfirmation, setPendingConfirmation] = useState(null);
   const [expandedPriorityBet, setExpandedPriorityBet] = useState(null);
 
   
@@ -2901,18 +2900,28 @@ const handleOrgSetupComplete = async ({ organization, userOrg, companyGoals, dep
   };
   
 const handleBetComplete = async (betData, ideaId = null) => {
-  console.log('BET DATA RECEIVED:', betData);
-  setPendingConfirmation({ betData, ideaId });  // ✅ Skip straight to confirmation
-  setScreen('bet_confirmation');
+  try {
+    const orgLearnings = (currentOrg?.orgId && user?.id)
+      ? await getOrgLearnings(currentOrg.orgId, user.id, 'bet')
+      : [];
+
+    const { data, error } = await createBet(betData, ideaId, null, currentOrg);
+
+    if (error) {
+      console.error('Error creating bet:', error);
+      alert('Error saving bet. Please try again.');
+    } else {
+      setCurrentBet(data);
+      setScreen('score');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    alert('Error saving bet. Please try again.');
+  }
 };
   
 
 
-const handleConfirmationContinue = async (userParams) => {
-  try {
-    const orgLearnings = (currentOrg?.orgId && user?.id) 
-      ? await getOrgLearnings(currentOrg.orgId, user.id, 'bet')
-      : [];
     
     // Add user parameters to betData
     const betDataWithParams = {
@@ -3384,27 +3393,12 @@ const handleRejectBet = async (betId, reason) => {
 
 
 {screen === 'bet' && (
-  <BetSubmissionNarrative 
+  <BetSubmission
     onComplete={handleBetComplete}
     currentOrg={currentOrg}
   />
 )}
 
-
-      {screen === 'bet_confirmation' && pendingConfirmation && (
-  <BetConfirmation
-    extractedData={pendingConfirmation.betData}
-    onContinue={handleConfirmationContinue}
-    onBack={() => {
-      setPendingBetForReview({
-        betData: pendingConfirmation.betData,
-        ideaId: pendingConfirmation.ideaId
-      });
-      setPendingConfirmation(null);
-      setShowStoryReview(true);
-    }}
-  />
-)}
 
 
 {screen === 'score' && (
