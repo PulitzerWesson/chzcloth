@@ -2922,41 +2922,6 @@ const handleBetComplete = async (betData, ideaId = null) => {
   
 
 
-    
-    // Add user parameters to betData
-    const betDataWithParams = {
-      ...pendingConfirmation.betData,
-      confidence: userParams.confidence,
-      strategicAlignment: userParams.strategicAlignment,
-      estimatedEffort: userParams.estimatedEffort,
-      inactionImpact: userParams.inactionImpact,
-      startBy: userParams.startBy,
-      mustShipBy: userParams.mustShipBy
-    };
-    
-    // Save bet (createBet will score it internally)
-const { data, error } = await createBet(
-  betDataWithParams,
-  pendingConfirmation.ideaId,
-  null,  // precomputedScores
-  currentOrg  // orgContext
-);
-    
-    if (error) {
-      console.error('Error creating bet:', error);
-      alert('Error saving bet. Please try again.');
-    } else {
-      setCurrentBet(data);
-      setPendingConfirmation(null);
-      setScreen('score');  // ← Go to old circular score screen
-    }
-  } catch (error) {
-    console.error('Error:', error);
-    alert('Error saving bet. Please try again.');
-  }
-};
-
-
 const handleUseAIEnhancement = async () => {
   if (!currentBet.scoringRationale?.suggestion) return;
   
