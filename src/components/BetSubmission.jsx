@@ -340,10 +340,10 @@ export default function BetSubmission({ onComplete, currentOrg }) {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 0 60px 0' }}>
+    <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 0 60px 0' }}>
 
       {/* Header */}
-      <div style={{ marginBottom: 32 }}>
+      <div style={{ marginBottom: 40 }}>
         <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#f1f5f9', margin: '0 0 8px 0' }}>Make a Bet</h1>
         <p style={{ color: '#64748b', margin: 0, fontSize: '0.95rem' }}>
           Describe what you'll build, why it matters, and how you'll validate it
@@ -351,10 +351,10 @@ export default function BetSubmission({ onComplete, currentOrg }) {
       </div>
 
       {/* ── Row 1: Goal | Strategic Alignment ─────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16, alignItems: 'stretch' }}>
 
         {/* Goal */}
-        <div style={cardStyle}>
+        <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column' }}>
           <SectionLabel>Company Goal</SectionLabel>
 
           {hasLeadershipGoal ? (
@@ -393,17 +393,17 @@ export default function BetSubmission({ onComplete, currentOrg }) {
                 <button
                   onClick={() => handleGoalSelection(selectedGoalType === 'unaligned' ? '' : 'unaligned')}
                   style={{
-                    padding: '10px 14px',
-                    background: selectedGoalType === 'unaligned' ? 'rgba(255,255,255,0.04)' : 'transparent',
-                    border: `1px solid ${selectedGoalType === 'unaligned' ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)'}`,
-                    borderRadius: 10,
+                    background: 'none',
+                    border: 'none',
                     cursor: 'pointer',
+                    color: selectedGoalType === 'unaligned' ? '#2dd4bf' : '#475569',
+                    fontSize: '0.8rem',
+                    padding: '6px 0 0 0',
                     textAlign: 'left',
-                    color: '#475569',
-                    fontSize: '0.85rem',
+                    textDecoration: selectedGoalType === 'unaligned' ? 'underline' : 'none',
                   }}
                 >
-                  Not aligned to a current goal
+                  {selectedGoalType === 'unaligned' ? '✓ Not aligned to a current goal' : 'Not aligned to a current goal'}
                 </button>
               </div>
 
@@ -447,13 +447,13 @@ export default function BetSubmission({ onComplete, currentOrg }) {
         </div>
 
         {/* Strategic Alignment */}
-        <div style={cardStyle}>
+        <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column' }}>
           <SectionLabel>Strategic Priority</SectionLabel>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
             {ALIGNMENT_OPTIONS.map(opt => {
               const active = strategicAlignment === opt.value;
               return (
-                <button key={opt.value} onClick={() => setStrategicAlignment(opt.value)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: active ? 'rgba(45,212,191,0.08)' : 'rgba(255,255,255,0.02)', border: `1px solid ${active ? 'rgba(45,212,191,0.3)' : 'rgba(255,255,255,0.06)'}`, borderRadius: 10, cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s' }}>
+                <button key={opt.value} onClick={() => setStrategicAlignment(opt.value)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', flex: 1, background: active ? 'rgba(45,212,191,0.08)' : 'rgba(255,255,255,0.02)', border: `1px solid ${active ? 'rgba(45,212,191,0.3)' : 'rgba(255,255,255,0.06)'}`, borderRadius: 10, cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s' }}>
                   <AlignmentIcon type={opt.value} active={active} />
                   <div>
                     <div style={{ color: active ? '#f1f5f9' : '#94a3b8', fontSize: '0.875rem', fontWeight: active ? 600 : 400 }}>{opt.label}</div>
