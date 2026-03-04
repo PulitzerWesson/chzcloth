@@ -20,6 +20,7 @@ import BetConfirmation from './components/BetConfirmation';
 import CompanyDashboard from './components/CompanyDashboard';
 import { StatsScreen } from './components/StatsScreen';
 import PriorityQueue from './components/PriorityQueue';
+import { FilterBar, applyFilters, computeCounts, defaultFilters } from './components/FilterBar';
 
 // ============================================
 // CHZCLOTH Free - Where Bets Get Smarter
@@ -3309,10 +3310,24 @@ function BetCard({ bet, showAddToMarketplace, expandedBets, setExpandedBets, onR
   );
 }
 
+// Add this BEFORE the Dashboard function in App.jsx:
+const getContribStatus = (bet) => {
+  const outcomeKey = bet.outcome || bet.status;
+  if (['succeeded','partial','failed','inconclusive','never_shipped'].includes(outcomeKey)) return 'Outcome Recorded';
+  if (bet.completedAt) return 'Shipped';
+  if (bet.startedAt && !bet.completedAt) return 'In Progress';
+  if (bet.approvalStatus === 'approved') return 'Sponsored';
+  if (bet.approvalStatus === 'pending_approval') return 'In Marketplace';
+  return 'Draft';
+};
+
+// REPLACE the existing Dashboard function with this:
 function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEditMode, onAddOrg, onNewBet, email, currentUserId, onRecordOutcome, onAddToMarketplace, onWithdrawFromMarketplace, markStarted, markCompleted, setScreen }) {
   const safeBets = bets || [];
   const [expandedBets, setExpandedBets] = useState({});
   const [completionModal, setCompletionModal] = useState(null);
+  const [filters, setFilters] = useState(defaultFilters);
+  const [summaryExpanded, setSummaryExpanded] = useState(false);
 
   const yourBets = safeBets.filter(b => b.userId === currentUserId || b.user_id === currentUserId);
   const sponsoredBets = safeBets.filter(b =>
@@ -3320,21 +3335,15 @@ function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEd
     (b.userId !== currentUserId && b.user_id !== currentUserId)
   );
 
-  const betsWithOutcomes = safeBets.filter(b => ['succeeded', 'partial', 'failed'].includes(b.outcome) || ['succeeded', 'partial', 'failed'].includes(b.status));
-  const ownIdeas = betsWithOutcomes.filter(b => b.isOwnIdea !== false);
-  const othersIdeas = betsWithOutcomes.filter(b => b.isOwnIdea === false);
-  const getOutcome = (b) => b.status || b.outcome;
-  const isSuccess = (b) => ['succeeded', 'partial'].includes(getOutcome(b));
+  const counts = computeCounts([...yourBets, ...sponsoredBets], getContribStatus);
+  const filteredYourBets = applyFilters(yourBets, filters, getContribStatus);
+  const filteredSponsoredBets = applyFilters(sponsoredBets, filters, getContribStatus);
 
-  const totalCompleted = betsWithOutcomes.length;
-  const ownAccuracy = ownIdeas.length >= 2 ? Math.round((ownIdeas.filter(isSuccess).length / ownIdeas.length) * 100) : null;
-  const othersAccuracy = othersIdeas.length >= 2 ? Math.round((othersIdeas.filter(isSuccess).length / othersIdeas.length) * 100) : null;
-
-  const sortBets = (bets) => {
-    const order = { 'In Progress': 0, 'Sponsored': 1, 'In Marketplace': 2, 'Draft': 3, 'Completed': 4, '✓ Succeeded': 5, '◐ Partial': 6, '✗ Failed': 7, '? Inconclusive': 8, '⊘ Never shipped': 9 };
-    return [...bets].sort((a, b) => {
-      const aLabel = getStatusBadge(a).label;
-      const bLabel = getStatusBadge(b).label;
+  const sortBets = (betsToSort) => {
+    const order = { 'In Progress': 0, 'Sponsored': 1, 'In Marketplace': 2, 'Draft': 3, 'Shipped': 4, 'Outcome Recorded': 5 };
+    return [...betsToSort].sort((a, b) => {
+      const aLabel = getContribStatus(a);
+      const bLabel = getContribStatus(b);
       return (order[aLabel] ?? 99) - (order[bLabel] ?? 99);
     });
   };
@@ -3364,50 +3373,99 @@ function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEd
 
   return (
     <>
-      {/* Stats row */}
-<div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginBottom: 24 }}>
-  <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
-    <div style={{ color: '#f1f5f9', fontSize: '2.5rem', fontWeight: 800 }}>
-      {yourBets.length}
-    </div>
-    <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Submitted</div>
-  </div>
-  <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
-    <div style={{ color: '#a78bfa', fontSize: '2.5rem', fontWeight: 800 }}>
-      {yourBets.filter(b => b.approvalStatus === 'approved').length}
-    </div>
-    <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Sponsored</div>
-  </div>
-  <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
-    <div style={{ color: '#fbbf24', fontSize: '2.5rem', fontWeight: 800 }}>
-      {yourBets.filter(b => b.startedAt && !b.completedAt).length}
-    </div>
-    <div style={{ color: '#64748b', fontSize: '0.85rem' }}>In Progress</div>
-  </div>
-  <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
-    <div style={{ color: '#2dd4bf', fontSize: '2.5rem', fontWeight: 800 }}>
-      {yourBets.filter(b => b.completedAt).length}
-    </div>
-    <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Shipped</div>
-  </div>
-  <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
-    <div style={{ color: '#22c55e', fontSize: '2.5rem', fontWeight: 800 }}>
-      {yourBets.filter(b => ['succeeded', 'partial', 'failed', 'inconclusive', 'never_shipped'].includes(b.outcome || b.status)).length}
-    </div>
-    <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Outcome Recorded</div>
-  </div>
-</div>
+      {/* Header */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 8 }}>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#f1f5f9', margin: 0 }}>Contributors</h1>
+          {yourBets.length > 0 && (
+            <span style={{ color: '#475569', fontSize: '0.95rem' }}>{yourBets.length} bet{yourBets.length !== 1 ? 's' : ''}</span>
+          )}
+        </div>
 
+        {/* Collapsible summary */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+            <p style={{ color: '#64748b', fontSize: '0.95rem', margin: 0 }}>
+              Your bets and the ones you've sponsored.
+            </p>
+            {!summaryExpanded && (
+              <button onClick={() => setSummaryExpanded(true)} style={{ background: 'none', border: 'none', color: '#2dd4bf', fontSize: '0.8rem', cursor: 'pointer', padding: 0, whiteSpace: 'nowrap', textDecoration: 'underline' }}>
+                How it works
+              </button>
+            )}
+          </div>
+          {summaryExpanded && (
+            <div style={{ marginTop: 12, padding: '14px 16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, color: '#94a3b8', fontSize: '0.875rem', lineHeight: 1.7 }}>
+              <p style={{ margin: '0 0 8px 0' }}>
+                Contributors is your personal workspace. Your Bets shows everything you've submitted — drafts, bets in the Marketplace waiting for a sponsor, and active bets in the Priority Queue. Sponsored by You shows bets from others that you've taken ownership of.
+              </p>
+              <p style={{ margin: '0 0 8px 0' }}>
+                This is where you manage execution. Mark a bet started when work begins, mark it shipped when it's done, and record the outcome — what actually happened vs. what you predicted. That data builds your track record over time.
+              </p>
+              <p style={{ margin: 0 }}>
+                Use the filters to focus on a specific status, lever, or strategic alignment.
+              </p>
+              <button onClick={() => setSummaryExpanded(false)} style={{ marginTop: 10, background: 'none', border: 'none', color: '#475569', fontSize: '0.78rem', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>
+                Show less
+              </button>
+            </div>
+          )}
+        </div>
+
+        <FilterBar
+          filters={filters}
+          onChange={setFilters}
+          showStatus={true}
+          statusOptions={['Draft', 'In Marketplace', 'Sponsored', 'In Progress', 'Shipped', 'Outcome Recorded']}
+          counts={counts}
+        />
+      </div>
+
+      {/* Stats row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginBottom: 32 }}>
+        <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
+          <div style={{ color: '#f1f5f9', fontSize: '2.5rem', fontWeight: 800 }}>{yourBets.length}</div>
+          <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Submitted</div>
+        </div>
+        <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
+          <div style={{ color: '#a78bfa', fontSize: '2.5rem', fontWeight: 800 }}>
+            {yourBets.filter(b => b.approvalStatus === 'approved').length}
+          </div>
+          <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Sponsored</div>
+        </div>
+        <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
+          <div style={{ color: '#fbbf24', fontSize: '2.5rem', fontWeight: 800 }}>
+            {yourBets.filter(b => b.startedAt && !b.completedAt).length}
+          </div>
+          <div style={{ color: '#64748b', fontSize: '0.85rem' }}>In Progress</div>
+        </div>
+        <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
+          <div style={{ color: '#2dd4bf', fontSize: '2.5rem', fontWeight: 800 }}>
+            {yourBets.filter(b => b.completedAt).length}
+          </div>
+          <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Shipped</div>
+        </div>
+        <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
+          <div style={{ color: '#22c55e', fontSize: '2.5rem', fontWeight: 800 }}>
+            {yourBets.filter(b => ['succeeded', 'partial', 'failed', 'inconclusive', 'never_shipped'].includes(b.outcome || b.status)).length}
+          </div>
+          <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Outcome Recorded</div>
+        </div>
+      </div>
 
       {/* Your Bets */}
       {yourBets.length > 0 && (
         <div style={{ marginBottom: 40 }}>
           <h2 style={{ color: '#f1f5f9', fontSize: '1.25rem', fontWeight: 600, marginBottom: 16 }}>
-            Your Bets ({yourBets.length})
+            Your Bets ({filteredYourBets.length}{filteredYourBets.length !== yourBets.length ? ` of ${yourBets.length}` : ''})
           </h2>
-          {sortBets(yourBets).map(bet => (
-            <BetCard key={bet.id} bet={bet} showAddToMarketplace={true} {...cardProps} />
-          ))}
+          {filteredYourBets.length === 0 ? (
+            <div style={{ color: '#64748b', fontSize: '0.9rem', padding: '20px 0' }}>No bets match the current filters.</div>
+          ) : (
+            sortBets(filteredYourBets).map(bet => (
+              <BetCard key={bet.id} bet={bet} showAddToMarketplace={true} {...cardProps} />
+            ))
+          )}
         </div>
       )}
 
@@ -3415,11 +3473,15 @@ function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEd
       {sponsoredBets.length > 0 && (
         <div style={{ marginBottom: 40 }}>
           <h2 style={{ color: '#f1f5f9', fontSize: '1.25rem', fontWeight: 600, marginBottom: 16 }}>
-            Sponsored by You ({sponsoredBets.length})
+            Sponsored by You ({filteredSponsoredBets.length}{filteredSponsoredBets.length !== sponsoredBets.length ? ` of ${sponsoredBets.length}` : ''})
           </h2>
-          {sortBets(sponsoredBets).map(bet => (
-            <BetCard key={bet.id} bet={bet} showAddToMarketplace={false} {...cardProps} />
-          ))}
+          {filteredSponsoredBets.length === 0 ? (
+            <div style={{ color: '#64748b', fontSize: '0.9rem', padding: '20px 0' }}>No bets match the current filters.</div>
+          ) : (
+            sortBets(filteredSponsoredBets).map(bet => (
+              <BetCard key={bet.id} bet={bet} showAddToMarketplace={false} {...cardProps} />
+            ))
+          )}
         </div>
       )}
 
@@ -3440,7 +3502,7 @@ function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEd
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000 }}>
           <div style={{ background: '#1e293b', borderRadius: 16, padding: 32, maxWidth: 440, width: 'calc(100% - 32px)', border: '1px solid rgba(255,255,255,0.08)' }}>
             <h3 style={{ color: '#f1f5f9', fontSize: '1.3rem', fontWeight: 600, margin: '0 0 12px 0' }}>
-              Bet Completed!
+              Bet Shipped!
             </h3>
             <p style={{ color: '#94a3b8', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: 8 }}>
               <strong style={{ color: '#f1f5f9' }}>{completionModal.title || completionModal.hypothesis}</strong>
@@ -3468,7 +3530,6 @@ function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEd
     </>
   );
 }
-
 // ============================================
 // MAIN APP
 // ============================================
