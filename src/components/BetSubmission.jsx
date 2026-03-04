@@ -371,6 +371,7 @@ export default function BetSubmission({ onComplete, currentOrg }) {
                       onClick={() => handleGoalSelection(isSelected ? '' : `company-${idx}`)}
                       style={{
                         padding: '12px 14px',
+                        minHeight: 56,
                         background: isSelected ? 'rgba(45,212,191,0.08)' : 'rgba(255,255,255,0.02)',
                         border: `1px solid ${isSelected ? 'rgba(45,212,191,0.35)' : 'rgba(255,255,255,0.07)'}`,
                         borderRadius: 10,
@@ -400,7 +401,8 @@ export default function BetSubmission({ onComplete, currentOrg }) {
                     fontSize: '0.8rem',
                     padding: '6px 0 0 0',
                     textAlign: 'left',
-                    textDecoration: selectedGoalType === 'unaligned' ? 'underline' : 'none',
+                    textDecoration: 'underline',
+                    textDecorationColor: selectedGoalType === 'unaligned' ? '#2dd4bf' : 'rgba(255,255,255,0.15)',
                   }}
                 >
                   {selectedGoalType === 'unaligned' ? '✓ Not aligned to a current goal' : 'Not aligned to a current goal'}
@@ -453,7 +455,7 @@ export default function BetSubmission({ onComplete, currentOrg }) {
             {ALIGNMENT_OPTIONS.map(opt => {
               const active = strategicAlignment === opt.value;
               return (
-                <button key={opt.value} onClick={() => setStrategicAlignment(opt.value)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', flex: 1, background: active ? 'rgba(45,212,191,0.08)' : 'rgba(255,255,255,0.02)', border: `1px solid ${active ? 'rgba(45,212,191,0.3)' : 'rgba(255,255,255,0.06)'}`, borderRadius: 10, cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s' }}>
+                <button key={opt.value} onClick={() => setStrategicAlignment(opt.value)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', minHeight: 56, flex: 1, background: active ? 'rgba(45,212,191,0.08)' : 'rgba(255,255,255,0.02)', border: `1px solid ${active ? 'rgba(45,212,191,0.3)' : 'rgba(255,255,255,0.06)'}`, borderRadius: 10, cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s' }}>
                   <AlignmentIcon type={opt.value} active={active} />
                   <div>
                     <div style={{ color: active ? '#f1f5f9' : '#94a3b8', fontSize: '0.875rem', fontWeight: active ? 600 : 400 }}>{opt.label}</div>
