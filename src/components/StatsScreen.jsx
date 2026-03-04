@@ -6,6 +6,72 @@ import { useAuth } from '../hooks/useAuth';
 const OUTCOME_STATUSES = ['succeeded', 'partial', 'failed', 'inconclusive', 'never_shipped'];
 const ALIGNMENT_LABELS = { inner: 'Inner Ring', outer: 'Outer Ring', experimental: 'Experimental' };
 
+const LEVERS = ['Revenue', 'Retention', 'Acquisition', 'Efficiency', 'Platform', 'Experience', 'Risk'];
+const LEVER_COLORS = {
+  Revenue:     '#22c55e',
+  Retention:   '#2dd4bf',
+  Acquisition: '#fbbf24',
+  Efficiency:  '#7dd3fc',
+  Platform:    '#a78bfa',
+  Experience:  '#f97316',
+  Risk:        '#ef4444',
+};
+
+const LeverIcon = ({ lever }) => {
+  const c = LEVER_COLORS[lever] || '#94a3b8';
+  const s = { width: 16, height: 16, flexShrink: 0 };
+  switch (lever) {
+    case 'Revenue': return (
+      <svg {...s} viewBox="0 0 14 14" fill="none">
+        <polyline points="1,10 4,6 7,8 10,3 13,1" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+        <polyline points="10,1 13,1 13,4" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    );
+    case 'Retention': return (
+      <svg {...s} viewBox="0 0 14 14" fill="none">
+        <path d="M7 12 C7 12 2 8.5 2 5.5 C2 3.5 3.5 2 5.5 2 C6.3 2 7 2.5 7 2.5 C7 2.5 7.7 2 8.5 2 C10.5 2 12 3.5 12 5.5 C12 8.5 7 12 7 12Z" stroke={c} strokeWidth="1.6" fill="none" strokeLinejoin="round"/>
+      </svg>
+    );
+    case 'Acquisition': return (
+      <svg {...s} viewBox="0 0 14 14" fill="none">
+        <circle cx="5.5" cy="5.5" r="3.5" stroke={c} strokeWidth="1.6" fill="none"/>
+        <line x1="8.5" y1="8.5" x2="12.5" y2="12.5" stroke={c} strokeWidth="1.8" strokeLinecap="round"/>
+        <line x1="11" y1="2" x2="11" y2="6" stroke={c} strokeWidth="1.6" strokeLinecap="round"/>
+        <line x1="9" y1="4" x2="13" y2="4" stroke={c} strokeWidth="1.6" strokeLinecap="round"/>
+      </svg>
+    );
+    case 'Efficiency': return (
+      <svg {...s} viewBox="0 0 14 14" fill="none">
+        <polygon points="7,1 8.5,5.5 13,5.5 9.5,8.5 11,13 7,10 3,13 4.5,8.5 1,5.5 5.5,5.5" stroke={c} strokeWidth="1.4" fill="none" strokeLinejoin="round"/>
+      </svg>
+    );
+    case 'Platform': return (
+      <svg {...s} viewBox="0 0 14 14" fill="none">
+        <rect x="1" y="1" width="5" height="5" rx="1" stroke={c} strokeWidth="1.5" fill="none"/>
+        <rect x="8" y="1" width="5" height="5" rx="1" stroke={c} strokeWidth="1.5" fill="none"/>
+        <rect x="1" y="8" width="5" height="5" rx="1" stroke={c} strokeWidth="1.5" fill="none"/>
+        <rect x="8" y="8" width="5" height="5" rx="1" stroke={c} strokeWidth="1.5" fill="none"/>
+      </svg>
+    );
+    case 'Experience': return (
+      <svg {...s} viewBox="0 0 14 14" fill="none">
+        <circle cx="7" cy="7" r="5.5" stroke={c} strokeWidth="1.5" fill="none"/>
+        <path d="M4.5 8.5 C5 9.5 6 10 7 10 C8 10 9 9.5 9.5 8.5" stroke={c} strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+        <circle cx="5" cy="6" r="0.8" fill={c}/>
+        <circle cx="9" cy="6" r="0.8" fill={c}/>
+      </svg>
+    );
+    case 'Risk': return (
+      <svg {...s} viewBox="0 0 14 14" fill="none">
+        <path d="M7 1 L13 12 L1 12 Z" stroke={c} strokeWidth="1.5" strokeLinejoin="round" fill="none"/>
+        <line x1="7" y1="5" x2="7" y2="8.5" stroke={c} strokeWidth="1.5" strokeLinecap="round"/>
+        <circle cx="7" cy="10.5" r="0.7" fill={c}/>
+      </svg>
+    );
+    default: return null;
+  }
+};
+
 const StrategicAlignmentIcon = ({ alignment }) => {
   const normalized = alignment?.toLowerCase();
   if (normalized === 'inner' || normalized === 'inner_ring' || normalized === 'inner ring') {
@@ -117,6 +183,29 @@ function MiniStat({ label, value, color }) {
   );
 }
 
+function StatsTable({ rows, renderLabel }) {
+  return (
+    <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, overflow: 'hidden' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr repeat(4, 80px)', padding: '10px 24px', borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
+        {['', 'Submitted', 'Sponsored', 'Shipped', 'Outcomes'].map((h, i) => (
+          <div key={i} style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 600, textAlign: i === 0 ? 'left' : 'center' }}>{h}</div>
+        ))}
+      </div>
+      {rows.map((s, idx) => (
+        <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr repeat(4, 80px)', padding: '14px 24px', borderBottom: idx < rows.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none', alignItems: 'center' }}>
+          <div style={{ fontSize: '0.9rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8 }}>
+            {renderLabel(s)}
+          </div>
+          <div style={{ color: '#94a3b8', fontSize: '0.95rem', textAlign: 'center' }}>{s.submitted}</div>
+          <div style={{ color: '#a78bfa', fontSize: '0.95rem', textAlign: 'center' }}>{s.sponsored || '—'}</div>
+          <div style={{ color: '#2dd4bf', fontSize: '0.95rem', textAlign: 'center' }}>{s.shipped || '—'}</div>
+          <div style={{ color: '#22c55e', fontSize: '0.95rem', textAlign: 'center' }}>{s.outcomes || '—'}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function computeUserStats(bets, userId) {
   const submitted = bets.filter(b => b.user_id === userId && ['pending_approval', 'approved'].includes(b.approval_status));
   const sponsored = submitted.filter(b => b.approval_status === 'approved');
@@ -201,13 +290,7 @@ export function StatsScreen({ currentOrg, isAdmin }) {
       const outcomes = shipped.filter(b => OUTCOME_STATUSES.includes(b.outcome));
 
       fetchSummary({
-        funnel: {
-          submitted: submitted.length,
-          sponsored: sponsored.length,
-          inProgress: inProgress.length,
-          shipped: shipped.length,
-          outcomesRecorded: outcomes.length
-        },
+        funnel: { submitted: submitted.length, sponsored: sponsored.length, inProgress: inProgress.length, shipped: shipped.length, outcomesRecorded: outcomes.length },
         outcomeBreakdown: {
           succeeded: outcomes.filter(b => b.outcome === 'succeeded').length,
           partial: outcomes.filter(b => b.outcome === 'partial').length,
@@ -241,18 +324,28 @@ export function StatsScreen({ currentOrg, isAdmin }) {
   const allOutcomes = allShipped.filter(b => OUTCOME_STATUSES.includes(b.outcome));
   const avgSubmitToSponsored = avgDays(allSponsored.map(b => [b.created_at, b.approved_at]));
   const avgSponsoredToShipped = avgDays(allShipped.filter(b => b.approved_at).map(b => [b.approved_at, b.completed_at]));
+
   const outcomeBreakdown = {
     succeeded: allOutcomes.filter(b => b.outcome === 'succeeded').length,
     partial: allOutcomes.filter(b => b.outcome === 'partial').length,
     failed: allOutcomes.filter(b => b.outcome === 'failed').length,
     inconclusive: allOutcomes.filter(b => ['inconclusive', 'never_shipped'].includes(b.outcome)).length,
   };
+
   const alignmentStats = ['inner', 'outer', 'experimental'].map(alignment => ({
     alignment,
     submitted: allSubmitted.filter(b => b.strategic_alignment === alignment).length,
     sponsored: allSponsored.filter(b => b.strategic_alignment === alignment).length,
     shipped: allShipped.filter(b => b.strategic_alignment === alignment).length,
     outcomes: allOutcomes.filter(b => b.strategic_alignment === alignment).length,
+  })).filter(s => s.submitted > 0);
+
+  const leverStats = LEVERS.map(lever => ({
+    lever,
+    submitted: allSubmitted.filter(b => b.lever === lever).length,
+    sponsored: allSponsored.filter(b => b.lever === lever).length,
+    shipped: allShipped.filter(b => b.lever === lever).length,
+    outcomes: allOutcomes.filter(b => b.lever === lever).length,
   })).filter(s => s.submitted > 0);
 
   const visibleMembers = isAdmin ? members : members.filter(m => m.user_id === user?.id);
@@ -310,25 +403,31 @@ export function StatsScreen({ currentOrg, isAdmin }) {
       {alignmentStats.length > 0 && (
         <div style={{ marginBottom: 48 }}>
           <SectionLabel>By Strategic Alignment</SectionLabel>
-          <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, overflow: 'hidden' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr repeat(4, 80px)', padding: '10px 24px', borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
-              {['', 'Submitted', 'Sponsored', 'Shipped', 'Outcomes'].map((h, i) => (
-                <div key={i} style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 600, textAlign: i === 0 ? 'left' : 'center' }}>{h}</div>
-              ))}
-            </div>
-            {alignmentStats.map((s, idx) => (
-              <div key={s.alignment} style={{ display: 'grid', gridTemplateColumns: '1fr repeat(4, 80px)', padding: '14px 24px', borderBottom: idx < alignmentStats.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none', alignItems: 'center' }}>
-                <div style={{ color: '#f1f5f9', fontSize: '0.9rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <StrategicAlignmentIcon alignment={s.alignment} />
-                  {ALIGNMENT_LABELS[s.alignment] || s.alignment}
-                </div>
-                <div style={{ color: '#94a3b8', fontSize: '0.95rem', textAlign: 'center' }}>{s.submitted}</div>
-                <div style={{ color: '#a78bfa', fontSize: '0.95rem', textAlign: 'center' }}>{s.sponsored || '—'}</div>
-                <div style={{ color: '#2dd4bf', fontSize: '0.95rem', textAlign: 'center' }}>{s.shipped || '—'}</div>
-                <div style={{ color: '#22c55e', fontSize: '0.95rem', textAlign: 'center' }}>{s.outcomes || '—'}</div>
-              </div>
-            ))}
-          </div>
+          <StatsTable
+            rows={alignmentStats}
+            renderLabel={s => (
+              <>
+                <StrategicAlignmentIcon alignment={s.alignment} />
+                <span style={{ color: '#f1f5f9' }}>{ALIGNMENT_LABELS[s.alignment] || s.alignment}</span>
+              </>
+            )}
+          />
+        </div>
+      )}
+
+      {/* By Lever */}
+      {leverStats.length > 0 && (
+        <div style={{ marginBottom: 48 }}>
+          <SectionLabel>By Lever</SectionLabel>
+          <StatsTable
+            rows={leverStats}
+            renderLabel={s => (
+              <>
+                <LeverIcon lever={s.lever} />
+                <span style={{ color: LEVER_COLORS[s.lever] || '#f1f5f9' }}>{s.lever}</span>
+              </>
+            )}
+          />
         </div>
       )}
 
