@@ -146,8 +146,7 @@ export default function BetSubmissionNarrative({ onComplete, currentOrg }) {
   const goalOptions = [
     ...companyGoals.map((goal, idx) => ({
       value: `company-${idx}`,
-      label: `P${goal.priority} · ${goal.time_period?.toUpperCase()} ${goal.year} · ${goal.title}`
-    })),
+      label: `P${goal.priority} · ${goal.title}`    })),
     { value: 'unaligned', label: 'Not aligned to a current goal' }
   ];
 
@@ -292,14 +291,17 @@ Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks an
     return '2-3-sprints';
   };
 
-  const canSubmit = () => {
-    if (!hasLeadershipGoal && !selectedGoalType) return false;
-    const hasNarrative = narrative.length >= 100;
-    const hasDocument = !!uploadedFile;
-    if (!hasNarrative && !hasDocument) return false;
-    if (!story.validationMethod || story.validationMethod.length < 5) return false;
-    return true;
-  };
+const canSubmit = () => {
+  if (!hasLeadershipGoal) {
+    if (companyGoals.length > 0 && !selectedGoalType) return false;
+    if (companyGoals.length === 0 && !goalContext.trim()) return false;
+  }
+  const hasNarrative = narrative.length >= 100;
+  const hasDocument = !!uploadedFile;
+  if (!hasNarrative && !hasDocument) return false;
+  if (!story.validationMethod || story.validationMethod.length < 5) return false;
+  return true;
+};
 
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
