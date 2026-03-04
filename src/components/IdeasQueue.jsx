@@ -134,7 +134,7 @@ function IdeasQueue({ ideas = [], loading = false, currentOrg, currentUser, onCl
         <div style={{ marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
             <p style={{ color: '#64748b', fontSize: '0.95rem', margin: 0 }}>
-              Bets waiting for to be sponsored and moved to the Priority Queue.
+              Bets waiting to be sponsored and moved to the Priority Queue.
             </p>
             {!summaryExpanded && (
               <button onClick={() => setSummaryExpanded(true)} style={{ background: 'none', border: 'none', color: '#2dd4bf', fontSize: '0.8rem', cursor: 'pointer', padding: 0, whiteSpace: 'nowrap', textDecoration: 'underline' }}>
