@@ -45,37 +45,17 @@ function FilterPill({ label, count, isOpen, onClick }) {
     <button
       onClick={onClick}
       style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 6,
-        padding: '6px 12px',
-        borderRadius: 20,
-        border: isOpen
-          ? '1px solid rgba(45,212,191,0.5)'
-          : isActive
-          ? '1px solid rgba(45,212,191,0.35)'
-          : '1px solid rgba(255,255,255,0.1)',
-        background: isOpen
-          ? 'rgba(45,212,191,0.1)'
-          : isActive
-          ? 'rgba(45,212,191,0.06)'
-          : 'rgba(255,255,255,0.03)',
+        display: 'inline-flex', alignItems: 'center', gap: 6,
+        padding: '6px 12px', borderRadius: 20, cursor: 'pointer', transition: 'all 0.15s',
+        border: isOpen ? '1px solid rgba(45,212,191,0.5)' : isActive ? '1px solid rgba(45,212,191,0.35)' : '1px solid rgba(255,255,255,0.1)',
+        background: isOpen ? 'rgba(45,212,191,0.1)' : isActive ? 'rgba(45,212,191,0.06)' : 'rgba(255,255,255,0.03)',
         color: isActive || isOpen ? '#2dd4bf' : '#64748b',
-        fontSize: '0.82rem',
-        fontWeight: isActive ? 600 : 400,
-        cursor: 'pointer',
-        transition: 'all 0.15s',
-        whiteSpace: 'nowrap',
+        fontSize: '0.82rem', fontWeight: isActive ? 600 : 400, whiteSpace: 'nowrap',
       }}
     >
       {label}
       {isActive && (
-        <span style={{
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          width: 16, height: 16, borderRadius: '50%',
-          background: 'rgba(45,212,191,0.2)', color: '#2dd4bf',
-          fontSize: '0.7rem', fontWeight: 700
-        }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 16, height: 16, borderRadius: '50%', background: 'rgba(45,212,191,0.2)', color: '#2dd4bf', fontSize: '0.7rem', fontWeight: 700 }}>
           {count}
         </span>
       )}
@@ -86,24 +66,10 @@ function FilterPill({ label, count, isOpen, onClick }) {
 
 function Dropdown({ children, onClear, showClear }) {
   return (
-    <div style={{
-      position: 'absolute',
-      top: 'calc(100% + 6px)',
-      left: 0,
-      zIndex: 100,
-      background: '#1e293b',
-      border: '1px solid rgba(255,255,255,0.1)',
-      borderRadius: 12,
-      padding: '12px 14px',
-      minWidth: 220,
-      boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-    }}>
+    <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 100, background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '12px 14px', minWidth: 240, boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
       {children}
       {showClear && (
-        <button
-          onClick={onClear}
-          style={{ marginTop: 10, background: 'none', border: 'none', color: '#475569', fontSize: '0.75rem', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
-        >
+        <button onClick={onClear} style={{ marginTop: 10, background: 'none', border: 'none', color: '#475569', fontSize: '0.75rem', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>
           Clear
         </button>
       )}
@@ -111,7 +77,7 @@ function Dropdown({ children, onClear, showClear }) {
   );
 }
 
-function OptionPill({ label, active, onClick, color, bg, border, icon }) {
+function OptionPill({ label, count, active, onClick, color, bg, border, icon }) {
   return (
     <button
       onClick={onClick}
@@ -126,11 +92,16 @@ function OptionPill({ label, active, onClick, color, bg, border, icon }) {
     >
       {icon}
       {label}
+      {count !== undefined && count !== null && (
+        <span style={{ color: active ? (color || '#2dd4bf') : '#475569', fontSize: '0.72rem', opacity: 0.8 }}>
+          ({count})
+        </span>
+      )}
     </button>
   );
 }
 
-export function FilterBar({ filters, onChange, showStatus = true, showLever = true, showAlignment = true, showScore = true, statusOptions = [] }) {
+export function FilterBar({ filters, onChange, showStatus = true, showLever = true, showAlignment = true, showScore = true, statusOptions = [], counts = {} }) {
   const [openPanel, setOpenPanel] = useState(null);
   const ref = useRef(null);
 
@@ -147,28 +118,23 @@ export function FilterBar({ filters, onChange, showStatus = true, showLever = tr
   };
 
   const togglePanel = (panel) => setOpenPanel(openPanel === panel ? null : panel);
+  const hasActive = filters.levers.length > 0 || filters.statuses.length > 0 || filters.alignments.length > 0 || filters.minScore > 0;
 
   return (
     <div ref={ref} style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', position: 'relative', marginBottom: 24 }}>
 
-      {/* Lever */}
       {showLever && (
         <div style={{ position: 'relative' }}>
-          <FilterPill
-            label="Lever"
-            count={filters.levers.length}
-            isOpen={openPanel === 'lever'}
-            onClick={() => togglePanel('lever')}
-          />
+          <FilterPill label="Lever" count={filters.levers.length} isOpen={openPanel === 'lever'} onClick={() => togglePanel('lever')} />
           {openPanel === 'lever' && (
             <Dropdown showClear={filters.levers.length > 0} onClear={() => onChange({ ...filters, levers: [] })}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {LEVERS.map(lever => {
+                {LEVERS.filter(l => !counts.levers || counts.levers[l] > 0).map(lever => {
                   const lc = LEVER_COLORS[lever];
                   return (
                     <OptionPill
-                      key={lever}
-                      label={lever}
+                      key={lever} label={lever}
+                      count={counts.levers?.[lever]}
                       active={filters.levers.includes(lever)}
                       onClick={() => toggle('levers', lever)}
                       color={lc.text} bg={lc.bg} border={lc.border}
@@ -181,22 +147,16 @@ export function FilterBar({ filters, onChange, showStatus = true, showLever = tr
         </div>
       )}
 
-      {/* Alignment */}
       {showAlignment && (
         <div style={{ position: 'relative' }}>
-          <FilterPill
-            label="Alignment"
-            count={filters.alignments.length}
-            isOpen={openPanel === 'alignment'}
-            onClick={() => togglePanel('alignment')}
-          />
+          <FilterPill label="Alignment" count={filters.alignments.length} isOpen={openPanel === 'alignment'} onClick={() => togglePanel('alignment')} />
           {openPanel === 'alignment' && (
             <Dropdown showClear={filters.alignments.length > 0} onClear={() => onChange({ ...filters, alignments: [] })}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {ALIGNMENTS.map(a => (
+                {ALIGNMENTS.filter(a => !counts.alignments || counts.alignments[a] > 0).map(a => (
                   <OptionPill
-                    key={a}
-                    label={ALIGNMENT_LABELS[a]}
+                    key={a} label={ALIGNMENT_LABELS[a]}
+                    count={counts.alignments?.[a]}
                     active={filters.alignments.includes(a)}
                     onClick={() => toggle('alignments', a)}
                     icon={<AlignmentIcon alignment={a} />}
@@ -208,22 +168,16 @@ export function FilterBar({ filters, onChange, showStatus = true, showLever = tr
         </div>
       )}
 
-      {/* Status */}
       {showStatus && statusOptions.length > 0 && (
         <div style={{ position: 'relative' }}>
-          <FilterPill
-            label="Status"
-            count={filters.statuses.length}
-            isOpen={openPanel === 'status'}
-            onClick={() => togglePanel('status')}
-          />
+          <FilterPill label="Status" count={filters.statuses.length} isOpen={openPanel === 'status'} onClick={() => togglePanel('status')} />
           {openPanel === 'status' && (
             <Dropdown showClear={filters.statuses.length > 0} onClear={() => onChange({ ...filters, statuses: [] })}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {statusOptions.map(s => (
+                {statusOptions.filter(s => !counts.statuses || counts.statuses[s] > 0).map(s => (
                   <OptionPill
-                    key={s}
-                    label={s}
+                    key={s} label={s}
+                    count={counts.statuses?.[s]}
                     active={filters.statuses.includes(s)}
                     onClick={() => toggle('statuses', s)}
                   />
@@ -234,22 +188,15 @@ export function FilterBar({ filters, onChange, showStatus = true, showLever = tr
         </div>
       )}
 
-      {/* Score */}
       {showScore && (
         <div style={{ position: 'relative' }}>
-          <FilterPill
-            label="Score"
-            count={filters.minScore > 0 ? 1 : 0}
-            isOpen={openPanel === 'score'}
-            onClick={() => togglePanel('score')}
-          />
+          <FilterPill label="Score" count={filters.minScore > 0 ? 1 : 0} isOpen={openPanel === 'score'} onClick={() => togglePanel('score')} />
           {openPanel === 'score' && (
             <Dropdown showClear={filters.minScore > 0} onClear={() => onChange({ ...filters, minScore: 0 })}>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {SCORES.map(score => (
                   <OptionPill
-                    key={score}
-                    label={`${score}+`}
+                    key={score} label={`${score}+`}
                     active={filters.minScore === score}
                     onClick={() => onChange({ ...filters, minScore: filters.minScore === score ? 0 : score })}
                   />
@@ -260,8 +207,7 @@ export function FilterBar({ filters, onChange, showStatus = true, showLever = tr
         </div>
       )}
 
-      {/* Global clear */}
-      {(filters.levers.length > 0 || filters.statuses.length > 0 || filters.alignments.length > 0 || filters.minScore > 0) && (
+      {hasActive && (
         <button
           onClick={() => { onChange({ levers: [], statuses: [], alignments: [], minScore: 0 }); setOpenPanel(null); }}
           style={{ background: 'none', border: 'none', color: '#475569', fontSize: '0.78rem', cursor: 'pointer', padding: '0 4px', textDecoration: 'underline' }}
@@ -287,15 +233,30 @@ export function applyFilters(bets, filters, getStatusFn) {
       const status = getStatusFn(bet);
       if (!filters.statuses.includes(status)) return false;
     }
-      if (filters.minScore > 0) {
-        const total = (bet.approachScore || bet.viability_score || 0) +
-                      (bet.potentialScore || 0) +
-                      (bet.fitScore || bet.relevance_score || 0);
-        const avg = total / 3;
-        if (avg < filters.minScore) return false;
-      }
+    if (filters.minScore > 0) {
+      const total = (bet.approachScore || 0) + (bet.potentialScore || 0) + (bet.fitScore || 0);
+      const avg = total / 3;
+      if (avg < filters.minScore) return false;
+    }
     return true;
   });
+}
+
+export function computeCounts(bets, getStatusFn) {
+  const levers = {}, alignments = {}, statuses = {};
+  bets.forEach(bet => {
+    const lever = bet.lever || bet.betData?.lever;
+    if (lever) levers[lever] = (levers[lever] || 0) + 1;
+
+    const alignment = bet.strategicAlignment || bet.strategic_alignment || bet.betData?.strategicAlignment;
+    if (alignment) alignments[alignment] = (alignments[alignment] || 0) + 1;
+
+    if (getStatusFn) {
+      const status = getStatusFn(bet);
+      if (status) statuses[status] = (statuses[status] || 0) + 1;
+    }
+  });
+  return { levers, alignments, statuses };
 }
 
 export const defaultFilters = { levers: [], statuses: [], alignments: [], minScore: 0 };
