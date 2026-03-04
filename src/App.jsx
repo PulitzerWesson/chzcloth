@@ -3376,7 +3376,7 @@ function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEd
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 8 }}>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#f1f5f9', margin: 0 }}>Contributors</h1>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#f1f5f9', margin: 0 }}>Your CHZ</h1>
           {yourBets.length > 0 && (
             <span style={{ color: '#475569', fontSize: '0.95rem' }}>{yourBets.length} bet{yourBets.length !== 1 ? 's' : ''}</span>
           )}
@@ -3397,7 +3397,7 @@ function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEd
           {summaryExpanded && (
             <div style={{ marginTop: 12, padding: '14px 16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, color: '#94a3b8', fontSize: '0.875rem', lineHeight: 1.7 }}>
               <p style={{ margin: '0 0 8px 0' }}>
-                Contributors is your personal workspace. Your Bets shows everything you've submitted — drafts, bets in the Marketplace waiting for a sponsor, and active bets in the Priority Queue. Sponsored by You shows bets from others that you've taken ownership of.
+                Your CHZ is your personal workspace. Your Bets shows everything you've submitted — drafts, bets in the Marketplace waiting for a sponsor, and active bets in the Priority Queue. Sponsored by You shows bets from others that you've taken ownership of.
               </p>
               <p style={{ margin: '0 0 8px 0' }}>
                 This is where you manage execution. Mark a bet started when work begins, mark it shipped when it's done, and record the outcome — what actually happened vs. what you predicted. That data builds your track record over time.
