@@ -166,7 +166,7 @@ function PriorityQueue({ bets, setExpandedPriorityBet, expandedPriorityBet }) {
                 The Priority Queue holds all sponsored bets — work your team has committed to executing. Bets are sorted automatically: overdue and in-progress work surfaces first, followed by bets due soon, then by score.
               </p>
               <p style={{ margin: '0 0 8px 0' }}>
-                Use the filters to focus on a specific lever, strategic alignment, or status. Once a bet ships, mark it complete and record the outcome — that data feeds into your team's Stats.
+                Use the filters to focus on a specific lever, strategic alignment, or status. Once a bet ships, mark it complete and record the outcome — that data feeds into your team's Stats. Status updates — marking a bet started, shipped, or recording an outcome — are done from your Contributors queue.
               </p>
               <p style={{ margin: 0 }}>
                 Bets with a red border are overdue. Yellow border means due within 30 days.
