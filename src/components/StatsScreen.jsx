@@ -485,7 +485,7 @@ export function StatsScreen({ currentOrg, isAdmin }) {
                     <MiniStat label="Sponsored" value={stats.sponsored} color="#a78bfa" />
                     <MiniStat label="In Progress" value={stats.inProgress} color="#fbbf24" />
                     <MiniStat label="Shipped" value={stats.shipped} color="#2dd4bf" />
-                    <MiniStat label="Outcome" value={stats.outcomesRecorded} color="#22c55e" />
+                    <MiniStat label="Outcomes" value={stats.outcomesRecorded} color="#22c55e" />
                   </div>
                 </div>
 
