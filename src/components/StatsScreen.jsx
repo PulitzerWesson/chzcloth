@@ -340,13 +340,25 @@ export function StatsScreen({ currentOrg, isAdmin }) {
     outcomes: allOutcomes.filter(b => b.strategic_alignment === alignment).length,
   })).filter(s => s.submitted > 0);
 
-  const leverStats = LEVERS.map(lever => ({
-    lever,
-    submitted: allSubmitted.filter(b => b.lever === lever).length,
-    sponsored: allSponsored.filter(b => b.lever === lever).length,
-    shipped: allShipped.filter(b => b.lever === lever).length,
-    outcomes: allOutcomes.filter(b => b.lever === lever).length,
-  })).filter(s => s.submitted > 0);
+const leverStats = LEVERS.map(lever => ({
+  lever,
+  submitted: allSubmitted.filter(b => {
+    const bd = typeof b.bet_data === 'string' ? JSON.parse(b.bet_data) : b.bet_data;
+    return (b.lever || bd?.lever) === lever;
+  }).length,
+  sponsored: allSponsored.filter(b => {
+    const bd = typeof b.bet_data === 'string' ? JSON.parse(b.bet_data) : b.bet_data;
+    return (b.lever || bd?.lever) === lever;
+  }).length,
+  shipped: allShipped.filter(b => {
+    const bd = typeof b.bet_data === 'string' ? JSON.parse(b.bet_data) : b.bet_data;
+    return (b.lever || bd?.lever) === lever;
+  }).length,
+  outcomes: allOutcomes.filter(b => {
+    const bd = typeof b.bet_data === 'string' ? JSON.parse(b.bet_data) : b.bet_data;
+    return (b.lever || bd?.lever) === lever;
+  }).length,
+})).filter(s => s.submitted > 0);
 
   const visibleMembers = isAdmin ? members : members.filter(m => m.user_id === user?.id);
 
