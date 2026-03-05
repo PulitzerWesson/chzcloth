@@ -678,7 +678,7 @@ function Landing({ onStart }) {
 
 
 <div style={{ color: '#fbbf24', fontSize: '1.1rem', fontWeight: 600, marginBottom: 16, letterSpacing: '0.5px' }}>
-  More Cheese. Less Waste
+  More Cheese. Less Waste.
 </div>
         <h1 style={{ 
           fontSize: '3rem', 
