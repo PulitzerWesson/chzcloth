@@ -131,7 +131,25 @@ export default function BetSubmission({ onComplete, currentOrg }) {
   // State machine
   const [submitState, setSubmitState] = useState('idle'); // idle | analyzing | reviewed | scoring
   const [aiReview, setAiReview]       = useState(null);
+  const [showScaffold, setShowScaffold] = useState(false);
   const reviewRef = useRef(null);
+
+  // Scaffold starters by alignment
+  const SCAFFOLD_STARTERS = {
+    inner: `What's broken: [specific friction, for whom, measured how]\n\nWhy our fix works: [the causal chain, not just "this should help"]\n\nWhat we've observed: [tests run, users interviewed, data measured]\n\nWhat would make us wrong: [the single assumption this depends on]`,
+    outer: `The friction users feel: [specific, observed, not assumed]\n\nWhy this is worth doing now vs core work: [the case for prioritization]\n\nWhat we expect to happen: [specific outcome with numbers]\n\nWhat would make us wrong: [the single assumption this depends on]`,
+    experimental: `The question we're trying to answer: [specific, binary if possible]\n\nWhat a positive result looks like: [clear signal, measurable]\n\nWhat a negative result looks like: [also valuable — what would we learn?]\n\nWhy we need to run this to know: [why we can't answer this without building it]`,
+  };
+
+  // Issue field → targeted re-submit prompt
+  const ISSUE_PROMPTS = {
+    problem_clarity:   'What specifically is broken — for whom, in what context, and how do you know it\'s broken?',
+    mechanism:         'Walk through exactly why your intervention causes that outcome. Not that it might — why it does.',
+    killing_assumption:'What\'s the single thing that, if false, makes this entire bet wrong?',
+    evidence:          'What have you actually observed — tests run, users interviewed, data measured?',
+    scope:             'What exactly will you build? Specific enough that someone could start work tomorrow.',
+    goal_alignment:    'How does this directly move the goal — not loosely relate to it, but actually move it?',
+  };
 
   const hasLeadershipGoal = !!currentOrg?.leadershipGoal;
   const leadershipGoal    = currentOrg?.leadershipGoal || null;
@@ -241,7 +259,7 @@ export default function BetSubmission({ onComplete, currentOrg }) {
       const response = await fetch('/api/parse-narrative', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ narrative, goalContext: effectiveGoal, uploadedFile })
+        body: JSON.stringify({ narrative, goalContext: effectiveGoal, uploadedFile, strategicAlignment })
       });
       const review = await response.json();
       if (!response.ok) throw new Error(review.error || 'Analysis failed');
@@ -475,10 +493,46 @@ export default function BetSubmission({ onComplete, currentOrg }) {
             Describe Your Bet
             {uploadedFile && <span style={{ color: '#475569', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}> — optional with document</span>}
           </SectionLabel>
-          <button onClick={() => setShowExample(!showExample)} style={{ background: 'none', border: 'none', color: '#2dd4bf', fontSize: '0.78rem', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>
-            {showExample ? 'Hide example' : 'Show example'}
-          </button>
+          <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+            {submitState === 'idle' && (
+              <button
+                onClick={() => {
+                  if (!showScaffold) {
+                    if (!narrative.trim()) {
+                      setNarrative(SCAFFOLD_STARTERS[strategicAlignment]);
+                    }
+                    setShowScaffold(true);
+                  } else {
+                    setShowScaffold(false);
+                  }
+                }}
+                style={{ background: 'none', border: 'none', color: showScaffold ? '#2dd4bf' : '#475569', fontSize: '0.78rem', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
+              >
+                {showScaffold ? 'Hide structure' : 'Help me structure this'}
+              </button>
+            )}
+            <button onClick={() => setShowExample(!showExample)} style={{ background: 'none', border: 'none', color: '#2dd4bf', fontSize: '0.78rem', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>
+              {showExample ? 'Hide example' : 'Show example'}
+            </button>
+          </div>
         </div>
+
+        {/* Targeted prompts on re-submit — derived from actual issues */}
+        {submitState === 'reviewed' && !canScore && aiReview?.issues?.length > 0 && (
+          <div style={{ marginBottom: 12, padding: '14px 16px', background: 'rgba(239,68,68,0.04)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: 10 }}>
+            <div style={{ color: '#ef4444', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Address these in your revision</div>
+            {aiReview.issues.slice(0, 3).map((issue, i) => {
+              const prompt = ISSUE_PROMPTS[issue.field];
+              if (!prompt) return null;
+              return (
+                <div key={i} style={{ display: 'flex', gap: 10, marginBottom: i < Math.min(aiReview.issues.length, 3) - 1 ? 8 : 0 }}>
+                  <span style={{ color: '#ef4444', fontSize: '0.85rem', flexShrink: 0, marginTop: 1 }}>→</span>
+                  <div style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.5 }}>{prompt}</div>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {showExample && (
           <div style={{ marginBottom: 12, padding: '14px 16px', background: 'rgba(45,212,191,0.04)', border: '1px solid rgba(45,212,191,0.12)', borderRadius: 10, fontSize: '0.85rem', color: '#64748b', lineHeight: 1.7, whiteSpace: 'pre-line' }}>
@@ -489,7 +543,10 @@ export default function BetSubmission({ onComplete, currentOrg }) {
 
         <textarea
           value={narrative}
-          onChange={e => setNarrative(e.target.value)}
+          onChange={e => {
+            setNarrative(e.target.value);
+            if (submitState === 'reviewed') setSubmitState('idle');
+          }}
           placeholder={uploadedFile
             ? 'Add any additional context not in the document...'
             : "What you'll change, current state (with numbers), expected outcome (with numbers), why it will work, and evidence..."}
