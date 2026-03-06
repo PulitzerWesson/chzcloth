@@ -3404,7 +3404,7 @@ const handleRejectBet = async (betId, reason) => {
   <OrgSwitcher
     organizations={organizations || []}
     currentOrg={currentOrg}
-    onSwitch={switchCurrentOrg}
+    onSwitch={(orgId) => { setCurrentCompany(null); switchCurrentOrg(orgId); }}
     onAddOrg={() => setScreen('orgsetup')}
     onAddCompany={addCompanyToOrg}
     canInviteUsers={canInviteUsers}
