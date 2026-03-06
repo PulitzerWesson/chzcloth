@@ -461,7 +461,7 @@ export default function BetSubmission({ onComplete, currentOrg, companyGoals = [
         )}
 
         <style>{`
-          .bet-narrative::placeholder { color: #475569; font-size: 0.88rem; line-height: 1.8; }
+          .bet-narrative::placeholder { color: #475569; font-size: 0.82rem; line-height: 1.8; }
           .bet-narrative::placeholder::first-line { color: #64748b; font-size: 0.95rem; }
         `}</style>
         <textarea
