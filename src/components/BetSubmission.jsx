@@ -370,7 +370,10 @@ export default function BetSubmission({ onComplete, currentOrg, currentCompany =
       {/* ── Product Area (shown when company has areas) ───────────────────── */}
       {currentCompany?.product_areas?.length > 0 && (
         <div style={{ marginBottom: 16, ...cardStyle }}>
-          <SectionLabel>Product Area</SectionLabel>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
+            <SectionLabel>Product Area</SectionLabel>
+            <span style={{ color: '#334155', fontSize: '0.8rem', marginBottom: 10 }}>{currentCompany.name}</span>
+          </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {currentCompany.product_areas.map(area => {
               const active = selectedProductAreaId === area.archetypeId;
