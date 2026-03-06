@@ -12,6 +12,7 @@ export function OrgSwitcher({
   onSelectCompany,
 }) {
   const [isOpen, setIsOpen] = useState(false)
+  const [awaitingCompany, setAwaitingCompany] = useState(false)
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
 
@@ -37,6 +38,7 @@ export function OrgSwitcher({
 
   const handleSelectCompany = (company) => {
     onSelectCompany(company)
+    setAwaitingCompany(false)
     setIsOpen(false)
   }
 
@@ -124,7 +126,17 @@ export function OrgSwitcher({
                       Switch team
                     </div>
                     {otherOrgs.map(org => (
-                      <button key={org.orgId} onClick={() => { onSwitch(org.orgId); setIsOpen(false) }}
+                      <button key={org.orgId} onClick={() => {
+                        onSwitch(org.orgId);
+                        // Stay open if the switched-to org has multiple companies
+                        const orgCompanies = organizations.find(o => o.orgId === org.orgId)?.companies || [];
+                        if (orgCompanies.length > 1) {
+                          setAwaitingCompany(true);
+                          // keep isOpen true
+                        } else {
+                          setIsOpen(false);
+                        }
+                      }}
                         style={{ width: '100%', textAlign: 'left', padding: '10px 12px', background: 'transparent', border: 'none', borderRadius: 8, color: '#cbd5e1', fontWeight: 500, fontSize: '0.9rem', cursor: 'pointer', transition: 'background 0.15s' }}
                         onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                         onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
@@ -166,11 +178,15 @@ export function OrgSwitcher({
         </div>
 
         {/* Active company name — plain text, right of dropdown */}
-        {currentCompany && (
+        {currentCompany ? (
           <span style={{ color: '#94a3b8', fontSize: '0.9rem', fontWeight: 400 }}>
             {currentCompany.name}
           </span>
-        )}
+        ) : companies.length > 1 ? (
+          <span style={{ color: '#475569', fontSize: '0.9rem', cursor: 'pointer' }} onClick={() => setIsOpen(true)}>
+            Select company
+          </span>
+        ) : null}
 
       </div>
 
