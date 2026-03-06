@@ -3584,6 +3584,7 @@ const handleRejectBet = async (betId, reason) => {
   <CompanyDashboard 
     currentOrg={currentOrg}
     isAdmin={isAdmin}
+    onCompanyAdded={refreshOrganizations}
   />
 )}
    {screen === 'outcomes' && (
