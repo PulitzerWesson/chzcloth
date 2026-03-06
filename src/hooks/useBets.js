@@ -20,15 +20,14 @@ export function useBets(orgId, orgMode) {
       const response = await fetch('/api/score-bet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          bet: betData, 
-          orgMode: orgMode || 'growth',
-          orgName: orgContext?.name,
-          orgContext: orgContext?.context,
-          orgLearnings: orgContext?.learnings,
-          companyGoals: orgContext?.companyGoals || [],
-          selectedKPI: orgContext?.selectedKPI || null,
-        })
+          body: JSON.stringify({ 
+            bet: betData, 
+            orgMode: orgMode || 'growth',
+            orgLearnings: orgContext?.learnings,
+            companyGoals: orgContext?.companyGoals || [],
+            companyName: orgContext?.companyName || orgContext?.name,
+            companyContext: orgContext?.companyContext || orgContext?.context,
+          })
       });
       
       if (!response.ok) throw new Error('Scoring failed');
@@ -185,13 +184,15 @@ sponsoredByEmail: bet.sponsor?.email || null,
 
       }
       
-      scores = await scoreBet(betData, { 
-        name: orgContext?.name || orgId, 
-        context: orgContext?.combinedContext || orgContext?.userContext,
-        learnings: orgLearnings?.learnings || [],
-        companyGoals: companyGoals,
-        selectedKPI: betData.selectedKPI || null,
-      });
+scores = await scoreBet(betData, { 
+  name: orgContext?.name || orgId, 
+  context: orgContext?.combinedContext || orgContext?.userContext,
+  learnings: orgLearnings?.learnings || [],
+  companyGoals: companyGoals,
+  selectedKPI: betData.selectedKPI || null,
+  companyName: betData.companyName || null,
+  companyContext: betData.companyContext || null,
+});
     }
 
     try {
