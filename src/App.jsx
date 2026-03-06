@@ -2805,7 +2805,8 @@ const {
   switchCurrentOrg,
   addCompanyToOrg,
   isAdmin,
-  canInviteUsers
+  canInviteUsers,
+  refreshOrganizations
 } = useOrganizations();
   
 const { bets, loading: betsLoading, createBet, createPastBets, recordOutcome, scoreBet, approveBet, rejectBet, refreshBets, markStarted, markCompleted} = useBets(currentOrg?.orgId, currentOrg?.mode);
