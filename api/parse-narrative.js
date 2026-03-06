@@ -1,291 +1,221 @@
-// api/score-bet.js
+// api/parse-narrative.js
+
+async function callWithRetry(fn, maxAttempts = 3) {
+  let lastResponse;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    lastResponse = await fn();
+    if (lastResponse.status !== 529) return lastResponse;
+    if (attempt < maxAttempts) {
+      const wait = attempt * 1500;
+      console.log(`Anthropic overloaded (attempt ${attempt}/${maxAttempts}), retrying in ${wait}ms...`);
+      await new Promise(r => setTimeout(r, wait));
+    }
+  }
+  return lastResponse;
+}
 
 export default async function handler(req, res) {
+  console.log('=== PARSE NARRATIVE REQUEST START ===');
+  console.log('Timestamp:', new Date().toISOString());
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const { bet, orgMode, orgName, orgContext, orgLearnings, companyGoals } = req.body;
-    // validationMethod is embedded in bet object
+    const { narrative, goalContext, uploadedFile, strategicAlignment } = req.body;
 
-    const alignment = bet.strategicAlignment || 'inner';
+    console.log('Parsed request data:', {
+      hasNarrative: !!narrative,
+      narrativeLength: narrative?.length || 0,
+      hasGoalContext: !!goalContext,
+      strategicAlignment: strategicAlignment || 'inner',
+      hasUploadedFile: !!uploadedFile,
+    });
 
-    // ── Org learnings section ──────────────────────────────────────────────
-    let learningsSection = '';
-    if (orgLearnings && orgLearnings.length > 0) {
-      learningsSection = `
-PAST ORGANIZATIONAL LEARNINGS:
-${orgLearnings.slice(0, 5).map(l => `- ${l.summary || l.learned}`).join('\n')}
-`;
-    }
+    const alignment = strategicAlignment || 'inner';
 
-    // ── Company goals section — title + description only, no KPIs ─────────
-    let goalsSection = '';
-    if (companyGoals && companyGoals.length > 0) {
-      goalsSection = `
-COMPANY STRATEGIC GOALS:
-${companyGoals.map((goal, idx) => {
-  const desc = goal.description ? `\n  ${goal.description}` : '';
-  return `P${goal.priority || idx + 1}: ${goal.title}${desc}`;
-}).join('\n\n')}
-`;
-    }
+    // Alignment-specific review framing
+    const alignmentContext = {
+      inner: `This bet is marked INNER RING — core product, critical path. This is a commitment, not a test. 
+The bar is high: the person needs to genuinely understand the problem, have a defensible causal mechanism, 
+and know what they will measure and how. Weak causation or vague problem framing on a core bet is a real issue.`,
 
-    // ── Alignment-specific scoring frame ──────────────────────────────────
-    const alignmentFrame = {
-      inner: {
-        label: 'INNER RING (core product, critical path)',
-        approachNote: `This is a core bet — a commitment, not a test. Score approach on: does the person deeply understand 
-the problem? Is the causal mechanism defensible under scrutiny, not just stated? Is the killing assumption 
-named and honest? A well-formatted hypothesis with a weak mechanism scores low here. A rough hypothesis 
-with a sharp, observed problem and clear cause-effect chain scores high.`,
-        potentialNote: `Evidence quality determines potential credibility. A 20% lift prediction backed by a 2-week 
-test with 200 users is fundamentally different from a 20% lift prediction backed by gut feel. 
-Score accordingly. Does the prediction calibration match what they actually know?`,
-        fitNote: `For inner ring bets: is this the highest-leverage use of core product bandwidth right now? 
-Does it directly move P1/P2 goals? Is the effort proportionate to the expected impact? 
-Inner ring work that weakly supports P3 goals is a fit problem.`
-      },
-      outer: {
-        label: 'OUTER RING (nice to have, quality of life)',
-        approachNote: `Outer ring bets face a different bar: is the problem real and felt, or assumed? 
-Many outer ring bets solve problems that don't actually hurt anyone much. 
-Score approach on: is there evidence users actually feel this friction, not just that it exists? 
-Is the mechanism credible, or is this "adding feature X should improve Y" without a real link?`,
-        potentialNote: `Be honest about the ceiling. Outer ring improvements typically move metrics modestly. 
-A prediction of 30% lift from a quality-of-life improvement should be scrutinized — 
-is the evidence proportionate to that claim? Score lower if the prediction is ambitious without support, 
-higher if the prediction is honest and evidence-backed even if the absolute upside is limited.`,
-        fitNote: `The core fit question for outer ring: is this worth doing now vs core work? 
-Does it support a P1/P2 goal or is it genuinely a P3 or below? 
-An outer ring bet that distracts from a P1 goal is a fit problem even if the bet itself is solid.`
-      },
-      experimental: {
-        label: 'EXPERIMENTAL (test, learn, might not ship)',
-        approachNote: `Experimental bets are not judged by whether the mechanism is proven — that's the point of the experiment.
-Score approach on learning design: Is there a clear question this experiment answers? 
-Is there a definition of what a positive result looks like AND what a negative result looks like?
-A good experiment can fail and still be worth running. A bad experiment learns nothing regardless of outcome.
-Do NOT penalize for uncertain mechanism or absence of prior evidence — reward honest uncertainty.`,
-        potentialNote: `For experiments, potential is about the quality of the learning, not the magnitude of the uplift. 
-What will they know after this that they don't know now, and how valuable is that knowledge? 
-Does the experiment design actually produce a clean enough signal to act on? 
-A small, clean experiment that produces a definitive answer scores higher than a large experiment that produces noise.`,
-        fitNote: `Is this the right question to be testing right now? Does the learning, if positive, 
-unlock a meaningful path — toward a P1/P2 goal, a new capability, or a validated assumption 
-that unblocks a bigger bet? Experiments that test interesting but strategically irrelevant questions score lower here.`
-      }
+      outer: `This bet is marked OUTER RING — nice to have, quality of life. 
+The key question beyond problem clarity is opportunity cost: is this worth doing right now vs core work? 
+Push on whether the problem is real and felt, not just assumed. 
+If the mechanism is weak, flag it — but also ask whether this is the right bet at all given what else could be done.`,
+
+      experimental: `This bet is marked EXPERIMENTAL — test, learn, might not ship. 
+Do NOT penalize for ambitious predictions or incomplete evidence — that's the point of an experiment. 
+What matters here is learning design: will they actually know something meaningful when this ends? 
+Push on: what is the specific question this experiment answers? What would a clear result look like — 
+both positive and negative? If the experiment can't fail in a way that teaches them something, it's not a real experiment.`
     }[alignment];
 
-    // ── PASS 1: Assess web search need ────────────────────────────────────
-    const assessmentResponse = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 300,
-        temperature: 0,
-        messages: [{
-          role: 'user',
-          content: `Does scoring this bet require web search for benchmarks or market context?
+    const promptText = `You are reviewing a product bet before it gets scored. Your job is not to be a copy editor. 
+Your job is to push on the things that actually determine whether this bet is worth making.
 
-Hypothesis: "${bet.hypothesis}"
-Metric: ${bet.metric} | Prediction: ${bet.prediction} | Alignment: ${alignment}
-Company: ${orgName || 'Unknown'} | Stage: ${orgMode || 'growth'}
-${orgContext ? `Context provided: yes (${orgContext.length} chars)` : 'No company context provided'}
+STRATEGIC CONTEXT:
+Goal: ${goalContext || 'Not specified'}
+Strategic Alignment: ${alignment.toUpperCase()}
 
-Skip search if: company context is sufficient, bet is clearly strong or weak without benchmarks, 
-or alignment is experimental (experiments don't need benchmarks).
+${alignmentContext}
 
-Return ONLY JSON: {"needs_search": true/false, "reason": "one sentence"}`
-        }]
-      })
-    });
+${narrative?.trim() ? `BET NARRATIVE:\n${narrative}\n` : '(No narrative — document provided)'}
+${uploadedFile ? '\nA supporting document has been provided.' : ''}
 
-    const assessmentData = await assessmentResponse.json();
-    let needsSearch = false;
-    let searchReason = null;
+---
 
-    try {
-      const assessmentText = assessmentData.content[0].text;
-      const match = assessmentText.match(/\{[\s\S]*\}/);
-      if (match) {
-        const assessment = JSON.parse(match[0]);
-        needsSearch = assessment.needs_search;
-        searchReason = assessment.reason;
-        if (alignment === 'experimental') needsSearch = false;
-        console.log('Web search decision:', assessment.reason);
-      }
-    } catch (e) {
-      console.log('Assessment parse failed, defaulting to no search');
-    }
+YOUR REVIEW FRAMEWORK — push on these four things, in this order of importance:
 
-    // ── PASS 2: Score ─────────────────────────────────────────────────────
-    const effortLabels = { S: 'Small', M: 'Medium', L: 'Large', XL: 'X-Large' };
-    const effortDisplay = effortLabels[bet.estimatedEffort] || bet.estimatedEffort || 'Not specified';
+1. PROBLEM CLARITY
+Does this person actually understand what is broken and why? 
+Not "improve conversion" — but what specific friction, for whom, in what context, measured how?
+A sharp problem statement predicts better bets more than anything else.
+Flag if: the problem is assumed rather than observed, vague rather than specific, or missing entirely.
 
-    const scoringPrompt = `You are scoring a product bet. Your job is to deliver a verdict — direct, honest, and specific to this bet and this company. 
+2. CAUSAL MECHANISM  
+Is there a real reason why their intervention causes the outcome they're predicting?
+Not just "because users want this" — but a defensible chain of cause and effect.
+The test: could a skeptic in the room poke a hole in the mechanism with one question?
+Flag if: the mechanism is asserted rather than explained, or if it relies on correlation rather than causation.
 
-No hedging. No "consider adding more detail." State what you see and why it matters.
+3. THE KILLING ASSUMPTION
+What is the single thing — if false — that makes this entire bet wrong?
+Not a list of risks. The one thing.
+A person who can name this is thinking clearly. A person who can't may not have thought it through.
+Flag if: assumptions are vague, plural without priority, or if the person hasn't identified the real load-bearing belief.
 
-─── BET ──────────────────────────────────────────────────────────────────
-Hypothesis: "${bet.hypothesis}"
-Metric: ${bet.metric}
-Prediction: ${bet.prediction}
-Baseline: ${bet.baseline || 'Not specified'}
-Timeframe: ${bet.timeframe} days
-Confidence: ${bet.confidence}%
-Strategic Alignment: ${alignmentFrame.label}
-Estimated Effort: ${effortDisplay}
-Assumptions: ${bet.assumptions || 'Not specified'}
-Measurement Plan: ${bet.validationMethod || 'Not specified'}
-Check After: ${bet.timeframe} days
+4. EVIDENCE QUALITY (adjust expectations based on alignment type above)
+There is a difference between "we think" and "we measured."
+"We assume users want this" ≠ "we interviewed 15 churned users and 11 cited this reason."
+"We expect 20% lift" ≠ "we ran a 2-week test on 200 users and saw 18% lift."
+Flag if: evidence is absent or the confidence of the prediction is not matched by the quality of evidence supporting it.
 
-─── COMPANY CONTEXT ──────────────────────────────────────────────────────
-${orgName ? `Company: ${orgName}` : 'Company: Unknown'}
-Stage: ${orgMode || 'growth'}
-${orgContext ? `\n${orgContext}\n` : ''}
-${goalsSection}
-${learningsSection}
+5. MEASUREMENT PLAN
+This is non-negotiable. If there is no specific metric, no source of truth, and no definition of what success looks like, the bet cannot be evaluated after the fact.
+"We'll look at analytics" is not a measurement plan. "Trial-to-paid conversion in Stripe — success is ≥11% sustained over 2 weeks" is.
+Flag if: the measurement is vague, the source of data is absent, or there is no definition of success vs failure.
 
-─── SCORING ──────────────────────────────────────────────────────────────
+---
 
-Score each dimension 0–100. Each rationale must be a direct verdict, not a suggestion. 
-Reference specific details from this bet and this company — not generic guidance.
-If company context is provided, cite it. If goals are provided, name them specifically.
+ISSUE SEVERITY:
+- "missing": blocks scoring — the bet cannot be evaluated without this
+- "weak": bet can be scored but this meaningfully reduces confidence
 
-APPROACH (0–100): Does this person understand the problem and mechanism well enough to be right?
-${alignmentFrame.approachNote}
+STRENGTHS:
+Call out what is genuinely sharp — not just "good hypothesis structure" but actual insight, real evidence, clear mechanism, honest uncertainty.
 
-Score guide:
-90–100: Sharp problem, observed not assumed. Defensible causal mechanism a skeptic would accept. Killing assumption named honestly. Specific measurement plan — exact metric, source, and definition of success.
-70–89: Clear problem and plausible mechanism. Some assumptions stated. Measurement plan is reasonable but could be more specific.
-50–69: Problem is real but surface-level. Mechanism is asserted not explained. Measurement plan is vague ("check analytics").
-30–49: Problem is assumed. Mechanism is "this should work." Measurement plan is absent or unmeasurable.
-0–29: No clear problem. No mechanism. No way to know if this worked.
+READY TO SCORE:
+- true if the core intent is clear enough to evaluate, even with weak signals
+- false only if the bet is too vague to score (e.g., "improve things", no mechanism, no metric)
+- For experimental bets: be more generous — readyToScore=true if the learning question is clear
 
-POTENTIAL (0–100): Is the predicted outcome believable given what they actually know?
-${alignmentFrame.potentialNote}
+---
 
-Score guide:
-90–100: Prediction is calibrated to evidence. Strong prior data (test results, measured baseline, comparable). Confidence matches what they know.
-70–89: Reasonable prediction with some supporting evidence. Minor optimism but grounded.
-50–69: Prediction exists but evidence is thin. "We expect X" without real basis. Confidence higher than evidence warrants.
-30–49: Ambitious prediction with weak or no evidence. Baseline missing or guessed. Timeframe mismatched to expected change.
-0–29: No prediction or completely unmoored from reality.
-
-FIT (0–100): Is this the right bet at the right time for this company?
-${alignmentFrame.fitNote}
-
-Score guide:
-90–100: Directly addresses a P1/P2 goal. Effort is proportionate. Timing is right. Learning (if experimental) unlocks a meaningful path.
-70–89: Supports company direction. Good use of effort. Minor alignment gaps.
-50–69: Loosely related to goals. Effort may not match priority. Opportunity cost concerns.
-30–49: Tangential to stated goals. Questionable prioritization. Better bets likely exist for this effort.
-0–29: Works against company priorities or addresses a problem nobody has.
-
-─── SUGGESTION ───────────────────────────────────────────────────────────
-
-Average score context:
-- avg ≥ 70: "complement" — the bet is solid, suggest a specific sharpening
-- avg 60–69: "complement" — keep core intent, make it more precise and measurable  
-- avg < 60: "alternative" — suggest a different approach to the same underlying goal
-
-For experimental bets, suggestions should improve the learning design, not the outcome prediction.
-
-─── OUTPUT ───────────────────────────────────────────────────────────────
-
-Return ONLY valid JSON, no markdown:
+Return ONLY valid JSON:
 {
-  "title": "8–12 word title capturing the core action and outcome",
-  "summary": "15–20 word value proposition",
-  "product": "Which product surface this bet modifies",
-  "lever": "Exactly one of: Revenue | Retention | Acquisition | Efficiency | Platform | Experience | Risk",
-  "approach": {
-    "score": 0–100,
-    "rationale": "Direct verdict. What specifically is strong or weak about the problem framing and mechanism. Cite specific details from this bet."
+  "extracted": {
+    "change": "what they will specifically do",
+    "baseline": "current measured state",
+    "magnitude": "expected outcome with numbers",
+    "mechanism": "the causal chain they're relying on",
+    "evidence": "what they have actually observed or tested",
+    "effort": "inferred effort size: S (small) | M (medium) | L (large) | XL (x-large)"
   },
-  "potential": {
-    "score": 0–100,
-    "rationale": "Direct verdict. Is the prediction credible given the evidence? Be specific about evidence quality. Cite company context where relevant."
+  "goalAlignment": {
+    "aligned": true,
+    "reasoning": "does this bet actually move the goal, or just loosely relate to it"
   },
-  "fit": {
-    "score": 0–100,
-    "rationale": "Direct verdict. Is this the right bet right now? Name specific goals it supports or doesn't support. Cite company priorities."
-  },
-  "market_context": ${needsSearch ? '"Key web findings about similar initiatives"' : 'null'},
-  "suggestion": {
-    "type": "alternative | complement",
-    "hypothesis": "The improved or alternative hypothesis",
-    "metrics": "The improved or alternative prediction",
-    "effort": "S | M | L | XL",
-    "reasoning": "Why this is sharper — specific, not generic. For experimental bets, explain how this improves the learning design.",
-    "expected_score": 0–100,
-    "market_evidence": ${needsSearch ? '"Supporting web findings"' : 'null'}
-  }
+  "killingAssumption": "The single belief that, if false, makes this bet wrong",
+  "issues": [
+    {
+      "field": "problem_clarity | mechanism | killing_assumption | evidence | scope | goal_alignment | measurement_plan",
+      "severity": "missing | weak",
+      "message": "Direct, specific, one sentence. Not a suggestion — a pushback."
+    }
+  ],
+  "strengths": [
+    "Specific thing that is genuinely sharp — not generic praise"
+  ],
+  "readyToScore": true
 }`;
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    let messageContent;
+    if (uploadedFile) {
+      messageContent = [
+        { type: 'text', text: promptText },
+        {
+          type: 'document',
+          source: {
+            type: 'base64',
+            media_type: uploadedFile.type,
+            data: uploadedFile.data
+          }
+        }
+      ];
+    } else {
+      messageContent = promptText;
+    }
+
+    const apiPayload = {
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 3000,
+      messages: [{ role: 'user', content: messageContent }]
+    };
+
+    console.log('Calling Anthropic API...');
+
+    const response = await callWithRetry(() => fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': process.env.ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01'
       },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 4000,
-        temperature: 0,
-        messages: [{ role: 'user', content: scoringPrompt }],
-        tools: needsSearch ? [{ type: 'web_search_20250305', name: 'web_search' }] : undefined
-      })
-    });
+      body: JSON.stringify(apiPayload)
+    }));
+
+    console.log('Anthropic API response status:', response.status);
 
     const data = await response.json();
 
-    if (data.error) {
+    if (!response.ok) {
       console.error('Anthropic API error:', data.error);
-      return res.status(500).json({ error: data.error.message || 'API error' });
+      throw new Error(data.error?.message || `Anthropic API error: ${response.status}`);
     }
 
-    let fullText = '';
-    for (const block of data.content) {
-      if (block.type === 'text') fullText += block.text;
+    const text = data.content[0].text;
+    let jsonText = text.trim();
+
+    if (jsonText.startsWith('```')) {
+      const match = jsonText.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/);
+      if (match) jsonText = match[1];
     }
 
-    const jsonMatch = fullText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.error('No JSON found in response:', fullText);
-      return res.status(500).json({ error: 'Invalid API response format' });
-    }
-
-    const scores = JSON.parse(jsonMatch[0]);
-
-    const strip = (text) => text ? text.replace(/<cite[^>]*>|<\/cite>/g, '') : text;
-    scores.title = strip(scores.title);
-    scores.summary = strip(scores.summary);
-    scores.product = strip(scores.product);
-    if (scores.approach) scores.approach.rationale = strip(scores.approach.rationale);
-    if (scores.potential) scores.potential.rationale = strip(scores.potential.rationale);
-    if (scores.fit) scores.fit.rationale = strip(scores.fit.rationale);
-    if (scores.market_context) scores.market_context = strip(scores.market_context);
-    if (scores.suggestion) {
-      scores.suggestion.reasoning = strip(scores.suggestion.reasoning);
-      scores.suggestion.market_evidence = strip(scores.suggestion.market_evidence);
-    }
-
-    scores.web_search_used = needsSearch;
-    scores.web_search_reason = searchReason;
-
-    return res.status(200).json(scores);
+    const parsed = JSON.parse(jsonText);
+    console.log('=== REQUEST COMPLETED SUCCESSFULLY ===');
+    return res.status(200).json(parsed);
 
   } catch (error) {
-    console.error('Scoring error:', error);
-    return res.status(500).json({ error: error.message });
+    console.error('=== ERROR IN PARSE NARRATIVE ===');
+    console.error('Error:', error.message);
+
+    return res.status(500).json({
+      error: error.message || 'Unknown error',
+      fallback: {
+        extracted: {},
+        goalAlignment: { aligned: false, reasoning: 'Analysis failed — check logs' },
+        killingAssumption: null,
+        issues: [{
+          field: 'analysis',
+          severity: 'missing',
+          message: `Error: ${error.message}`
+        }],
+        strengths: [],
+        readyToScore: false
+      }
+    });
   }
 }
