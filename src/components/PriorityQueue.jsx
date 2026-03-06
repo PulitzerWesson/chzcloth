@@ -160,10 +160,10 @@ const REACH_BY_LEVER = {
 };
 
 const EFFORT_DIVISOR = {
-  '1-sprint':       1,
-  '2-3-sprints':    2,
-  '4-6-sprints':    3.5,
-  '6-plus-sprints': 5,
+  'S':  1,
+  'M':  2,
+  'L':  3.5,
+  'XL': 5,
 };
 
 const ALIGNMENT_BONUS = {
