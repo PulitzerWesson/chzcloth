@@ -563,7 +563,7 @@ export default function BetSubmission({ onComplete, currentOrg, companyGoals = [
           onChange={e => setValidationMethod(e.target.value)}
           placeholder="Name the specific metric, where you'll measure it, and what a success looks like.&#10;&#10;e.g., Trial-to-paid conversion rate in Stripe. Currently 8% — success is reaching 11%+ sustained over 2 weeks."
           rows={4}
-          style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.7, marginBottom: 12 }}
+          style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.7, marginBottom: 12, fontSize: '0.82rem' }}
         />
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ color: '#475569', fontSize: '0.82rem', flexShrink: 0 }}>Check after</span>
