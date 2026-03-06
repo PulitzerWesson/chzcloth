@@ -83,7 +83,7 @@ function QuestionModal({ email, onClose }) {
   );
 }
 
-function IdeasQueue({ ideas = [], loading = false, currentOrg, currentUser, onClaimIdea, onUnclaimIdea, onClaimAndStructure, onStructureBet, setScreen }) {
+function IdeasQueue({ ideas = [], loading = false, currentOrg, currentUser, onClaimIdea, onUnclaimIdea, onClaimAndStructure, onStructureBet, setScreen, currentCompany }) {
   const [expandedRationale, setExpandedRationale] = useState(null);
   const [filters, setFilters] = useState(defaultFilters);
   const [summaryExpanded, setSummaryExpanded] = useState(false);
@@ -91,6 +91,11 @@ function IdeasQueue({ ideas = [], loading = false, currentOrg, currentUser, onCl
 
   const betIdeas = ideas
     .filter(i => (i.entry_type === 'bet' || !i.entry_type) && i.status === 'pending')
+    .filter(i => {
+      if (!currentCompany) return true;
+      const bd = typeof i.bet_data === 'string' ? JSON.parse(i.bet_data) : i.bet_data;
+      return bd?.companyId === currentCompany.id;
+    })
     .sort((a, b) => {
       const aBetData = typeof a.bet_data === 'string' ? JSON.parse(a.bet_data) : a.bet_data;
       const bBetData = typeof b.bet_data === 'string' ? JSON.parse(b.bet_data) : b.bet_data;
@@ -121,7 +126,6 @@ function IdeasQueue({ ideas = [], loading = false, currentOrg, currentUser, onCl
 
   return (
     <>
-      {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 8 }}>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#f1f5f9', margin: 0 }}>Marketplace</h1>
@@ -130,7 +134,6 @@ function IdeasQueue({ ideas = [], loading = false, currentOrg, currentUser, onCl
           )}
         </div>
 
-        {/* Collapsible summary */}
         <div style={{ marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
             <p style={{ color: '#64748b', fontSize: '0.95rem', margin: 0 }}>
@@ -160,20 +163,16 @@ function IdeasQueue({ ideas = [], loading = false, currentOrg, currentUser, onCl
           )}
         </div>
 
-        <FilterBar
-          filters={filters}
-          onChange={setFilters}
-          showStatus={false}
-          statusOptions={[]}
-          counts={counts}
-        />
+        <FilterBar filters={filters} onChange={setFilters} showStatus={false} statusOptions={[]} counts={counts} />
       </div>
 
       {questionModal && <QuestionModal email={questionModal} onClose={() => setQuestionModal(null)} />}
 
       {betIdeas.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 20px', color: '#64748b' }}>
-          No bets in marketplace yet. Create one using the "New Bet" button!
+          {currentCompany
+            ? `No bets in marketplace for ${currentCompany.name} yet.`
+            : 'No bets in marketplace yet. Create one using the "New Bet" button!'}
         </div>
       ) : filteredIdeas.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 20px', color: '#64748b' }}>
