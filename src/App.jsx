@@ -2895,7 +2895,7 @@ const handleOrgSetupComplete = async ({ organization, userOrg, companyGoals, dep
       console.error('Error creating organization:', error);
       alert('Error saving company. Please try again.');
     } else {
-      setScreen('bet');
+      setScreen('team');
     }
   };
   
@@ -3378,7 +3378,7 @@ const handleRejectBet = async (betId, reason) => {
 )}
       {screen === 'baseline' && <SeedBaseline profile={profile} onComplete={handleBaselineComplete} />}
       {screen === 'record_outcome' && <RecordOutcome bet={betToRecord} onComplete={handleOutcomeComplete} onCancel={handleOutcomeCancel} />}
-{(screen === 'dashboard' || screen === 'ideas_queue' || screen === 'priority_queue' || screen === 'company' || screen === 'stats') && (
+(screen === 'dashboard' || screen === 'ideas_queue' || screen === 'priority_queue' || screen === 'team' || screen === 'stats' || screen === 'outcomes') && (
   <div style={{ padding: '40px 24px' }}>
     <div style={{ maxWidth: 900, margin: '0 auto' }}>
       
@@ -3389,6 +3389,7 @@ const handleRejectBet = async (betId, reason) => {
     currentOrg={currentOrg}
     onSwitch={switchCurrentOrg}
     onAddOrg={() => setScreen('orgsetup')}
+    onAddCompany={addCompanyToOrg}
     canInviteUsers={canInviteUsers}
   />
 </div>
@@ -3419,6 +3420,27 @@ const handleRejectBet = async (betId, reason) => {
             <span style={{ color: screen === 'dashboard' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>◆</span>
             Your Queue
           </button>
+
+          <button
+  onClick={() => setScreen('outcomes')}
+  style={{
+    background: 'transparent',
+    border: 'none',
+    borderBottom: screen === 'outcomes' ? '2px solid #7dd3fc' : '2px solid transparent',
+    padding: '16px 0',
+    color: screen === 'outcomes' ? '#e0e0e0' : '#666',
+    fontSize: '0.9rem',
+    fontWeight: 500,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
+  }}
+>
+<span style={{ color: screen === 'outcomes' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>✦</span>
+    Outcomes
+</button>
 
           <button
             onClick={() => setScreen('priority_queue')}
@@ -3483,13 +3505,13 @@ const handleRejectBet = async (betId, reason) => {
   Stats
 </button>
           <button
-  onClick={() => setScreen('company')}
+  onClick={() => setScreen('team')}
   style={{
     background: 'transparent',
     border: 'none',
-    borderBottom: screen === 'company' ? '2px solid #7dd3fc' : '2px solid transparent',
+    borderBottom: screen === 'team' ? '2px solid #7dd3fc' : '2px solid transparent',
     padding: '16px 0',
-    color: screen === 'company' ? '#e0e0e0' : '#666',
+    color: screen === 'team' ? '#e0e0e0' : '#666',
     fontSize: '0.9rem',
     fontWeight: 500,
     cursor: 'pointer',
@@ -3499,8 +3521,8 @@ const handleRejectBet = async (betId, reason) => {
     gap: '8px'
   }}
 >
-  <span style={{ color: screen === 'company' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>●</span>
-  Company
+  <span style={{ color: screen === 'team' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>●</span>
+  Team
 </button>
         </div>
       </div>
@@ -3528,11 +3550,14 @@ const handleRejectBet = async (betId, reason) => {
 
       {console.log('Current screen state:', screen)}
 
-{screen === 'company' && (
+{screen === 'team' && (
   <CompanyDashboard 
     currentOrg={currentOrg}
     isAdmin={isAdmin}
   />
+)}
+   {screen === 'outcomes' && (
+  <OutcomesQueue bets={bets} />
 )}
 
 {screen === 'stats' && (
