@@ -6,9 +6,19 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { bet, orgMode, orgName, orgContext, orgLearnings, companyGoals, selectedKPI } = req.body;
+    const {
+      bet,
+      orgMode,
+      orgLearnings,
+      companyGoals,
+      // Company-level context (replaces org-level)
+      companyName,
+      companyContext,
+    } = req.body;
 
     const alignment = bet.strategicAlignment || 'inner';
+    const productAreaLabel = bet.productAreaLabel || null;
+    const reach = bet.reach || 70;
 
     // ── Org learnings section ──────────────────────────────────────────────
     let learningsSection = '';
@@ -25,11 +35,8 @@ ${orgLearnings.slice(0, 5).map(l => `- ${l.summary || l.learned}`).join('\n')}
       goalsSection = `
 COMPANY STRATEGIC GOALS:
 ${companyGoals.map((goal, idx) => {
-  const kpis = typeof goal.kpis === 'string' ? JSON.parse(goal.kpis) : goal.kpis;
-  const kpiText = kpis && kpis.length > 0
-    ? kpis.map(k => `  - ${k.metric}: ${k.baseline} → ${k.target}`).join('\n')
-    : '  (No KPIs defined)';
-  return `P${goal.priority || idx + 1}: ${goal.title}\n${kpiText}`;
+  const desc = goal.description ? `\n  ${goal.description}` : '';
+  return `P${goal.priority || idx + 1}: ${goal.title}${desc}`;
 }).join('\n\n')}
 `;
     }
@@ -98,8 +105,8 @@ that unblocks a bigger bet? Experiments that test interesting but strategically 
 
 Hypothesis: "${bet.hypothesis}"
 Metric: ${bet.metric} | Prediction: ${bet.prediction} | Alignment: ${alignment}
-Company: ${orgName || 'Unknown'} | Stage: ${orgMode || 'growth'}
-${orgContext ? `Context provided: yes (${orgContext.length} chars)` : 'No company context provided'}
+Company: ${companyName || 'Unknown'} | Stage: ${orgMode || 'growth'}
+${companyContext ? `Context provided: yes (${companyContext.length} chars)` : 'No company context provided'}
 
 Skip search if: company context is sufficient, bet is clearly strong or weak without benchmarks, 
 or alignment is experimental (experiments don't need benchmarks).
@@ -120,7 +127,6 @@ Return ONLY JSON: {"needs_search": true/false, "reason": "one sentence"}`
         const assessment = JSON.parse(match[0]);
         needsSearch = assessment.needs_search;
         searchReason = assessment.reason;
-        // Never search for experimental bets — benchmarks don't apply
         if (alignment === 'experimental') needsSearch = false;
         console.log('Web search decision:', assessment.reason);
       }
@@ -129,6 +135,9 @@ Return ONLY JSON: {"needs_search": true/false, "reason": "one sentence"}`
     }
 
     // ── PASS 2: Score ─────────────────────────────────────────────────────
+    const effortLabels = { S: 'Small', M: 'Medium', L: 'Large', XL: 'X-Large' };
+    const effortDisplay = effortLabels[bet.estimatedEffort] || bet.estimatedEffort || 'Not specified';
+
     const scoringPrompt = `You are scoring a product bet. Your job is to deliver a verdict — direct, honest, and specific to this bet and this company. 
 
 No hedging. No "consider adding more detail." State what you see and why it matters.
@@ -141,14 +150,15 @@ Baseline: ${bet.baseline || 'Not specified'}
 Timeframe: ${bet.timeframe} days
 Confidence: ${bet.confidence}%
 Strategic Alignment: ${alignmentFrame.label}
-Estimated Effort: ${bet.estimatedEffort || 'Not specified'}
+Estimated Effort: ${effortDisplay}
 Assumptions: ${bet.assumptions || 'Not specified'}
-${selectedKPI?.metric ? `Targeted KPI: ${selectedKPI.metric} (${selectedKPI.baseline} → ${selectedKPI.target})` : ''}
+Measurement Plan: ${bet.validationMethod || 'Not specified'}
+${productAreaLabel ? `Product Area: ${productAreaLabel} (reach score: ${reach}/100 — this reflects how broadly this surface is used)` : `Reach: ${reach}/100`}
 
 ─── COMPANY CONTEXT ──────────────────────────────────────────────────────
-${orgName ? `Company: ${orgName}` : 'Company: Unknown'}
+${companyName ? `Company: ${companyName}` : 'Company: Unknown'}
 Stage: ${orgMode || 'growth'}
-${orgContext ? `\n${orgContext}\n` : ''}
+${companyContext ? `\n${companyContext}\n` : ''}
 ${goalsSection}
 ${learningsSection}
 
@@ -157,16 +167,17 @@ ${learningsSection}
 Score each dimension 0–100. Each rationale must be a direct verdict, not a suggestion. 
 Reference specific details from this bet and this company — not generic guidance.
 If company context is provided, cite it. If goals are provided, name them specifically.
+Where product area reach is provided, factor it into fit scoring — a high-reach area bet that weakly addresses goals is still a fit problem.
 
 APPROACH (0–100): Does this person understand the problem and mechanism well enough to be right?
 ${alignmentFrame.approachNote}
 
 Score guide:
-90–100: Sharp problem, observed not assumed. Defensible causal mechanism a skeptic would accept. Killing assumption named honestly.
-70–89: Clear problem and plausible mechanism. Some assumptions stated. Minor gaps that don't undermine the core logic.
-50–69: Problem is real but surface-level. Mechanism is asserted not explained. Assumptions are vague or absent.
-30–49: Problem is assumed. Mechanism is "this should work" without a real causal chain. Can't identify what would make this wrong.
-0–29: No clear problem. No mechanism. Bet cannot be evaluated on its own terms.
+90–100: Sharp problem, observed not assumed. Defensible causal mechanism a skeptic would accept. Killing assumption named honestly. Specific measurement plan — exact metric, source, and definition of success.
+70–89: Clear problem and plausible mechanism. Some assumptions stated. Measurement plan is reasonable but could be more specific.
+50–69: Problem is real but surface-level. Mechanism is asserted not explained. Measurement plan is vague ("check analytics").
+30–49: Problem is assumed. Mechanism is "this should work." Measurement plan is absent or unmeasurable.
+0–29: No clear problem. No mechanism. No way to know if this worked.
 
 POTENTIAL (0–100): Is the predicted outcome believable given what they actually know?
 ${alignmentFrame.potentialNote}
@@ -180,6 +191,7 @@ Score guide:
 
 FIT (0–100): Is this the right bet at the right time for this company?
 ${alignmentFrame.fitNote}
+${productAreaLabel ? `This bet lands in "${productAreaLabel}" — a surface with reach score ${reach}/100. Factor this into whether the effort is proportionate to the potential impact given the company's goals.` : ''}
 
 Score guide:
 90–100: Directly addresses a P1/P2 goal. Effort is proportionate. Timing is right. Learning (if experimental) unlocks a meaningful path.
@@ -206,25 +218,25 @@ Return ONLY valid JSON, no markdown:
   "product": "Which product surface this bet modifies",
   "lever": "Exactly one of: Revenue | Retention | Acquisition | Efficiency | Platform | Experience | Risk",
   "approach": {
-    "score": 0–100,
+    "score": 0-100,
     "rationale": "Direct verdict. What specifically is strong or weak about the problem framing and mechanism. Cite specific details from this bet."
   },
   "potential": {
-    "score": 0–100,
-    "rationale": "Direct verdict. Is the prediction credible given the evidence? Be specific about evidence quality. Cite company context and KPI targets where relevant."
+    "score": 0-100,
+    "rationale": "Direct verdict. Is the prediction credible given the evidence? Be specific about evidence quality. Cite company context where relevant."
   },
   "fit": {
-    "score": 0–100,
-    "rationale": "Direct verdict. Is this the right bet right now? Name specific goals it supports or doesn't support. Cite company priorities."
+    "score": 0-100,
+    "rationale": "Direct verdict. Is this the right bet right now? Name specific goals it supports or doesn't support. Cite company priorities and product area reach."
   },
   "market_context": ${needsSearch ? '"Key web findings about similar initiatives"' : 'null'},
   "suggestion": {
     "type": "alternative | complement",
     "hypothesis": "The improved or alternative hypothesis",
     "metrics": "The improved or alternative prediction",
-    "effort": "Estimated effort",
+    "effort": "S | M | L | XL",
     "reasoning": "Why this is sharper — specific, not generic. For experimental bets, explain how this improves the learning design.",
-    "expected_score": 0–100,
+    "expected_score": 0-100,
     "market_evidence": ${needsSearch ? '"Supporting web findings"' : 'null'}
   }
 }`;
@@ -265,9 +277,7 @@ Return ONLY valid JSON, no markdown:
 
     const scores = JSON.parse(jsonMatch[0]);
 
-    // Strip citation tags
     const strip = (text) => text ? text.replace(/<cite[^>]*>|<\/cite>/g, '') : text;
-
     scores.title = strip(scores.title);
     scores.summary = strip(scores.summary);
     scores.product = strip(scores.product);
