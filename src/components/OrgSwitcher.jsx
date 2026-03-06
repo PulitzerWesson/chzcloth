@@ -5,10 +5,11 @@ export function OrgSwitcher({
   currentOrg,
   onSwitch,
   onAddOrg,
+  onAddCompany,             // () => void — navigates to Team tab
   canInviteUsers,
-  companies = [],           // companies for the current org
-  currentCompany,           // { id, name } | null (null = all companies)
-  onSelectCompany,          // (company | null) => void
+  companies = [],
+  currentCompany,
+  onSelectCompany,
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const [showInviteModal, setShowInviteModal] = useState(false)
@@ -80,20 +81,12 @@ export function OrgSwitcher({
                   </div>
 
                   {/* Company list */}
-                  {companies.length > 0 && (
+                  {(companies.length > 0 || onAddCompany) && (
                     <div style={{ marginBottom: 12 }}>
                       <div style={{ color: '#475569', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
                         Company
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-
-                        {/* All companies option */}
-                        <button
-                          onClick={() => handleSelectCompany(null)}
-                          style={{ width: '100%', textAlign: 'left', padding: '8px 10px', background: !currentCompany ? 'rgba(45,212,191,0.08)' : 'transparent', border: `1px solid ${!currentCompany ? 'rgba(45,212,191,0.25)' : 'transparent'}`, borderRadius: 7, color: !currentCompany ? '#2dd4bf' : '#64748b', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.15s' }}>
-                          All companies
-                        </button>
-
                         {companies.map(c => (
                           <button key={c.id}
                             onClick={() => handleSelectCompany(c)}
@@ -103,6 +96,13 @@ export function OrgSwitcher({
                             {c.name}
                           </button>
                         ))}
+                        {onAddCompany && (
+                          <button
+                            onClick={() => { setIsOpen(false); onAddCompany(); }}
+                            style={{ width: '100%', textAlign: 'left', padding: '8px 10px', background: 'transparent', border: 'none', borderRadius: 7, color: '#2dd4bf', fontSize: '0.85rem', cursor: 'pointer' }}>
+                            + New Company
+                          </button>
+                        )}
                       </div>
                     </div>
                   )}
@@ -166,13 +166,11 @@ export function OrgSwitcher({
         </div>
 
         {/* Active company name — plain text, right of dropdown */}
-        {currentCompany ? (
+        {currentCompany && (
           <span style={{ color: '#94a3b8', fontSize: '0.9rem', fontWeight: 400 }}>
             {currentCompany.name}
           </span>
-        ) : companies.length > 0 ? (
-          <span style={{ color: '#334155', fontSize: '0.9rem' }}>All companies</span>
-        ) : null}
+        )}
 
       </div>
 
