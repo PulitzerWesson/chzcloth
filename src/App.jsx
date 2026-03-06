@@ -3411,6 +3411,7 @@ const handleRejectBet = async (betId, reason) => {
       companies={currentOrg?.companies || []}
   currentCompany={currentCompany}
   onSelectCompany={setCurrentCompany}
+    onAddCompany={() => setScreen('team')}
   />
 </div>
 
