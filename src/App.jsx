@@ -3015,11 +3015,13 @@ const ideaEntry = {
     },
     viability_score: currentBet.approachScore,
     relevance_score: currentBet.fitScore,
-    overall_score: overallScore, // ← Use AI score if available!
+    overall_score: overallScore,
     scoring_rationale: currentBet.scoringRationale ? 
       `Approach: ${currentBet.scoringRationale.approach?.rationale}\nPotential: ${currentBet.scoringRationale.potential?.rationale}\nFit: ${currentBet.scoringRationale.fit?.rationale}` 
       : null,
-    ai_enhanced: currentBet.aiEnhanced || false // ← Add flag at top level
+    ai_enhanced: currentBet.aiEnhanced || false,
+  company_id: currentBet.companyId || null,
+  
   };
   
   const { error } = await submitIdea(ideaEntry);
@@ -3053,7 +3055,8 @@ const ideaEntry = {
     viability_score: bet.approachScore,
     relevance_score: bet.fitScore,
     overall_score: overallScore,
-    ai_enhanced: bet.aiEnhanced || false
+    ai_enhanced: bet.aiEnhanced || false,
+    company_id: bet.companyId || null,
   };
 
 const { error } = await submitIdea(ideaEntry);
