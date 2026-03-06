@@ -20,6 +20,7 @@ import { StatsScreen } from './components/StatsScreen';
 import PriorityQueue from './components/PriorityQueue';
 import { FilterBar, applyFilters, computeCounts, defaultFilters } from './components/FilterBar';
 import BetSubmission from './components/BetSubmission';
+import OutcomesQueue from './components/OutcomesQueue'
 
 
 // ============================================
