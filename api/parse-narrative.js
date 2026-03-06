@@ -93,6 +93,11 @@ There is a difference between "we think" and "we measured."
 "We expect 20% lift" ≠ "we ran a 2-week test on 200 users and saw 18% lift."
 Flag if: evidence is absent or the confidence of the prediction is not matched by the quality of evidence supporting it.
 
+5. MEASUREMENT PLAN
+This is non-negotiable. If there is no specific metric, no source of truth, and no definition of what success looks like, the bet cannot be evaluated after the fact.
+"We'll look at analytics" is not a measurement plan. "Trial-to-paid conversion in Stripe — success is ≥11% sustained over 2 weeks" is.
+Flag if: the measurement is vague, the source of data is absent, or there is no definition of success vs failure.
+
 ---
 
 ISSUE SEVERITY:
@@ -117,7 +122,7 @@ Return ONLY valid JSON:
     "magnitude": "expected outcome with numbers",
     "mechanism": "the causal chain they're relying on",
     "evidence": "what they have actually observed or tested",
-    "effort": "inferred effort: 1-sprint | 2-3-sprints | 4-6-sprints | 6-plus-sprints"
+    "effort": "inferred effort size: S (small) | M (medium) | L (large) | XL (x-large)"
   },
   "goalAlignment": {
     "aligned": true,
@@ -126,7 +131,7 @@ Return ONLY valid JSON:
   "killingAssumption": "The single belief that, if false, makes this bet wrong",
   "issues": [
     {
-      "field": "problem_clarity | mechanism | killing_assumption | evidence | scope | goal_alignment",
+      "field": "problem_clarity | mechanism | killing_assumption | evidence | scope | goal_alignment | measurement_plan",
       "severity": "missing | weak",
       "message": "Direct, specific, one sentence. Not a suggestion — a pushback."
     }
