@@ -38,7 +38,6 @@ function CompanyCard({ company, goals, isAdmin, onEdit }) {
                 return (
                   <span key={area.archetypeId} style={{ padding: '3px 10px', background: 'rgba(45,212,191,0.08)', border: '1px solid rgba(45,212,191,0.2)', borderRadius: 20, color: '#2dd4bf', fontSize: '0.72rem', fontWeight: 500 }}>
                     {area.label}
-                    {archetype && <span style={{ color: '#1e6e66', marginLeft: 4 }}>· {archetype.reach}</span>}
                   </span>
                 );
               })}
@@ -103,7 +102,7 @@ function CompanyCard({ company, goals, isAdmin, onEdit }) {
   );
 }
 
-export function CompanyDashboard({ currentOrg, isAdmin }) {
+export function CompanyDashboard({ currentOrg, isAdmin, onCompanyAdded }) {
   const { user } = useAuth();
   const [companies, setCompanies]     = useState([]);
   const [goalsByCompany, setGoalsByCompany] = useState({});
@@ -148,10 +147,10 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
     } else {
       setCompanies([...companies, savedCompany]);
     }
-    // Refresh goals for this company
     fetchData();
     setShowCompanySetup(false);
     setEditingCompany(null);
+    if (onCompanyAdded) onCompanyAdded();
   };
 
   const handleRemoveMember = async (userOrgId) => {
@@ -168,9 +167,9 @@ export function CompanyDashboard({ currentOrg, isAdmin }) {
     <div style={{ padding: '0 0 40px 0' }}>
 
       <div style={{ marginBottom: 32 }}>
-        <h1 style={{ color: '#f1f5f9', fontSize: '1.75rem', fontWeight: 700, margin: '0 0 8px 0' }}>Team</h1>
+        <h1 style={{ color: '#f1f5f9', fontSize: '1.75rem', fontWeight: 700, margin: '0 0 8px 0' }}>{currentOrg?.name || 'Team'}</h1>
         <p style={{ color: '#64748b', fontSize: '0.95rem', margin: 0 }}>
-          Manage the companies your team places bets for — goals, product areas, and context all live here.
+          Companies, goals, and product areas for your team.
         </p>
       </div>
 
