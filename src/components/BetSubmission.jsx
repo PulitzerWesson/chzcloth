@@ -49,14 +49,13 @@ Evidence: we ran a manual test with 3 video testimonials, 200 visitors, 2 weeks.
 
 What would make us wrong: the drop-off isn't about trust — it's about price or feature gaps. If that's true, testimonials won't move the number.`;
 
-const NARRATIVE_PLACEHOLDER = `Describe what you'll change and why it will work.
+const NARRATIVE_PLACEHOLDER = `What's the bet?
 
-The strongest bets include:
-— What's broken or missing right now (be specific — for whom, how often, measured how)
-— What you'll do about it
-— Why that intervention causes the outcome you're predicting (the causal chain, not just "this should help")
-— What you've observed that makes you believe this (tests run, users interviewed, data measured)
-— What would have to be false for this bet to fail`;
+· What's broken or missing — for whom, how often, measured how
+· What you'll do about it  
+· Why that causes the outcome you're predicting (the causal chain, not just "this should help")
+· What you've actually observed — tests run, users interviewed, data measured
+· What would have to be false for this to fail`;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -461,7 +460,12 @@ export default function BetSubmission({ onComplete, currentOrg, companyGoals = [
           </div>
         )}
 
+        <style>{`
+          .bet-narrative::placeholder { color: #334155; font-size: 0.88rem; line-height: 1.8; }
+          .bet-narrative::placeholder::first-line { color: #64748b; font-size: 0.95rem; }
+        `}</style>
         <textarea
+          className="bet-narrative"
           value={narrative}
           onChange={e => {
             setNarrative(e.target.value);
