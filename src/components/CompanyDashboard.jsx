@@ -51,27 +51,22 @@ function CompanyCard({ company, goals, isAdmin, onEdit }) {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-          {/* Goal count */}
-          <div style={{ textAlign: 'center', padding: '6px 12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 8 }}>
-            <div style={{ color: sortedGoals.length > 0 ? '#f1f5f9' : '#334155', fontSize: '1rem', fontWeight: 700 }}>{sortedGoals.length}</div>
-            <div style={{ color: '#475569', fontSize: '0.68rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>goal{sortedGoals.length !== 1 ? 's' : ''}</div>
-          </div>
-
           {isAdmin && (
             <button onClick={() => onEdit(company)}
               style={{ padding: '7px 14px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, color: '#94a3b8', fontSize: '0.82rem', cursor: 'pointer' }}>
               Edit
             </button>
           )}
-
-          <button onClick={() => setExpanded(!expanded)}
-            style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer', fontSize: '0.8rem', padding: '4px', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ fontSize: '0.65rem' }}>{expanded ? '▼' : '▶'}</span>
-          </button>
         </div>
       </div>
 
-      {/* Expanded: context + goals */}
+      {/* Goals toggle */}
+      <div style={{ padding: '10px 24px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+        <button onClick={() => setExpanded(!expanded)}
+          style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer', fontSize: '0.82rem', padding: 0, display: 'flex', alignItems: 'center', gap: 5 }}>
+          Goals <span style={{ fontSize: '0.65rem' }}>{expanded ? '▼' : '▶'}</span>
+        </button>
+      </div>
       {expanded && (
         <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '20px 24px' }}>
           {company.context && (
