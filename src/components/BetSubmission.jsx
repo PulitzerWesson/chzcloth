@@ -396,7 +396,7 @@ export default function BetSubmission({ onComplete, currentOrg, companyGoals = [
           ) : (
             <>
               <input type="text" value={goalContext} onChange={e => setGoalContext(e.target.value)} placeholder="e.g., Grow revenue by 30% this year" style={inputStyle} />
-              <div style={{ color: '#475569', fontSize: '0.8rem', marginTop: 8 }}>
+              <div style={{ color: '#475569', fontSize: '0.88rem', marginTop: 8 }}>
                 AI will check if your bet actually achieves this goal
               </div>
             </>
@@ -555,8 +555,7 @@ export default function BetSubmission({ onComplete, currentOrg, companyGoals = [
             <SectionLabel>How will you measure success?</SectionLabel>
           </div>
           <p style={{ color: '#475569', fontSize: '0.88rem', margin: 0, lineHeight: 1.6 }}>
-            If you can't name the exact number you'll check, and where you'll find it, you won't know if this worked.
-            A bet without a clear measurement plan isn't a bet — it's a guess.
+            Name the metric, where you'll find it, and what a good result looks like — e.g., trial-to-paid conversion in Stripe, success is ≥11% over 2 weeks.
           </p>
         </div>
         <textarea
