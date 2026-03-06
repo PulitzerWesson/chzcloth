@@ -25,7 +25,7 @@ export function useOrganizations() {
 
     try {
       setLoading(true)
-      
+
       const { data, error: fetchError } = await supabase
         .from('user_organizations')
         .select(`
@@ -50,6 +50,27 @@ export function useOrganizations() {
 
       if (fetchError) throw fetchError
 
+      // Fetch companies for all orgs in one query
+      const orgIds = (data || [])
+        .filter(uo => uo.organizations)
+        .map(uo => uo.organizations.id)
+
+      let companiesByOrg = {}
+      if (orgIds.length > 0) {
+        const { data: companiesData } = await supabase
+          .from('org_companies')
+          .select('*')
+          .in('org_id', orgIds)
+          .order('created_at', { ascending: true })
+
+        if (companiesData) {
+          companiesData.forEach(c => {
+            if (!companiesByOrg[c.org_id]) companiesByOrg[c.org_id] = []
+            companiesByOrg[c.org_id].push(c)
+          })
+        }
+      }
+
       const transformed = (data || [])
         .filter(uo => uo.organizations)
         .map(uo => ({
@@ -62,17 +83,18 @@ export function useOrganizations() {
           combinedContext: uo.organizations.combined_context,
           role: uo.role,
           seniority: uo.seniority,
-              teamRole: uo.team_role,
+          teamRole: uo.team_role,
           startedAt: uo.started_at,
           endedAt: uo.ended_at,
-          isCurrent: uo.is_current
+          isCurrent: uo.is_current,
+          companies: companiesByOrg[uo.organizations.id] || [],
         }))
 
       setOrganizations(transformed)
-      
+
       const current = transformed.find(o => o.isCurrent) || transformed[0] || null
       setCurrentOrg(current)
-      
+
       setError(null)
     } catch (err) {
       console.error('Error fetching organizations:', err)
@@ -119,7 +141,7 @@ export function useOrganizations() {
           .eq('is_current', true)
       }
 
-      // 3. Create user_organization link FIRST (so RLS policies work for goals)
+      // 3. Create user_organization link
       const { data: userOrg, error: userOrgError } = await supabase
         .from('user_organizations')
         .insert({
@@ -129,17 +151,31 @@ export function useOrganizations() {
           seniority: userOrgData.seniority,
           started_at: userOrgData.startedAt,
           is_current: userOrgData.isCurrent !== false,
-          team_role: 'admin' 
+          team_role: 'admin'
         })
         .select()
         .single()
 
       if (userOrgError) throw userOrgError
 
-      // 4. Create company goals (NOW policy check will pass)
-      let companyGoalIds = []
+      // 4. Insert associated companies
+      if (orgData.companies && orgData.companies.length > 0) {
+        const validCompanies = orgData.companies.filter(c => c.name?.trim())
+        if (validCompanies.length > 0) {
+          await supabase
+            .from('org_companies')
+            .insert(validCompanies.map(c => ({
+              org_id: org.id,
+              name: c.name.trim(),
+              website: c.website?.trim() || null,
+              domain: c.website?.trim().replace(/^https?:\/\//, '').split('/')[0] || null,
+            })))
+        }
+      }
+
+      // 5. Create company goals
       if (orgData.companyGoals && orgData.companyGoals.length > 0) {
-        const { data: goals, error: goalsError } = await supabase
+        await supabase
           .from('company_goals')
           .insert(
             orgData.companyGoals.map((g, index) => ({
@@ -152,13 +188,7 @@ export function useOrganizations() {
               priority: index + 1
             }))
           )
-          .select()
-
-        if (goalsError) throw goalsError
-        companyGoalIds = goals.map(g => g.id)
       }
-
- 
 
       fetchingRef.current = false
       await fetchOrganizations()
@@ -167,6 +197,56 @@ export function useOrganizations() {
     } catch (err) {
       console.error('Error creating organization:', err)
       return { data: null, error: err }
+    }
+  }
+
+  // Add a company to an existing team
+  const addCompanyToOrg = async (orgId, companyData) => {
+    if (!user) return { error: { message: 'Not authenticated' } }
+
+    try {
+      const { data, error } = await supabase
+        .from('org_companies')
+        .insert({
+          org_id: orgId,
+          name: companyData.name.trim(),
+          website: companyData.website?.trim() || null,
+          domain: companyData.website?.trim().replace(/^https?:\/\//, '').split('/')[0] || null,
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      fetchingRef.current = false
+      await fetchOrganizations()
+
+      return { data, error: null }
+    } catch (err) {
+      console.error('Error adding company:', err)
+      return { data: null, error: err }
+    }
+  }
+
+  // Remove a company from a team
+  const removeCompanyFromOrg = async (companyId) => {
+    if (!user) return { error: { message: 'Not authenticated' } }
+
+    try {
+      const { error } = await supabase
+        .from('org_companies')
+        .delete()
+        .eq('id', companyId)
+
+      if (error) throw error
+
+      fetchingRef.current = false
+      await fetchOrganizations()
+
+      return { error: null }
+    } catch (err) {
+      console.error('Error removing company:', err)
+      return { error: err }
     }
   }
 
@@ -231,7 +311,7 @@ export function useOrganizations() {
     try {
       const { error } = await supabase
         .from('user_organizations')
-        .update({ 
+        .update({
           is_current: false,
           ended_at: new Date().toISOString().split('T')[0]
         })
@@ -260,9 +340,12 @@ export function useOrganizations() {
     updateOrganization,
     switchCurrentOrg,
     leaveOrganization,
+    addCompanyToOrg,
+    removeCompanyFromOrg,
     refreshOrganizations: fetchOrganizations,
     hasOrganizations: organizations.length > 0,
-      isAdmin: currentOrg?.teamRole === 'admin',
-  canInviteUsers: currentOrg?.teamRole === 'admin'
+    // Everyone has full permissions — no role gates
+    isAdmin: true,
+    canInviteUsers: true,
   }
 }
