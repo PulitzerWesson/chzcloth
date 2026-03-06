@@ -159,7 +159,7 @@ const ALIGNMENT_BONUS = {
 };
 
 function computePriorityScore(bet) {
-  const reach      = REACH_BY_LEVER[bet.lever] ?? 65;
+  const reach      = bet.reach ?? 65;
   const impact     = bet.potentialScore ?? 50;
   const confidence = bet.confidence ?? 50;
   const effortKey  = bet.estimatedEffort ?? 'M';
@@ -173,29 +173,30 @@ function computePriorityScore(bet) {
   return Math.round(blended * alignmentMultiplier);
 }
 
-function PriorityQueue({ bets, setExpandedPriorityBet, expandedPriorityBet, currentUserId, onMarkStarted, onMarkShipped, onRecordOutcome }) {
+function PriorityQueue({ bets, setExpandedPriorityBet, expandedPriorityBet, currentUserId, onMarkStarted, onMarkShipped, onRecordOutcome, currentCompany }) {
   const [filters, setFilters] = useState(defaultFilters);
   const [summaryExpanded, setSummaryExpanded] = useState(false);
   const [recordingOutcomeId, setRecordingOutcomeId] = useState(null);
 
-  // Exclude bets with recorded outcomes — they live in Outcomes tab
-  const queueBets = (bets?.filter(b => b.approvalStatus === 'approved') || [])
+  const companyBets = currentCompany
+    ? (bets || []).filter(b => b.companyId === currentCompany.id)
+    : (bets || []);
+
+  const queueBets = companyBets
+    .filter(b => b.approvalStatus === 'approved')
     .filter(b => !OUTCOME_KEYS.includes(b.status || b.outcome));
 
   const counts = computeCounts(queueBets, getStatusKey);
   const filteredBets = applyFilters(queueBets, filters, getStatusKey);
-
   const sortedBets = [...filteredBets].sort((a, b) => {
     const aAwaiting = !!a.completedAt;
     const bAwaiting = !!b.completedAt;
     if (aAwaiting && !bAwaiting) return 1;
     if (!aAwaiting && bAwaiting) return -1;
-
     const aInProgress = !!a.startedAt && !a.completedAt;
     const bInProgress = !!b.startedAt && !b.completedAt;
     if (aInProgress && !bInProgress) return -1;
     if (!aInProgress && bInProgress) return 1;
-
     return computePriorityScore(b) - computePriorityScore(a);
   });
 
@@ -244,10 +245,12 @@ function PriorityQueue({ bets, setExpandedPriorityBet, expandedPriorityBet, curr
         />
       </div>
 
-      {queueBets.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 20px', color: '#64748b' }}>
-          No approved bets yet. Approve bets from the Marketplace to add them here.
-        </div>
+        {queueBets.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '60px 20px', color: '#64748b' }}>
+            {currentCompany
+              ? `No approved bets for ${currentCompany.name} yet.`
+              : 'No approved bets yet. Approve bets from the Marketplace to add them here.'}
+          </div>
       ) : filteredBets.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 20px', color: '#64748b' }}>
           No bets match the current filters.
