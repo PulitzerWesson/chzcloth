@@ -181,10 +181,10 @@ function StepGoals({ goals, onChange }) {
   return (
     <div>
       <h2 style={{ fontSize: '1.4rem', fontWeight: 600, color: '#f1f5f9', marginBottom: 8 }}>
-        Set goals for this company
+        What is this company trying to achieve?
       </h2>
       <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: 8, lineHeight: 1.6 }}>
-        Up to 3. Every bet placed against this company gets scored on how well it moves these.
+        Set up to 3 goals — P1 is the must-hit, P2 is important, P3 is a stretch. Every bet gets scored on how directly it moves one of these. Vague goals produce vague scoring.
       </p>
       <p style={{ color: '#475569', fontSize: '0.82rem', marginBottom: 24 }}>
         You can skip this and add goals later from the Team tab.
