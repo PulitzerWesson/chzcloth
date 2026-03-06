@@ -1,5 +1,56 @@
 import React, { useState } from 'react';
 
+const StrategicAlignmentIcon = ({ alignment }) => {
+  const normalized = alignment?.toLowerCase();
+  if (normalized === 'inner' || normalized === 'inner_ring' || normalized === 'inner ring') {
+    return (
+      <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
+        <style>{`
+          @keyframes growFromDotOQ { 0% { transform: scale(0); opacity: 0; } 22% { transform: scale(1); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+          .grow-circle-oq { animation: growFromDotOQ 9s ease-out infinite; transform-origin: center; }
+        `}</style>
+        <circle cx="14" cy="14" r="12" stroke="url(#tgOQ1)" strokeWidth="2.5" fill="none"/>
+        <circle className="grow-circle-oq" cx="14" cy="14" r="6" fill="url(#tgOQ1)"/>
+        <defs><linearGradient id="tgOQ1" x1="2" y1="2" x2="26" y2="26"><stop offset="0%" stopColor="#2dd4bf"/><stop offset="100%" stopColor="#22d3ee"/></linearGradient></defs>
+      </svg>
+    );
+  }
+  if (normalized === 'outer' || normalized === 'outer_ring' || normalized === 'outer ring') {
+    return (
+      <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
+        <style>{`
+          @keyframes drawOQ { 0% { stroke-dashoffset: 75.4; } 30% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 0; } }
+          .draw-circle-oq { stroke-dasharray: 75.4; animation: drawOQ 10s linear infinite; }
+        `}</style>
+        <circle className="draw-circle-oq" cx="14" cy="14" r="12" stroke="url(#tgOQ2)" strokeWidth="3" fill="none"/>
+        <circle cx="14" cy="14" r="6" fill="#1e293b"/>
+        <defs><linearGradient id="tgOQ2" x1="2" y1="2" x2="26" y2="26"><stop offset="0%" stopColor="#2dd4bf"/><stop offset="100%" stopColor="#22d3ee"/></linearGradient></defs>
+      </svg>
+    );
+  }
+  if (normalized === 'experimental') {
+    return (
+      <svg width="20" height="20" viewBox="0 0 24 28" fill="none">
+        <style>{`
+          @keyframes b1OQ { 0% { cy: 20; opacity: 0; } 20% { opacity: 1; } 100% { cy: 3; opacity: 0; } }
+          @keyframes b2OQ { 0% { cy: 20; opacity: 0; } 20% { opacity: 1; } 100% { cy: 3.5; opacity: 0; } }
+          @keyframes b3OQ { 0% { cy: 20; opacity: 0; } 20% { opacity: 1; } 100% { cy: 3; opacity: 0; } }
+          .b1OQ { animation: b1OQ 2.5s ease-in infinite; }
+          .b2OQ { animation: b2OQ 2.5s ease-in infinite 0.8s; }
+          .b3OQ { animation: b3OQ 2.5s ease-in infinite 1.6s; }
+        `}</style>
+        <path d="M8 2 L8 10 L4 22 C3.5 24 4.5 26 7 26 L17 26 C19.5 26 20.5 24 20 22 L16 10 L16 2" stroke="url(#bkOQ)" strokeWidth="2" fill="none"/>
+        <line x1="8" y1="2" x2="16" y2="2" stroke="url(#bkOQ)" strokeWidth="2"/>
+        <circle className="b1OQ" cx="9" cy="20" r="2" fill="#2dd4bf" opacity="0"/>
+        <circle className="b2OQ" cx="12" cy="20" r="1.8" fill="#22d3ee" opacity="0"/>
+        <circle className="b3OQ" cx="15" cy="20" r="2" fill="#2dd4bf" opacity="0"/>
+        <defs><linearGradient id="bkOQ" x1="4" y1="2" x2="20" y2="26"><stop offset="0%" stopColor="#2dd4bf"/><stop offset="100%" stopColor="#22d3ee"/></linearGradient></defs>
+      </svg>
+    );
+  }
+  return null;
+};
+
 const LEVER_COLORS = {
   Revenue:     { bg: 'rgba(34,197,94,0.15)',   border: 'rgba(34,197,94,0.3)',   text: '#22c55e' },
   Retention:   { bg: 'rgba(45,212,191,0.15)',  border: 'rgba(45,212,191,0.3)',  text: '#2dd4bf' },
@@ -110,8 +161,12 @@ function OutcomesQueue({ bets }) {
                 borderLeft: `3px solid ${oc.text}`,
                 borderRadius: 12, padding: '18px 20px',
               }}>
-                {/* Top row: product + title + outcome badge + scores */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                {/* Top row: alignment icon + product + title + outcome badge + scores */}
+                <div style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
+                  <div style={{ flexShrink: 0, paddingTop: 4 }}>
+                    <StrategicAlignmentIcon alignment={bet.strategicAlignment} />
+                  </div>
+                  <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div style={{ flex: 1, paddingRight: 16 }}>
                     {bet.product && (
                       <div style={{ color: '#fbbf24', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
@@ -142,6 +197,7 @@ function OutcomesQueue({ bets }) {
                     <span style={{ padding: '4px 12px', background: oc.bg, border: `1px solid ${oc.border}`, borderRadius: 20, color: oc.text, fontSize: '0.78rem', fontWeight: 600 }}>
                       {oc.label}
                     </span>
+                  </div>
                   </div>
                 </div>
 
