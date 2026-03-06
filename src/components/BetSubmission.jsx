@@ -220,7 +220,7 @@ export default function BetSubmission({ onComplete, currentOrg, companyGoals = [
       if (companyGoals.length === 0 && !goalContext.trim()) return false;
     }
     if (!uploadedFile && narrative.length < 100) return false;
-    if (!validationMethod || validationMethod.length < 5) return false;
+    if (!validationMethod || validationMethod.length < 20) return false;
     return true;
   };
 
@@ -343,7 +343,7 @@ export default function BetSubmission({ onComplete, currentOrg, companyGoals = [
       </div>
 
       {/* ── Row 1: Goal | Strategic Alignment ─────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16, alignItems: 'stretch' }}>
 
         {/* Goal */}
         <div style={cardStyle}>
@@ -499,13 +499,19 @@ export default function BetSubmission({ onComplete, currentOrg, companyGoals = [
 
       {/* ── Row 4: Confidence | Effort ────────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-        <div style={cardStyle}>
+        <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <SectionLabel>Your Confidence</SectionLabel>
+          <p style={{ color: '#475569', fontSize: '0.82rem', margin: '0 0 20px 0', lineHeight: 1.5 }}>
+            How confident are you this bet will produce the outcome you're predicting?
+          </p>
           <input type="range" min="0" max="100" step="5" value={confidence} onChange={e => setConfidence(parseInt(e.target.value))} style={{ width: '100%', accentColor: '#2dd4bf', cursor: 'pointer' }} />
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 8 }}>
-            <span style={{ fontSize: '1.6rem', fontWeight: 700, color: '#2dd4bf' }}>{confidence}%</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 12 }}>
+            <span style={{ fontSize: '2rem', fontWeight: 700, color: '#2dd4bf' }}>{confidence}%</span>
             <span style={{ color: '#64748b', fontSize: '0.82rem' }}>{getConfidenceLabel()}</span>
           </div>
+          <p style={{ color: '#334155', fontSize: '0.78rem', margin: '12px 0 0 0', lineHeight: 1.5 }}>
+            Be honest. Overconfidence on weak evidence is the most common failure mode.
+          </p>
         </div>
 
         <div style={cardStyle}>
@@ -538,15 +544,27 @@ export default function BetSubmission({ onComplete, currentOrg, companyGoals = [
         </div>
       </div>
 
-      {/* ── Row 5: Validate method | Timeframe ───────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-        <div>
-          <SectionLabel>How will you validate this?</SectionLabel>
-          <input type="text" value={validationMethod} onChange={e => setValidationMethod(e.target.value)} placeholder="e.g., Check Stripe conversion rate, Measure in PostHog" style={inputStyle} />
+      {/* ── Row 5: Measurement (full width, high importance) ──────────────── */}
+      <div style={{ marginBottom: 16, padding: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12 }}>
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 6 }}>
+            <SectionLabel>How will you measure success?</SectionLabel>
+          </div>
+          <p style={{ color: '#475569', fontSize: '0.88rem', margin: 0, lineHeight: 1.6 }}>
+            If you can't name the exact number you'll check, and where you'll find it, you won't know if this worked.
+            A bet without a clear measurement plan isn't a bet — it's a guess.
+          </p>
         </div>
-        <div>
-          <SectionLabel>Check after</SectionLabel>
-          <select value={validationTimeframe} onChange={e => setValidationTimeframe(e.target.value)} style={selectStyle}>
+        <textarea
+          value={validationMethod}
+          onChange={e => setValidationMethod(e.target.value)}
+          placeholder="Name the specific metric, where you'll measure it, and what a success looks like.&#10;&#10;e.g., Trial-to-paid conversion rate in Stripe. Currently 8% — success is reaching 11%+ sustained over 2 weeks."
+          rows={4}
+          style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.7, marginBottom: 12 }}
+        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ color: '#475569', fontSize: '0.82rem', flexShrink: 0 }}>Check after</span>
+          <select value={validationTimeframe} onChange={e => setValidationTimeframe(e.target.value)} style={{ ...selectStyle, width: 'auto', minWidth: 140 }}>
             {TIMEFRAME_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
         </div>
