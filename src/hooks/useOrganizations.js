@@ -58,7 +58,7 @@ export function useOrganizations() {
       let companiesByOrg = {}
       if (orgIds.length > 0) {
         const { data: companiesData } = await supabase
-          .from('org_companies')
+          .from('companies')
           .select('*')
           .in('org_id', orgIds)
           .order('created_at', { ascending: true })
@@ -163,7 +163,7 @@ export function useOrganizations() {
         const validCompanies = orgData.companies.filter(c => c.name?.trim())
         if (validCompanies.length > 0) {
           await supabase
-            .from('org_companies')
+            .from('companies')
             .insert(validCompanies.map(c => ({
               org_id: org.id,
               name: c.name.trim(),
@@ -206,7 +206,7 @@ export function useOrganizations() {
 
     try {
       const { data, error } = await supabase
-        .from('org_companies')
+        .from('companies')
         .insert({
           org_id: orgId,
           name: companyData.name.trim(),
@@ -234,7 +234,7 @@ export function useOrganizations() {
 
     try {
       const { error } = await supabase
-        .from('org_companies')
+        .from('companies')
         .delete()
         .eq('id', companyId)
 
