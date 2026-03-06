@@ -2926,21 +2926,19 @@ const handleOrgSetupComplete = async ({ organization, userOrg, companyGoals, dep
   
 const handleBetComplete = async (betData, ideaId = null) => {
   try {
-    const orgLearnings = (currentOrg?.orgId && user?.id)
-      ? await getOrgLearnings(currentOrg.orgId, user.id, 'bet')
-      : [];
-
+    setScreen('scoring_loading'); // ← add this line
+    setCurrentBet(null);
+    const orgLearnings = ...
     const { data, error } = await createBet(betData, ideaId, null, currentOrg);
-
     if (error) {
-      console.error('Error creating bet:', error);
+      setScreen('bet'); // ← go back on error
       alert('Error saving bet. Please try again.');
     } else {
       setCurrentBet(data);
       setScreen('score');
     }
   } catch (error) {
-    console.error('Error:', error);
+    setScreen('bet');
     alert('Error saving bet. Please try again.');
   }
 };
