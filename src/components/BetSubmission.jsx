@@ -1,17 +1,29 @@
 // BetSubmission.jsx — Consolidated single-screen bet form
 
-import React, { useState, useEffect, useRef } from 'react';
-import { supabase } from '../lib/supabase';
+import React, { useState, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const EFFORT_OPTIONS = [
-  { value: '1-sprint',       label: '1 sprint' },
-  { value: '2-3-sprints',    label: '2–3 sprints' },
-  { value: '4-6-sprints',    label: '4–6 sprints' },
-  { value: '6-plus-sprints', label: '6+ sprints' },
+// ─── Effort Rubric ──────────────────────────────────────────────────────────────────────────────
+
+const EFFORT_RUBRIC = [
+  { key: 'dependencies', label: 'Dependencies', weight: 1.0, options: ['Standalone', 'Team-only', 'External'] },
+  { key: 'risk',         label: 'Risk',         weight: 1.0, options: ['Proven', 'Some unknowns', 'Rewrite core'] },
+  { key: 'codebase',     label: 'Codebase',     weight: 1.5, options: ['New / isolated', 'Minor tweaks', 'Deep changes'] },
+  { key: 'design',       label: 'Design',       weight: 0.5, options: ['Reuse / none', 'Simple', 'Full new'] },
+  { key: 'extras',       label: 'Extras',       weight: 1.5, options: ['None', 'Basic', 'New tables / data / sec'] },
 ];
+
+const computeEffortLabel = (scores) => {
+  const total = EFFORT_RUBRIC.reduce((sum, f) => sum + (scores[f.key] || 1) * f.weight, 0);
+  if (total <= 5.5)  return 'S';
+  if (total <= 9.0)  return 'M';
+  if (total <= 12.5) return 'L';
+  return 'XL';
+};
+
+const EFFORT_FULL_LABELS = { S: 'Small', M: 'Medium', L: 'Large', XL: 'X-Large' };
 
 const ALIGNMENT_OPTIONS = [
   { value: 'inner',        label: 'Inner Ring',   desc: 'Core product, critical path' },
@@ -29,11 +41,22 @@ const TIMEFRAME_OPTIONS = [
 
 const EXAMPLE_NARRATIVE = `Add 5 video testimonials from enterprise customers to our pricing page.
 
-Currently, our pricing page converts at 8% (45 signups/week measured in Stripe). We expect this to grow to 12% conversion (68 signups/week) — a 50% increase.
+Currently, our pricing page converts at 8% (45 signups/week from Stripe). We expect this to reach 12% (68 signups/week) — a 50% lift.
 
-This will work because prospects bounce due to lack of trust. Exit surveys show "need social proof" as the #2 reason for not signing up (127 responses in Q4 2024). Real customer stories with specific outcomes will reduce skepticism and increase trial signups.
+Why this works: prospects are bouncing because they don't trust us yet. Exit surveys from 127 responses in Q4 2024 show "need social proof" as the #2 reason for not signing up. Real customers describing specific outcomes they achieved will reduce that skepticism.
 
-Evidence: We tested 3 manual video testimonials with 200 visitors for 2 weeks and saw conversion increase from 8% to 11.5%.`;
+Evidence: we ran a manual test with 3 video testimonials, 200 visitors, 2 weeks. Conversion went from 8% to 11.5%.
+
+What would make us wrong: the drop-off isn't about trust — it's about price or feature gaps. If that's true, testimonials won't move the number.`;
+
+const NARRATIVE_PLACEHOLDER = `Describe what you'll change and why it will work.
+
+The strongest bets include:
+— What's broken or missing right now (be specific — for whom, how often, measured how)
+— What you'll do about it
+— Why that intervention causes the outcome you're predicting (the causal chain, not just "this should help")
+— What you've observed that makes you believe this (tests run, users interviewed, data measured)
+— What would have to be false for this bet to fail`;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -101,16 +124,26 @@ function AlignmentIcon({ type, active }) {
   );
 }
 
+// ─── Issue → re-submit prompt map ─────────────────────────────────────────────
+
+const ISSUE_PROMPTS = {
+  problem_clarity:    'What specifically is broken — for whom, in what context, and how do you know it\'s broken?',
+  mechanism:          'Walk through exactly why your intervention causes that outcome. Not that it might — why it does.',
+  killing_assumption: 'What\'s the single thing that, if false, makes this entire bet wrong?',
+  evidence:           'What have you actually observed — tests run, users interviewed, data measured?',
+  scope:              'What exactly will you build? Specific enough that someone could start work tomorrow.',
+  goal_alignment:     'How does this directly move the goal — not loosely relate to it, but actually move it?',
+};
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function BetSubmission({ onComplete, currentOrg }) {
+// companyGoals passed as prop from App.jsx (fetched once at app level — no loading delay)
+export default function BetSubmission({ onComplete, currentOrg, companyGoals = [] }) {
   const { user } = useAuth();
 
   // Goals
-  const [companyGoals, setCompanyGoals]         = useState([]);
   const [selectedGoalType, setSelectedGoalType] = useState('');
   const [selectedGoalId, setSelectedGoalId]     = useState(null);
-  const [selectedKPI, setSelectedKPI]           = useState(null);
   const [goalContext, setGoalContext]            = useState('');
 
   // Narrative
@@ -124,49 +157,21 @@ export default function BetSubmission({ onComplete, currentOrg }) {
   const [validationTimeframe, setValidationTimeframe] = useState('90');
 
   // Params
-  const [confidence, setConfidence]               = useState(70);
+  const [confidence, setConfidence]                 = useState(70);
   const [strategicAlignment, setStrategicAlignment] = useState('inner');
-  const [estimatedEffort, setEstimatedEffort]     = useState('2-3-sprints');
+  const [effortScores, setEffortScores] = useState({ dependencies: 1, risk: 1, codebase: 1, design: 1, extras: 1 });
+  const estimatedEffort = computeEffortLabel(effortScores);
 
   // State machine
   const [submitState, setSubmitState] = useState('idle'); // idle | analyzing | reviewed | scoring
   const [aiReview, setAiReview]       = useState(null);
-  const [showScaffold, setShowScaffold] = useState(false);
   const reviewRef = useRef(null);
-
-  // Scaffold starters by alignment
-  const SCAFFOLD_STARTERS = {
-    inner: `What's broken: [specific friction, for whom, measured how]\n\nWhy our fix works: [the causal chain, not just "this should help"]\n\nWhat we've observed: [tests run, users interviewed, data measured]\n\nWhat would make us wrong: [the single assumption this depends on]`,
-    outer: `The friction users feel: [specific, observed, not assumed]\n\nWhy this is worth doing now vs core work: [the case for prioritization]\n\nWhat we expect to happen: [specific outcome with numbers]\n\nWhat would make us wrong: [the single assumption this depends on]`,
-    experimental: `The question we're trying to answer: [specific, binary if possible]\n\nWhat a positive result looks like: [clear signal, measurable]\n\nWhat a negative result looks like: [also valuable — what would we learn?]\n\nWhy we need to run this to know: [why we can't answer this without building it]`,
-  };
-
-  // Issue field → targeted re-submit prompt
-  const ISSUE_PROMPTS = {
-    problem_clarity:   'What specifically is broken — for whom, in what context, and how do you know it\'s broken?',
-    mechanism:         'Walk through exactly why your intervention causes that outcome. Not that it might — why it does.',
-    killing_assumption:'What\'s the single thing that, if false, makes this entire bet wrong?',
-    evidence:          'What have you actually observed — tests run, users interviewed, data measured?',
-    scope:             'What exactly will you build? Specific enough that someone could start work tomorrow.',
-    goal_alignment:    'How does this directly move the goal — not loosely relate to it, but actually move it?',
-  };
 
   const hasLeadershipGoal = !!currentOrg?.leadershipGoal;
   const leadershipGoal    = currentOrg?.leadershipGoal || null;
 
-  useEffect(() => {
-    if (!currentOrg?.orgId || !user) return;
-    supabase
-      .from('company_goals')
-      .select('*')
-      .eq('org_id', currentOrg.orgId)
-      .order('priority', { ascending: true })
-      .then(({ data }) => setCompanyGoals(data || []));
-  }, [currentOrg?.orgId, user]);
-
   const handleGoalSelection = (value) => {
     setSelectedGoalType(value);
-    setSelectedKPI(null);
     if (value === 'unaligned' || !value) {
       setSelectedGoalId(null);
       setGoalContext('');
@@ -224,32 +229,12 @@ export default function BetSubmission({ onComplete, currentOrg }) {
 
   // ── CTA ───────────────────────────────────────────────────────────────────
 
-  const ctaLabel = () => {
-    if (submitState === 'analyzing') return 'Analyzing...';
-    if (submitState === 'scoring')   return 'Scoring...';
-    if (submitState === 'reviewed') {
-      if (canScore) return 'Score Bet →';
-      return 'Re-submit for Review';
-    }
-    return 'Submit for Review';
-  };
-
   const ctaDisabled = () => {
     if (submitState === 'analyzing' || submitState === 'scoring') return true;
-    if (submitState === 'reviewed' && canScore) return false;
-    if (submitState === 'reviewed' && !canScore) return !canSubmitForReview();
     return !canSubmitForReview();
   };
 
   // ── Handlers ──────────────────────────────────────────────────────────────
-
-  const handleCTA = async () => {
-    if (submitState === 'reviewed' && canScore) {
-      await handleScore();
-    } else {
-      await handleReview();
-    }
-  };
 
   const handleReview = async () => {
     setSubmitState('analyzing');
@@ -297,12 +282,11 @@ export default function BetSubmission({ onComplete, currentOrg }) {
       validationMethod,
       assumptions:      extracted.mechanism || '',
       strategicAlignment,
-      estimatedEffort,
+      estimatedEffort,  // S/M/L/XL
       isOwnIdea:        true,
       betType:          'improve',
       goalContext:      effectiveGoal,
       goalId:           selectedGoalId,
-      selectedKPI,
       goalAlignment:    aiReview.goalAlignment,
       documentProvided: !!uploadedFile,
       documentName:     uploadedFile?.name || null,
@@ -313,6 +297,12 @@ export default function BetSubmission({ onComplete, currentOrg }) {
       evidenceDetails:  extracted.evidence || '',
     };
     onComplete(betData);
+  };
+
+  const handleRevise = () => {
+    setSubmitState('idle');
+    setAiReview(null);
+    setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 50);
   };
 
   // ── Styles ────────────────────────────────────────────────────────────────
@@ -330,11 +320,7 @@ export default function BetSubmission({ onComplete, currentOrg }) {
     fontFamily: 'inherit',
   };
 
-  const selectStyle = {
-    ...inputStyle,
-    cursor: 'pointer',
-    colorScheme: 'dark',
-  };
+  const selectStyle = { ...inputStyle, cursor: 'pointer', colorScheme: 'dark' };
 
   const cardStyle = {
     padding: '18px 20px',
@@ -342,18 +328,6 @@ export default function BetSubmission({ onComplete, currentOrg }) {
     border: '1px solid rgba(255,255,255,0.07)',
     borderRadius: 12,
   };
-
-  // ── Goal KPIs ─────────────────────────────────────────────────────────────
-
-  let selectedGoalObj  = null;
-  let selectedGoalKPIs = [];
-  if (selectedGoalType && selectedGoalType !== 'unaligned') {
-    const idx = parseInt(selectedGoalType.split('-')[1]);
-    selectedGoalObj  = companyGoals[idx];
-    selectedGoalKPIs = selectedGoalObj
-      ? (typeof selectedGoalObj.kpis === 'string' ? JSON.parse(selectedGoalObj.kpis) : selectedGoalObj.kpis || [])
-      : [];
-  }
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -369,93 +343,57 @@ export default function BetSubmission({ onComplete, currentOrg }) {
       </div>
 
       {/* ── Row 1: Goal | Strategic Alignment ─────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16, alignItems: 'stretch' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16, alignItems: 'start' }}>
 
         {/* Goal */}
-        <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column' }}>
+        <div style={cardStyle}>
           <SectionLabel>Company Goal</SectionLabel>
 
           {hasLeadershipGoal ? (
             <div style={{ color: '#cbd5e1', fontSize: '0.95rem' }}>{leadershipGoal}</div>
           ) : companyGoals.length > 0 ? (
-            <>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {companyGoals.map((goal, idx) => {
-                  const isSelected = selectedGoalType === `company-${idx}`;
-                  const pColors = { 1: '#ef4444', 2: '#fbbf24', 3: '#3b82f6' };
-                  return (
-                    <button
-                      key={goal.id}
-                      onClick={() => handleGoalSelection(isSelected ? '' : `company-${idx}`)}
-                      style={{
-                        padding: '12px 14px',
-                        minHeight: 56,
-                        background: isSelected ? 'rgba(45,212,191,0.08)' : 'rgba(255,255,255,0.02)',
-                        border: `1px solid ${isSelected ? 'rgba(45,212,191,0.35)' : 'rgba(255,255,255,0.07)'}`,
-                        borderRadius: 10,
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        transition: 'all 0.15s',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <span style={{ padding: '2px 7px', background: `${pColors[goal.priority]}22`, border: `1px solid ${pColors[goal.priority]}55`, borderRadius: 4, color: pColors[goal.priority], fontSize: '0.7rem', fontWeight: 700, flexShrink: 0 }}>
-                          P{goal.priority}
-                        </span>
-                        <span style={{ color: isSelected ? '#f1f5f9' : '#cbd5e1', fontSize: '0.88rem', fontWeight: 500 }}>
-                          {goal.title}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-                <button
-                  onClick={() => handleGoalSelection(selectedGoalType === 'unaligned' ? '' : 'unaligned')}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: selectedGoalType === 'unaligned' ? '#2dd4bf' : '#475569',
-                    fontSize: '0.8rem',
-                    padding: '6px 0 0 0',
-                    textAlign: 'left',
-                    textDecoration: 'underline',
-                    textDecorationColor: selectedGoalType === 'unaligned' ? '#2dd4bf' : 'rgba(255,255,255,0.15)',
-                  }}
-                >
-                  {selectedGoalType === 'unaligned' ? '✓ Not aligned to a current goal' : 'Not aligned to a current goal'}
-                </button>
-              </div>
-
-              {/* KPI Selection */}
-              {selectedGoalObj && selectedGoalKPIs.length > 0 && (
-                <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                  <SectionLabel>Which metric does this bet move?</SectionLabel>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {selectedGoalKPIs.map((kpi, kpiIdx) => {
-                      const isKpiSelected = selectedKPI?.index === kpiIdx;
-                      return (
-                        <label key={kpiIdx} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: isKpiSelected ? 'rgba(45,212,191,0.08)' : 'rgba(255,255,255,0.02)', border: `1px solid ${isKpiSelected ? 'rgba(45,212,191,0.3)' : 'rgba(255,255,255,0.06)'}`, borderRadius: 8, cursor: 'pointer' }}>
-                          <input type="radio" name="kpi" checked={isKpiSelected} onChange={() => setSelectedKPI({ index: kpiIdx, kpi })} style={{ accentColor: '#2dd4bf', flexShrink: 0 }} />
-                          <div style={{ flex: 1 }}>
-                            <div style={{ color: '#f1f5f9', fontSize: '0.88rem', fontWeight: 500 }}>{kpi.metric}</div>
-                            {(kpi.baseline || kpi.target) && (
-                              <div style={{ color: '#475569', fontSize: '0.78rem', marginTop: 2 }}>
-                                {kpi.baseline} <span style={{ color: '#2dd4bf' }}>→</span> {kpi.target}
-                              </div>
-                            )}
-                          </div>
-                        </label>
-                      );
-                    })}
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: selectedKPI?.index === 'indirect' ? 'rgba(255,255,255,0.04)' : 'transparent', border: `1px solid ${selectedKPI?.index === 'indirect' ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)'}`, borderRadius: 8, cursor: 'pointer' }}>
-                      <input type="radio" name="kpi" checked={selectedKPI?.index === 'indirect'} onChange={() => setSelectedKPI({ index: 'indirect', kpi: null })} style={{ accentColor: '#2dd4bf' }} />
-                      <span style={{ color: '#64748b', fontSize: '0.85rem' }}>Indirectly supports this goal</span>
-                    </label>
-                  </div>
-                </div>
-              )}
-            </>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {companyGoals.map((goal, idx) => {
+                const isSelected = selectedGoalType === `company-${idx}`;
+                const pColors = { 1: '#ef4444', 2: '#fbbf24', 3: '#3b82f6' };
+                return (
+                  <button
+                    key={goal.id}
+                    onClick={() => handleGoalSelection(isSelected ? '' : `company-${idx}`)}
+                    style={{
+                      padding: '12px 14px',
+                      background: isSelected ? 'rgba(45,212,191,0.08)' : 'rgba(255,255,255,0.02)',
+                      border: `1px solid ${isSelected ? 'rgba(45,212,191,0.35)' : 'rgba(255,255,255,0.07)'}`,
+                      borderRadius: 10,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ padding: '2px 7px', background: `${pColors[goal.priority]}22`, border: `1px solid ${pColors[goal.priority]}55`, borderRadius: 4, color: pColors[goal.priority], fontSize: '0.7rem', fontWeight: 700, flexShrink: 0 }}>
+                        P{goal.priority}
+                      </span>
+                      <span style={{ color: isSelected ? '#f1f5f9' : '#cbd5e1', fontSize: '0.88rem', fontWeight: 500 }}>
+                        {goal.title}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+              <button
+                onClick={() => handleGoalSelection(selectedGoalType === 'unaligned' ? '' : 'unaligned')}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: selectedGoalType === 'unaligned' ? '#2dd4bf' : '#475569',
+                  fontSize: '0.8rem', padding: '6px 0 0 0', textAlign: 'left',
+                  textDecoration: 'underline',
+                  textDecorationColor: selectedGoalType === 'unaligned' ? '#2dd4bf' : 'rgba(255,255,255,0.15)',
+                }}
+              >
+                {selectedGoalType === 'unaligned' ? '✓ Not aligned to a current goal' : 'Not aligned to a current goal'}
+              </button>
+            </div>
           ) : (
             <>
               <input type="text" value={goalContext} onChange={e => setGoalContext(e.target.value)} placeholder="e.g., Grow revenue by 30% this year" style={inputStyle} />
@@ -467,13 +405,14 @@ export default function BetSubmission({ onComplete, currentOrg }) {
         </div>
 
         {/* Strategic Alignment */}
-        <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column' }}>
+        <div style={cardStyle}>
           <SectionLabel>Strategic Priority</SectionLabel>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {ALIGNMENT_OPTIONS.map(opt => {
               const active = strategicAlignment === opt.value;
               return (
-                <button key={opt.value} onClick={() => setStrategicAlignment(opt.value)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', minHeight: 56, flex: 1, background: active ? 'rgba(45,212,191,0.08)' : 'rgba(255,255,255,0.02)', border: `1px solid ${active ? 'rgba(45,212,191,0.3)' : 'rgba(255,255,255,0.06)'}`, borderRadius: 10, cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s' }}>
+                <button key={opt.value} onClick={() => setStrategicAlignment(opt.value)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: active ? 'rgba(45,212,191,0.08)' : 'rgba(255,255,255,0.02)', border: `1px solid ${active ? 'rgba(45,212,191,0.3)' : 'rgba(255,255,255,0.06)'}`, borderRadius: 10, cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s' }}>
                   <AlignmentIcon type={opt.value} active={active} />
                   <div>
                     <div style={{ color: active ? '#f1f5f9' : '#94a3b8', fontSize: '0.875rem', fontWeight: active ? 600 : 400 }}>{opt.label}</div>
@@ -493,31 +432,12 @@ export default function BetSubmission({ onComplete, currentOrg }) {
             Describe Your Bet
             {uploadedFile && <span style={{ color: '#475569', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}> — optional with document</span>}
           </SectionLabel>
-          <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-            {submitState === 'idle' && (
-              <button
-                onClick={() => {
-                  if (!showScaffold) {
-                    if (!narrative.trim()) {
-                      setNarrative(SCAFFOLD_STARTERS[strategicAlignment]);
-                    }
-                    setShowScaffold(true);
-                  } else {
-                    setShowScaffold(false);
-                  }
-                }}
-                style={{ background: 'none', border: 'none', color: showScaffold ? '#2dd4bf' : '#475569', fontSize: '0.78rem', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
-              >
-                {showScaffold ? 'Hide structure' : 'Help me structure this'}
-              </button>
-            )}
-            <button onClick={() => setShowExample(!showExample)} style={{ background: 'none', border: 'none', color: '#2dd4bf', fontSize: '0.78rem', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>
-              {showExample ? 'Hide example' : 'Show example'}
-            </button>
-          </div>
+          <button onClick={() => setShowExample(!showExample)} style={{ background: 'none', border: 'none', color: '#2dd4bf', fontSize: '0.78rem', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>
+            {showExample ? 'Hide example' : 'Show example'}
+          </button>
         </div>
 
-        {/* Targeted prompts on re-submit — derived from actual issues */}
+        {/* Targeted prompts on re-submit */}
         {submitState === 'reviewed' && !canScore && aiReview?.issues?.length > 0 && (
           <div style={{ marginBottom: 12, padding: '14px 16px', background: 'rgba(239,68,68,0.04)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: 10 }}>
             <div style={{ color: '#ef4444', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Address these in your revision</div>
@@ -547,9 +467,7 @@ export default function BetSubmission({ onComplete, currentOrg }) {
             setNarrative(e.target.value);
             if (submitState === 'reviewed') setSubmitState('idle');
           }}
-          placeholder={uploadedFile
-            ? 'Add any additional context not in the document...'
-            : "What you'll change, current state (with numbers), expected outcome (with numbers), why it will work, and evidence..."}
+          placeholder={uploadedFile ? 'Add any additional context not in the document...' : NARRATIVE_PLACEHOLDER}
           rows={10}
           style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.7 }}
         />
@@ -566,17 +484,13 @@ export default function BetSubmission({ onComplete, currentOrg }) {
           <div style={{ position: 'relative' }}>
             <input type="file" id="file-upload" accept=".pdf,.docx,.txt,.md" onChange={handleFileUpload} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', zIndex: 1 }} />
             <div style={{ padding: '16px', background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: 10, textAlign: 'center', cursor: 'pointer' }}>
-              <div style={{ fontSize: '1.2rem', marginBottom: 4 }}>📄</div>
               <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Click to upload or drag and drop</div>
               <div style={{ color: '#334155', fontSize: '0.78rem', marginTop: 2 }}>PDF, Word, Text, or Markdown (max 32MB)</div>
             </div>
           </div>
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'rgba(45,212,191,0.06)', border: '1px solid rgba(45,212,191,0.2)', borderRadius: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span>📄</span>
-              <span style={{ color: '#cbd5e1', fontSize: '0.9rem' }}>{uploadedFile.name}</span>
-            </div>
+            <span style={{ color: '#cbd5e1', fontSize: '0.9rem' }}>{uploadedFile.name}</span>
             <button onClick={() => { setUploadedFile(null); setUploadError(null); }} style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer', fontSize: '0.85rem', textDecoration: 'underline' }}>Remove</button>
           </div>
         )}
@@ -585,33 +499,41 @@ export default function BetSubmission({ onComplete, currentOrg }) {
 
       {/* ── Row 4: Confidence | Effort ────────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-
-        {/* Confidence */}
         <div style={cardStyle}>
           <SectionLabel>Your Confidence</SectionLabel>
-          <input
-            type="range" min="0" max="100" step="5" value={confidence}
-            onChange={e => setConfidence(parseInt(e.target.value))}
-            style={{ width: '100%', accentColor: '#2dd4bf', cursor: 'pointer' }}
-          />
+          <input type="range" min="0" max="100" step="5" value={confidence} onChange={e => setConfidence(parseInt(e.target.value))} style={{ width: '100%', accentColor: '#2dd4bf', cursor: 'pointer' }} />
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 8 }}>
             <span style={{ fontSize: '1.6rem', fontWeight: 700, color: '#2dd4bf' }}>{confidence}%</span>
             <span style={{ color: '#64748b', fontSize: '0.82rem' }}>{getConfidenceLabel()}</span>
           </div>
         </div>
 
-        {/* Effort */}
         <div style={cardStyle}>
           <SectionLabel>Effort Estimate</SectionLabel>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            {EFFORT_OPTIONS.map(opt => {
-              const active = estimatedEffort === opt.value;
-              return (
-                <button key={opt.value} onClick={() => setEstimatedEffort(opt.value)} style={{ padding: '10px 8px', background: active ? 'rgba(45,212,191,0.1)' : 'rgba(255,255,255,0.02)', border: `1px solid ${active ? 'rgba(45,212,191,0.35)' : 'rgba(255,255,255,0.06)'}`, borderRadius: 8, color: active ? '#2dd4bf' : '#64748b', fontSize: '0.82rem', fontWeight: active ? 600 : 400, cursor: 'pointer', transition: 'all 0.15s' }}>
-                  {opt.label}
-                </button>
-              );
-            })}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {EFFORT_RUBRIC.map(factor => (
+              <div key={factor.key}>
+                <div style={{ color: '#475569', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 5 }}>{factor.label}</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 5 }}>
+                  {factor.options.map((opt, i) => {
+                    const score = i + 1;
+                    const active = effortScores[factor.key] === score;
+                    return (
+                      <button
+                        key={opt}
+                        onClick={() => setEffortScores(prev => ({ ...prev, [factor.key]: score }))}
+                        style={{ padding: '6px 4px', background: active ? 'rgba(45,212,191,0.1)' : 'rgba(255,255,255,0.02)', border: `1px solid ${active ? 'rgba(45,212,191,0.35)' : 'rgba(255,255,255,0.06)'}`, borderRadius: 6, color: active ? '#2dd4bf' : '#64748b', fontSize: '0.72rem', fontWeight: active ? 600 : 400, cursor: 'pointer', transition: 'all 0.15s', textAlign: 'center', lineHeight: 1.3 }}>
+                        {opt}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+            <div style={{ marginTop: 6, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+              <span style={{ color: '#475569', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Estimated effort</span>
+              <span style={{ fontSize: '1.1rem', fontWeight: 700, color: '#2dd4bf' }}>{EFFORT_FULL_LABELS[estimatedEffort]}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -630,21 +552,13 @@ export default function BetSubmission({ onComplete, currentOrg }) {
         </div>
       </div>
 
-      {/* ── Row 6: AI Review (full width, appears after submit) ───────────── */}
+      {/* ── Row 6: AI Review ──────────────────────────────────────────────── */}
       <div ref={reviewRef}>
         {submitState !== 'idle' && aiReview && (
           <div style={{ marginBottom: 16, padding: '20px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
               <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>CHZCLOTH Review</div>
-              <div style={{
-                padding: '3px 10px',
-                background: canScore ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
-                border: `1px solid ${canScore ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
-                borderRadius: 20,
-                color: canScore ? '#22c55e' : '#ef4444',
-                fontSize: '0.72rem',
-                fontWeight: 600,
-              }}>
+              <div style={{ padding: '3px 10px', background: canScore ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)', border: `1px solid ${canScore ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`, borderRadius: 20, color: canScore ? '#22c55e' : '#ef4444', fontSize: '0.72rem', fontWeight: 600 }}>
                 {canScore ? 'Ready to Score' : 'Needs Revision'}
               </div>
             </div>
@@ -691,38 +605,59 @@ export default function BetSubmission({ onComplete, currentOrg }) {
         )}
       </div>
 
-      {/* ── Row 7: CTA (right-aligned) ────────────────────────────────────── */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <button
-          onClick={handleCTA}
-          disabled={ctaDisabled()}
-          style={{
-            padding: '13px 28px',
-            background: ctaDisabled()
-              ? 'rgba(255,255,255,0.08)'
-              : canScore && submitState === 'reviewed'
-                ? 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)'
-                : 'rgba(45,212,191,0.15)',
-            border: ctaDisabled()
-              ? '1px solid rgba(255,255,255,0.06)'
-              : canScore && submitState === 'reviewed'
-                ? 'none'
-                : '1px solid rgba(45,212,191,0.3)',
-            borderRadius: 10,
-            color: ctaDisabled()
-              ? '#334155'
-              : canScore && submitState === 'reviewed'
-                ? '#0a0f1a'
-                : '#2dd4bf',
-            fontSize: '0.95rem',
-            fontWeight: 700,
-            cursor: ctaDisabled() ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s',
-            letterSpacing: '0.01em',
-          }}
-        >
-          {ctaLabel()}
-        </button>
+      {/* ── Row 7: CTA ────────────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12 }}>
+
+        {/* Revise option — shown when reviewed (scoreable or not) */}
+        {submitState === 'reviewed' && (
+          <button
+            onClick={handleRevise}
+            style={{ padding: '13px 20px', background: 'transparent', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, color: '#475569', fontSize: '0.9rem', cursor: 'pointer' }}
+          >
+            Revise
+          </button>
+        )}
+
+        {/* Re-submit for review — shown when reviewed but not scoreable, or idle */}
+        {(submitState === 'idle' || (submitState === 'reviewed' && !canScore)) && (
+          <button
+            onClick={handleReview}
+            disabled={ctaDisabled() || submitState === 'analyzing'}
+            style={{
+              padding: '13px 28px',
+              background: ctaDisabled() ? 'rgba(255,255,255,0.08)' : 'rgba(45,212,191,0.15)',
+              border: ctaDisabled() ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(45,212,191,0.3)',
+              borderRadius: 10,
+              color: ctaDisabled() ? '#334155' : '#2dd4bf',
+              fontSize: '0.95rem', fontWeight: 700,
+              cursor: ctaDisabled() ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s',
+            }}
+          >
+            {submitState === 'analyzing' ? 'Analyzing...' : submitState === 'reviewed' ? 'Re-submit for Review' : 'Submit for Review'}
+          </button>
+        )}
+
+        {/* Score — shown when ready */}
+        {submitState === 'reviewed' && canScore && (
+          <button
+            onClick={handleScore}
+            disabled={submitState === 'scoring'}
+            style={{
+              padding: '13px 28px',
+              background: 'linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%)',
+              border: 'none',
+              borderRadius: 10,
+              color: '#0a0f1a',
+              fontSize: '0.95rem', fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              letterSpacing: '0.01em',
+            }}
+          >
+            {submitState === 'scoring' ? 'Scoring...' : 'Score Bet →'}
+          </button>
+        )}
       </div>
 
     </div>
