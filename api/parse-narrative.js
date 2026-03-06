@@ -23,29 +23,27 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { narrative, goalContext, uploadedFile, strategicAlignment } = req.body;
+    const { narrative, goalContext, uploadedFile, strategicAlignment, companyContext } = req.body;
 
     console.log('Parsed request data:', {
       hasNarrative: !!narrative,
       narrativeLength: narrative?.length || 0,
       hasGoalContext: !!goalContext,
+      hasCompanyContext: !!companyContext,
       strategicAlignment: strategicAlignment || 'inner',
       hasUploadedFile: !!uploadedFile,
     });
 
     const alignment = strategicAlignment || 'inner';
 
-    // Alignment-specific review framing
     const alignmentContext = {
       inner: `This bet is marked INNER RING — core product, critical path. This is a commitment, not a test. 
 The bar is high: the person needs to genuinely understand the problem, have a defensible causal mechanism, 
 and know what they will measure and how. Weak causation or vague problem framing on a core bet is a real issue.`,
-
       outer: `This bet is marked OUTER RING — nice to have, quality of life. 
 The key question beyond problem clarity is opportunity cost: is this worth doing right now vs core work? 
 Push on whether the problem is real and felt, not just assumed. 
 If the mechanism is weak, flag it — but also ask whether this is the right bet at all given what else could be done.`,
-
       experimental: `This bet is marked EXPERIMENTAL — test, learn, might not ship. 
 Do NOT penalize for ambitious predictions or incomplete evidence — that's the point of an experiment. 
 What matters here is learning design: will they actually know something meaningful when this ends? 
@@ -59,6 +57,7 @@ Your job is to push on the things that actually determine whether this bet is wo
 STRATEGIC CONTEXT:
 Goal: ${goalContext || 'Not specified'}
 Strategic Alignment: ${alignment.toUpperCase()}
+${companyContext ? `\nCOMPANY CONTEXT:\n${companyContext}\n` : ''}
 
 ${alignmentContext}
 
@@ -74,6 +73,7 @@ Does this person actually understand what is broken and why?
 Not "improve conversion" — but what specific friction, for whom, in what context, measured how?
 A sharp problem statement predicts better bets more than anything else.
 Flag if: the problem is assumed rather than observed, vague rather than specific, or missing entirely.
+${companyContext ? 'Use the company context to assess whether this problem is real and relevant for this specific business.' : ''}
 
 2. CAUSAL MECHANISM  
 Is there a real reason why their intervention causes the outcome they're predicting?
