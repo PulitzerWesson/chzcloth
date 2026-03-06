@@ -310,7 +310,9 @@ scores = await scoreBet(betData, {
         selectedKpi: betData.selectedKPI || null,
         // AI enhancement tracking
         aiEnhanced: betData.aiEnhanced || false,
-        originalHypothesis: betData.originalHypothesis
+        originalHypothesis: betData.originalHypothesis,
+        companyId: betData.companyId || null,
+
       }
       
       setBets(prev => [newBet, ...prev])
