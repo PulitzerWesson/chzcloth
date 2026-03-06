@@ -3408,6 +3408,9 @@ const handleRejectBet = async (betId, reason) => {
     onAddOrg={() => setScreen('orgsetup')}
     onAddCompany={addCompanyToOrg}
     canInviteUsers={canInviteUsers}
+      companies={currentOrg?.companies || []}
+  currentCompany={currentCompany}
+  onSelectCompany={setCurrentCompany}
   />
 </div>
 
