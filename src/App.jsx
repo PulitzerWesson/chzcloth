@@ -2875,6 +2875,15 @@ const { ideas, loading: ideasLoading, updateIdeaStatus, claimIdea, submitIdea, u
       .order('priority', { ascending: true })
       .then(({ data }) => setCompanyGoals(data || []));
   }, [currentOrg?.orgId]);
+
+  useEffect(() => {
+  const companies = currentOrg?.companies || [];
+  if (companies.length === 1) {
+    setCurrentCompany(companies[0]);
+  } else if (companies.length === 0) {
+    setCurrentCompany(null);
+  }
+}, [currentOrg?.orgId]);
   
   // ============================================
   // EVENT HANDLERS
