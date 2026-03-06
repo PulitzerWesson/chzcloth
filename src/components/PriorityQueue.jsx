@@ -72,69 +72,164 @@ const OUTCOME_COLORS = {
 
 const STATUS_OPTIONS = ['Not Started', 'In Progress', 'Shipped', 'Awaiting Outcome', 'Outcome Recorded'];
 
+const OUTCOME_OPTIONS = [
+  { value: 'succeeded',     label: 'Succeeded' },
+  { value: 'partial',       label: 'Partial Win' },
+  { value: 'failed',        label: 'Failed' },
+  { value: 'inconclusive',  label: 'Inconclusive' },
+  { value: 'never_shipped', label: 'Never Shipped' },
+];
+
 const fmt = (dateStr) => new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-const getStatusKey = (bet, now) => {
-  const isCompleted = !!bet.completedAt;
-  const isStarted = !!bet.startedAt;
+function OutcomeForm({ bet, onSubmit, onCancel }) {
+  const [outcome, setOutcome] = useState('');
+  const [actualResult, setActualResult] = useState('');
+  const [learned, setLearned] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!outcome) return;
+    setSaving(true);
+    await onSubmit(bet.id, { status: outcome, actualResult, learned });
+    setSaving(false);
+  };
+
+  return (
+    <div style={{ marginTop: 16, padding: '16px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10 }}
+      onClick={e => e.stopPropagation()}>
+      <div style={{ color: '#94a3b8', fontSize: '0.78rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 14 }}>
+        Record Outcome
+      </div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+        {OUTCOME_OPTIONS.map(opt => (
+          <button key={opt.value} onClick={() => setOutcome(opt.value)}
+            style={{ padding: '7px 14px', background: outcome === opt.value ? 'rgba(45,212,191,0.12)' : 'rgba(255,255,255,0.03)', border: `1px solid ${outcome === opt.value ? 'rgba(45,212,191,0.4)' : 'rgba(255,255,255,0.08)'}`, borderRadius: 8, color: outcome === opt.value ? '#2dd4bf' : '#64748b', fontSize: '0.82rem', fontWeight: outcome === opt.value ? 600 : 400, cursor: 'pointer' }}>
+            {opt.label}
+          </button>
+        ))}
+      </div>
+      <textarea value={actualResult} onChange={e => setActualResult(e.target.value)} placeholder="What actually happened? Include numbers if you have them." rows={3}
+        style={{ width: '100%', marginBottom: 10, padding: '10px 12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, color: '#f1f5f9', fontSize: '0.88rem', outline: 'none', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box', lineHeight: 1.5 }} />
+      <textarea value={learned} onChange={e => setLearned(e.target.value)} placeholder="What did you learn? What would you do differently?" rows={3}
+        style={{ width: '100%', marginBottom: 14, padding: '10px 12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, color: '#f1f5f9', fontSize: '0.88rem', outline: 'none', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box', lineHeight: 1.5 }} />
+      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+        <button onClick={onCancel} style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#64748b', fontSize: '0.85rem', cursor: 'pointer' }}>Cancel</button>
+        <button onClick={handleSubmit} disabled={!outcome || saving}
+          style={{ padding: '8px 16px', background: outcome ? 'rgba(45,212,191,0.15)' : 'rgba(255,255,255,0.05)', border: `1px solid ${outcome ? 'rgba(45,212,191,0.3)' : 'rgba(255,255,255,0.08)'}`, borderRadius: 8, color: outcome ? '#2dd4bf' : '#334155', fontSize: '0.85rem', fontWeight: 600, cursor: outcome ? 'pointer' : 'not-allowed' }}>
+          {saving ? 'Saving...' : 'Save Outcome'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const getStatusKey = (bet) => {
   const outcomeKey = bet.status || bet.outcome;
   const hasOutcome = ['succeeded', 'partial', 'failed', 'inconclusive', 'never_shipped'].includes(outcomeKey);
   if (hasOutcome) return 'Outcome Recorded';
-  if (isCompleted) return 'Awaiting Outcome';
-  if (isStarted) return 'In Progress';
+  if (bet.completedAt) return 'Awaiting Outcome';
+  if (bet.startedAt) return 'In Progress';
   return 'Not Started';
 };
 
-function PriorityQueue({ bets, setExpandedPriorityBet, expandedPriorityBet }) {
+// ─── Priority Score Algorithm ─────────────────────────────────────────────────
+//
+// Composite of RICE + strategic fit, normalized to 0–100.
+//
+// RICE components (all inputs already captured on the bet):
+//   Reach  — inferred from lever type (how broadly does this move the needle?)
+//   Impact — potentialScore (0–100, from AI scoring)
+//   Confidence — confidence field (0–100, self-reported)
+//   Effort — estimatedEffort mapped to a divisor (lower effort = higher score)
+//
+// Fit multiplier — fitScore boosts or dampens the RICE result.
+// Strategic alignment bonus — inner ring bets get a boost, experimental get slight dampening.
+//
+// Active (in-progress) bets float to top regardless of score.
+// Completed bets sink to bottom.
+
+const REACH_BY_LEVER = {
+  Revenue:     90,
+  Acquisition: 85,
+  Retention:   80,
+  Efficiency:  65,
+  Platform:    70,
+  Experience:  60,
+  Risk:        55,
+};
+
+const EFFORT_DIVISOR = {
+  '1-sprint':       1,
+  '2-3-sprints':    2,
+  '4-6-sprints':    3.5,
+  '6-plus-sprints': 5,
+};
+
+const ALIGNMENT_BONUS = {
+  inner:        1.15,  // core bets get a 15% boost
+  outer:        1.0,
+  experimental: 0.9,   // experimental bets slightly dampened — they're tests, not priorities
+};
+
+function computePriorityScore(bet) {
+  const reach      = REACH_BY_LEVER[bet.lever] ?? 65;
+  const impact     = bet.potentialScore ?? 50;
+  const confidence = bet.confidence ?? 50;
+  const effortKey  = bet.estimatedEffort ?? '2-3-sprints';
+  const effort     = EFFORT_DIVISOR[effortKey] ?? 2;
+  const fit        = bet.fitScore ?? 50;
+  const alignment  = bet.strategicAlignment?.toLowerCase() ?? 'inner';
+
+  // RICE: (Reach × Impact × Confidence/100) / Effort
+  const rice = (reach * impact * (confidence / 100)) / effort;
+
+  // Normalize RICE to roughly 0–100 range (max theoretical: 90×100×1/1 = 9000)
+  const riceNormalized = Math.min(rice / 90, 100);
+
+  // Blend RICE (60%) with fit score (40%)
+  const blended = (riceNormalized * 0.6) + (fit * 0.4);
+
+  // Apply strategic alignment multiplier
+  const alignmentMultiplier = ALIGNMENT_BONUS[alignment] ?? 1.0;
+
+  return Math.round(blended * alignmentMultiplier);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+function PriorityQueue({ bets, setExpandedPriorityBet, expandedPriorityBet, currentUserId, onMarkStarted, onMarkShipped, onRecordOutcome }) {
   const [filters, setFilters] = useState(defaultFilters);
   const [summaryExpanded, setSummaryExpanded] = useState(false);
-  const now = new Date();
+  const [recordingOutcomeId, setRecordingOutcomeId] = useState(null);
 
   const queueBets = bets?.filter(b => b.approvalStatus === 'approved') || [];
 
-  // Normalize for filter/count
-  const normalizedBets = queueBets.map(bet => ({
-    ...bet,
-    strategicAlignment: bet.strategicAlignment,
-  }));
-
-  const getStatus = (bet) => getStatusKey(bet, now);
-  const counts = computeCounts(normalizedBets, getStatus);
-  const filteredBets = applyFilters(normalizedBets, filters, getStatus);
+  const counts = computeCounts(queueBets, getStatusKey);
+  const filteredBets = applyFilters(queueBets, filters, getStatusKey);
 
   const sortedBets = [...filteredBets].sort((a, b) => {
-    // Completed/outcome recorded sink to bottom
-    const aActive = !a.completedAt;
-    const bActive = !b.completedAt;
-    if (aActive && !bActive) return -1;
-    if (!aActive && bActive) return 1;
-    if (!aActive && !bActive) return new Date(b.completedAt) - new Date(a.completedAt);
+    const aOutcome = ['succeeded', 'partial', 'failed', 'inconclusive', 'never_shipped'].includes(a.status || a.outcome);
+    const bOutcome = ['succeeded', 'partial', 'failed', 'inconclusive', 'never_shipped'].includes(b.status || b.outcome);
 
-    // In progress floats up
+    // Completed with outcomes sink to bottom
+    if (aOutcome && !bOutcome) return 1;
+    if (!aOutcome && bOutcome) return -1;
+
+    // Awaiting outcome above completed-with-outcome, below active
+    const aAwaiting = !!a.completedAt && !aOutcome;
+    const bAwaiting = !!b.completedAt && !bOutcome;
+    if (aAwaiting && !bAwaiting) return 1;
+    if (!aAwaiting && bAwaiting) return -1;
+
+    // In progress floats to top
     const aInProgress = !!a.startedAt && !a.completedAt;
     const bInProgress = !!b.startedAt && !b.completedAt;
     if (aInProgress && !bInProgress) return -1;
     if (!aInProgress && bInProgress) return 1;
 
-    // Overdue
-    const aDeadline = a.mustShipBy ? new Date(a.mustShipBy) : null;
-    const bDeadline = b.mustShipBy ? new Date(b.mustShipBy) : null;
-    const aOverdue = aDeadline && aDeadline < now;
-    const bOverdue = bDeadline && bDeadline < now;
-    if (aOverdue && !bOverdue) return -1;
-    if (!aOverdue && bOverdue) return 1;
-
-    // Due soon
-    const aSoon = aDeadline && !aOverdue && (aDeadline - now) < 30 * 24 * 60 * 60 * 1000;
-    const bSoon = bDeadline && !bOverdue && (bDeadline - now) < 30 * 24 * 60 * 60 * 1000;
-    if (aSoon && !bSoon) return -1;
-    if (!aSoon && bSoon) return 1;
-    if (aSoon && bSoon) return aDeadline - bDeadline;
-
-    // Score
-    const aScore = (a.approachScore || 0) + (a.potentialScore || 0) + (a.fitScore || 0);
-    const bScore = (b.approachScore || 0) + (b.potentialScore || 0) + (b.fitScore || 0);
-    return bScore - aScore;
+    // Everything else sorted by priority score
+    return computePriorityScore(b) - computePriorityScore(a);
   });
 
   return (
@@ -148,11 +243,10 @@ function PriorityQueue({ bets, setExpandedPriorityBet, expandedPriorityBet }) {
           )}
         </div>
 
-        {/* Collapsible summary */}
         <div style={{ marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
             <p style={{ color: '#64748b', fontSize: '0.95rem', margin: 0 }}>
-              Sponsored bets ready to execute. Sorted by urgency and score.
+              Ready to execute bets, ranked by priority score — impact and confidence weighted against effort and strategic fit.
             </p>
             {!summaryExpanded && (
               <button onClick={() => setSummaryExpanded(true)} style={{ background: 'none', border: 'none', color: '#2dd4bf', fontSize: '0.8rem', cursor: 'pointer', padding: 0, whiteSpace: 'nowrap', textDecoration: 'underline' }}>
@@ -163,13 +257,13 @@ function PriorityQueue({ bets, setExpandedPriorityBet, expandedPriorityBet }) {
           {summaryExpanded && (
             <div style={{ marginTop: 12, padding: '14px 16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, color: '#94a3b8', fontSize: '0.875rem', lineHeight: 1.7 }}>
               <p style={{ margin: '0 0 8px 0' }}>
-                The Priority Queue holds all sponsored bets — work your team has committed to executing. Bets are sorted automatically: overdue and in-progress work surfaces first, followed by bets due soon, then by score.
+                The Priority Queue holds all approved bets, automatically ranked by a composite priority score. The score blends RICE (Reach, Impact, Confidence, Effort) with strategic fit — so a high-impact bet that aligns with a P1 goal outranks a similar bet that doesn't. Inner ring bets get a boost; experimental bets are slightly dampened since they're tests, not commitments.
               </p>
               <p style={{ margin: '0 0 8px 0' }}>
-                Use the filters to focus on a specific lever, strategic alignment, or status. Once a bet ships, mark it complete and record the outcome — that data feeds into your team's Stats. Status updates — marking a bet started, shipped, or recording an outcome — are done from your Contributors queue.
+                In-progress bets always surface first. Bets awaiting an outcome or with recorded outcomes sink to the bottom. Everything in between is ordered by priority score.
               </p>
               <p style={{ margin: 0 }}>
-                Bets with a red border are overdue. Yellow border means due within 30 days.
+                Status updates — marking a bet started, shipped, or recording an outcome — are done from Your Queue.
               </p>
               <button onClick={() => setSummaryExpanded(false)} style={{ marginTop: 10, background: 'none', border: 'none', color: '#475569', fontSize: '0.78rem', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>
                 Show less
@@ -189,7 +283,7 @@ function PriorityQueue({ bets, setExpandedPriorityBet, expandedPriorityBet }) {
 
       {queueBets.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 20px', color: '#64748b' }}>
-          No sponsored bets yet. Sponsor bets from the Marketplace to add them here.
+          No approved bets yet. Approve bets from the Marketplace to add them here.
         </div>
       ) : filteredBets.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 20px', color: '#64748b' }}>
@@ -208,16 +302,17 @@ function PriorityQueue({ bets, setExpandedPriorityBet, expandedPriorityBet }) {
             const hasOutcome = ['succeeded', 'partial', 'failed', 'inconclusive', 'never_shipped'].includes(outcomeKey);
             const lc = lever && LEVER_COLORS[lever] ? LEVER_COLORS[lever] : { bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)', text: '#94a3b8' };
             const oc = hasOutcome ? OUTCOME_COLORS[outcomeKey] : null;
-            const deadline = bet.mustShipBy ? new Date(bet.mustShipBy) : null;
-            const isOverdue = deadline && deadline < now && !isCompleted;
-            const isSoon = deadline && !isOverdue && !isCompleted && (deadline - now) < 30 * 24 * 60 * 60 * 1000;
+            const priorityScore = computePriorityScore(bet);
+
+            const isOwn = bet.userId === currentUserId;
+            const isRecordingOutcome = recordingOutcomeId === bet.id;
 
             return (
               <div
                 key={bet.id}
                 style={{
-                  background: isOverdue ? 'rgba(239,68,68,0.05)' : 'rgba(255,255,255,0.03)',
-                  border: isOverdue ? '1px solid rgba(239,68,68,0.3)' : isSoon ? '1px solid rgba(251,191,36,0.3)' : '1px solid rgba(255,255,255,0.1)',
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.1)',
                   borderRadius: 12, padding: 20, display: 'flex', gap: 16,
                   opacity: isCompleted ? 0.75 : 1
                 }}
@@ -241,14 +336,14 @@ function PriorityQueue({ bets, setExpandedPriorityBet, expandedPriorityBet }) {
                     </div>
 
                     <div style={{ display: 'flex', gap: 0, flexShrink: 0, alignItems: 'center' }}>
-                      {isAIEnhanced && aiScore ? (
-                        <div style={{ textAlign: 'center', paddingRight: 8 }}>
-                          <div style={{ fontSize: '0.7rem', color: '#2dd4bf', marginBottom: 2, fontWeight: 700, letterSpacing: '0.05em', textShadow: '0 0 10px rgba(45,212,191,0.6)' }}>CHZ</div>
-                          <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#2dd4bf', textShadow: '0 0 15px rgba(45,212,191,0.8)' }}>{aiScore}</div>
-                        </div>
-                      ) : null}
+                      {/* Priority score */}
+                      <div style={{ textAlign: 'center', paddingRight: 12, borderRight: '1px solid rgba(255,255,255,0.08)' }}>
+                        <div style={{ fontSize: '0.65rem', color: '#475569', marginBottom: 2, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Priority</div>
+                        <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#f1f5f9' }}>{priorityScore}</div>
+                      </div>
+
                       {bet.approachScore && (
-                        <div style={{ display: 'flex', gap: 8, flexShrink: 0, paddingLeft: isAIEnhanced && aiScore ? 8 : 0, borderLeft: isAIEnhanced && aiScore ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
+                        <div style={{ display: 'flex', gap: 8, flexShrink: 0, paddingLeft: 12 }}>
                           <div style={{ textAlign: 'center' }}>
                             <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: 2 }}>APR</div>
                             <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#2dd4bf' }}>{bet.approachScore}</div>
@@ -291,21 +386,11 @@ function PriorityQueue({ bets, setExpandedPriorityBet, expandedPriorityBet }) {
                     {hasOutcome && oc && (
                       <span style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 10px', background: oc.bg, border: `1px solid ${oc.border}`, borderRadius: 6, color: oc.text, fontSize: '0.75rem', fontWeight: 600 }}>{oc.label}</span>
                     )}
-                    {isOverdue && (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 10px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 6, color: '#ef4444', fontSize: '0.75rem', fontWeight: 600 }}>Overdue</span>
-                    )}
-                    {isSoon && (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 10px', background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: 6, color: '#fbbf24', fontSize: '0.75rem', fontWeight: 600 }}>Due soon</span>
-                    )}
                     <span>•</span>
                     <span>by {bet.submittedByEmail || 'unknown'}</span>
-                    <span>•</span>
-                    <span>sponsored by {bet.sponsoredByEmail || 'unknown'}</span>
+                    {bet.sponsoredByEmail && <><span>•</span><span>approved by {bet.sponsoredByEmail}</span></>}
                     {isStarted && !isCompleted && <><span>•</span><span>Started {fmt(bet.startedAt)}</span></>}
                     {isCompleted && <><span>•</span><span>Shipped {fmt(bet.completedAt)}</span></>}
-                    {bet.mustShipBy && !isCompleted && (
-                      <><span>•</span><span style={{ color: isOverdue ? '#ef4444' : isSoon ? '#fbbf24' : '#64748b' }}>Ship by {fmt(bet.mustShipBy)}</span></>
-                    )}
                   </div>
 
                   {hasOutcome && bet.actualResult && (
@@ -313,6 +398,38 @@ function PriorityQueue({ bets, setExpandedPriorityBet, expandedPriorityBet }) {
                       <div style={{ color: '#64748b', fontSize: '0.75rem', marginBottom: 4 }}>Result</div>
                       <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>{bet.actualResult}</div>
                     </div>
+                  )}
+
+                  {/* Action buttons — visible to submitter */}
+                  {isOwn && !hasOutcome && (
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+                      {!isStarted && !isCompleted && (
+                        <button onClick={() => onMarkStarted(bet.id)}
+                          style={{ padding: '7px 16px', background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 8, color: '#fbbf24', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer' }}>
+                          Mark Started
+                        </button>
+                      )}
+                      {isStarted && !isCompleted && (
+                        <button onClick={() => onMarkShipped(bet.id)}
+                          style={{ padding: '7px 16px', background: 'rgba(45,212,191,0.08)', border: '1px solid rgba(45,212,191,0.25)', borderRadius: 8, color: '#2dd4bf', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer' }}>
+                          Mark Shipped
+                        </button>
+                      )}
+                      {isCompleted && (
+                        <button onClick={() => setRecordingOutcomeId(isRecordingOutcome ? null : bet.id)}
+                          style={{ padding: '7px 16px', background: isRecordingOutcome ? 'rgba(255,255,255,0.05)' : 'rgba(167,139,250,0.08)', border: `1px solid ${isRecordingOutcome ? 'rgba(255,255,255,0.1)' : 'rgba(167,139,250,0.25)'}`, borderRadius: 8, color: isRecordingOutcome ? '#64748b' : '#a78bfa', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer' }}>
+                          {isRecordingOutcome ? 'Cancel' : 'Record Outcome'}
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {isRecordingOutcome && (
+                    <OutcomeForm
+                      bet={bet}
+                      onSubmit={async (id, data) => { await onRecordOutcome(id, data); setRecordingOutcomeId(null); }}
+                      onCancel={() => setRecordingOutcomeId(null)}
+                    />
                   )}
 
                   {bet.scoringRationale && (
@@ -341,17 +458,16 @@ function PriorityQueue({ bets, setExpandedPriorityBet, expandedPriorityBet }) {
                           {bet.baseline && <div><span style={{ color: '#64748b' }}>Baseline: </span><span style={{ color: '#94a3b8' }}>{bet.baseline}</span></div>}
                           {bet.timeframe && <div><span style={{ color: '#64748b' }}>Timeframe: </span><span style={{ color: '#94a3b8' }}>{bet.timeframe} days</span></div>}
                           {bet.confidence && <div><span style={{ color: '#64748b' }}>Confidence: </span><span style={{ color: '#fbbf24' }}>{bet.confidence}%</span></div>}
-                          {bet.mustShipBy && <div><span style={{ color: '#64748b' }}>Must ship by: </span><span style={{ color: isOverdue ? '#ef4444' : '#94a3b8' }}>{fmt(bet.mustShipBy)}</span></div>}
-                          {bet.startBy && <div><span style={{ color: '#64748b' }}>Start by: </span><span style={{ color: '#94a3b8' }}>{fmt(bet.startBy)}</span></div>}
                           {bet.strategicAlignment && (
                             <div>
                               <span style={{ color: '#64748b' }}>Strategic Alignment: </span>
                               <span style={{ color: '#94a3b8' }}>
-                                {bet.strategicAlignment === 'inner' ? 'Inner Ring' : bet.strategicAlignment === 'outer' ? 'Outer Ring' : bet.strategicAlignment === 'experimental' ? 'Experimental' : bet.strategicAlignment}
+                                {bet.strategicAlignment === 'inner' ? 'Inner Ring' : bet.strategicAlignment === 'outer' ? 'Outer Ring' : 'Experimental'}
                               </span>
                             </div>
                           )}
-                          {bet.estimatedEffort && <div><span style={{ color: '#64748b' }}>Estimated Effort: </span><span style={{ color: '#94a3b8' }}>{bet.estimatedEffort}</span></div>}
+                          {bet.estimatedEffort && <div><span style={{ color: '#64748b' }}>Effort: </span><span style={{ color: '#94a3b8' }}>{bet.estimatedEffort}</span></div>}
+                          <div><span style={{ color: '#64748b' }}>Priority Score: </span><span style={{ color: '#f1f5f9', fontWeight: 600 }}>{priorityScore}</span></div>
                         </div>
                         {bet.assumptions && (
                           <div>
@@ -367,9 +483,8 @@ function PriorityQueue({ bets, setExpandedPriorityBet, expandedPriorityBet }) {
                         )}
                       </div>
                       <div style={{ paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                           CHZCLOTH SCORING RATIONALE
-                          {isAIEnhanced && <span style={{ color: '#2dd4bf', fontWeight: 700 }}>• ENHANCED</span>}
                         </div>
                         <div style={{ marginBottom: 8 }}><span style={{ color: '#2dd4bf', fontWeight: 600 }}>Approach:</span><span style={{ color: '#94a3b8', marginLeft: 8 }}>{bet.scoringRationale?.approach?.rationale}</span></div>
                         <div style={{ marginBottom: 8 }}><span style={{ color: '#fbbf24', fontWeight: 600 }}>Potential:</span><span style={{ color: '#94a3b8', marginLeft: 8 }}>{bet.scoringRationale?.potential?.rationale}</span></div>
