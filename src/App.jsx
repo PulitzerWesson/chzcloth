@@ -3447,7 +3447,7 @@ const handleRejectBet = async (betId, reason) => {
               gap: '8px'
             }}
           >
-  <span style={{ color: screen === 'team' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>●</span>
+  <span style={{ color: screen === 'dashboard' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>●</span>
             Your Queue
           </button>
 
@@ -3551,7 +3551,7 @@ const handleRejectBet = async (betId, reason) => {
     gap: '8px'
   }}
 >
-<span style={{ color: screen === 'dashboard' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>◆</span>
+<span style={{ color: screen === 'team' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>◆</span>
   Team
 </button>
         </div>
