@@ -189,7 +189,6 @@ scores = await scoreBet(betData, {
   context: orgContext?.combinedContext || orgContext?.userContext,
   learnings: orgLearnings?.learnings || [],
   companyGoals: companyGoals,
-  selectedKPI: betData.selectedKPI || null,
   companyName: betData.companyName || null,
   companyContext: betData.companyContext || null,
 });
@@ -239,6 +238,7 @@ scores = await scoreBet(betData, {
           selected_kpi: betData.selectedKPI || null,
           start_by: betData.startBy || null,
           must_ship_by: betData.mustShipBy || null,
+          company_id: betData.companyId || null,
         })
         .select()
         .single()
