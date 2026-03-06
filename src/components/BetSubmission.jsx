@@ -1,7 +1,9 @@
 // BetSubmission.jsx — Consolidated single-screen bet form
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { supabase } from '../lib/supabase';
+import { PRODUCT_AREA_ARCHETYPES, ARCHETYPE_REACH } from './CompanySetup';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -136,9 +138,27 @@ const ISSUE_PROMPTS = {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-// companyGoals passed as prop from App.jsx (fetched once at app level — no loading delay)
-export default function BetSubmission({ onComplete, currentOrg, companyGoals = [] }) {
+// currentCompany and companyGoals passed from App.jsx
+export default function BetSubmission({ onComplete, currentOrg, currentCompany = null }) {
   const { user } = useAuth();
+
+  // Fetch goals for current company
+  const [companyGoals, setCompanyGoals] = useState([]);
+  useEffect(() => {
+    if (!currentCompany?.id) { setCompanyGoals([]); return; }
+    supabase
+      .from('company_goals')
+      .select('*')
+      .eq('company_id', currentCompany.id)
+      .order('priority', { ascending: true })
+      .then(({ data }) => setCompanyGoals(data || []));
+  }, [currentCompany?.id]);
+
+  // Product area
+  const [selectedProductAreaId, setSelectedProductAreaId] = useState(() => {
+    const areas = currentCompany?.product_areas || [];
+    return areas.length === 1 ? areas[0].archetypeId : null;
+  });
 
   // Goals
   const [selectedGoalType, setSelectedGoalType] = useState('');
@@ -243,7 +263,7 @@ export default function BetSubmission({ onComplete, currentOrg, companyGoals = [
       const response = await fetch('/api/parse-narrative', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ narrative, goalContext: effectiveGoal, uploadedFile, strategicAlignment })
+        body: JSON.stringify({ narrative, goalContext: effectiveGoal, uploadedFile, strategicAlignment, companyContext: currentCompany?.context || null })
       });
       const review = await response.json();
       if (!response.ok) throw new Error(review.error || 'Analysis failed');
@@ -268,6 +288,9 @@ export default function BetSubmission({ onComplete, currentOrg, companyGoals = [
     const extracted = aiReview?.extracted || {};
     const effectiveGoal = hasLeadershipGoal ? leadershipGoal : goalContext;
 
+    const selectedArea = (currentCompany?.product_areas || []).find(a => a.archetypeId === selectedProductAreaId);
+    const reach = selectedArea ? (ARCHETYPE_REACH[selectedArea.archetypeId] || 70) : 70;
+
     const betData = {
       hypothesis: extracted.change
         ? `If we ${extracted.change}, then ${extracted.baseline || 'the metric'} will improve to ${extracted.magnitude || 'target'}, because ${extracted.mechanism || 'of expected impact'}`
@@ -281,7 +304,7 @@ export default function BetSubmission({ onComplete, currentOrg, companyGoals = [
       validationMethod,
       assumptions:      extracted.mechanism || '',
       strategicAlignment,
-      estimatedEffort,  // S/M/L/XL
+      estimatedEffort,
       isOwnIdea:        true,
       betType:          'improve',
       goalContext:      effectiveGoal,
@@ -294,6 +317,9 @@ export default function BetSubmission({ onComplete, currentOrg, companyGoals = [
       mechanism:        extracted.mechanism || '',
       evidenceType:     'tested',
       evidenceDetails:  extracted.evidence || '',
+      companyId:        currentCompany?.id || null,
+      productAreaId:    selectedProductAreaId,
+      reach,
     };
     onComplete(betData);
   };
@@ -340,6 +366,24 @@ export default function BetSubmission({ onComplete, currentOrg, companyGoals = [
           Describe what you'll build, why it matters, and how you'll validate it
         </p>
       </div>
+
+      {/* ── Product Area (shown when company has areas) ───────────────────── */}
+      {currentCompany?.product_areas?.length > 0 && (
+        <div style={{ marginBottom: 16, ...cardStyle }}>
+          <SectionLabel>Product Area</SectionLabel>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {currentCompany.product_areas.map(area => {
+              const active = selectedProductAreaId === area.archetypeId;
+              return (
+                <button key={area.archetypeId} onClick={() => setSelectedProductAreaId(active ? null : area.archetypeId)}
+                  style={{ padding: '8px 16px', background: active ? 'rgba(45,212,191,0.1)' : 'rgba(255,255,255,0.03)', border: `1px solid ${active ? 'rgba(45,212,191,0.4)' : 'rgba(255,255,255,0.08)'}`, borderRadius: 20, color: active ? '#2dd4bf' : '#94a3b8', fontSize: '0.85rem', fontWeight: active ? 600 : 400, cursor: 'pointer', transition: 'all 0.15s' }}>
+                  {area.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ── Row 1: Goal | Strategic Alignment ─────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16, alignItems: 'stretch' }}>
@@ -461,7 +505,7 @@ export default function BetSubmission({ onComplete, currentOrg, companyGoals = [
         )}
 
         <style>{`
-          .bet-narrative::placeholder { color: #475569; font-size: 0.82rem; line-height: 1.8; }
+          .bet-narrative::placeholder { color: #475569; font-size: 0.88rem; line-height: 1.8; }
           .bet-narrative::placeholder::first-line { color: #64748b; font-size: 0.95rem; }
         `}</style>
         <textarea
@@ -563,7 +607,7 @@ export default function BetSubmission({ onComplete, currentOrg, companyGoals = [
           onChange={e => setValidationMethod(e.target.value)}
           placeholder="Name the specific metric, where you'll measure it, and what a success looks like.&#10;&#10;e.g., Trial-to-paid conversion rate in Stripe. Currently 8% — success is reaching 11%+ sustained over 2 weeks."
           rows={4}
-          style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.7, marginBottom: 12, fontSize: '0.82rem' }}
+          style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.7, marginBottom: 12 }}
         />
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ color: '#475569', fontSize: '0.82rem', flexShrink: 0 }}>Check after</span>
