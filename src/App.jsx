@@ -2862,6 +2862,18 @@ const { ideas, loading: ideasLoading, updateIdeaStatus, claimIdea, submitIdea, u
       }
     }
   }, [isAuthenticated, authLoading, orgsInitialized, organizations, screen]);
+
+  const [companyGoals, setCompanyGoals] = useState([]);
+
+  useEffect(() => {
+    if (!currentOrg?.orgId) return;
+    supabase
+      .from('company_goals')
+      .select('*')
+      .eq('org_id', currentOrg.orgId)
+      .order('priority', { ascending: true })
+      .then(({ data }) => setCompanyGoals(data || []));
+  }, [currentOrg?.orgId]);
   
   // ============================================
   // EVENT HANDLERS
@@ -3363,6 +3375,8 @@ const handleRejectBet = async (betId, reason) => {
   <BetSubmission
     onComplete={handleBetComplete}
     currentOrg={currentOrg}
+    companyGoals={companyGoals}
+
   />
 )}
 
