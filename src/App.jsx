@@ -2927,12 +2927,14 @@ const handleOrgSetupComplete = async ({ organization, userOrg, companyGoals, dep
   
 const handleBetComplete = async (betData, ideaId = null) => {
   try {
-    setScreen('scoring_loading'); // ← add this line
+    setScreen('scoring_loading');
     setCurrentBet(null);
-    const orgLearnings = ...
+    const orgLearnings = (currentOrg?.orgId && user?.id)
+      ? await getOrgLearnings(currentOrg.orgId, user.id, 'bet')
+      : [];
     const { data, error } = await createBet(betData, ideaId, null, currentOrg);
     if (error) {
-      setScreen('bet'); // ← go back on error
+      setScreen('bet');
       alert('Error saving bet. Please try again.');
     } else {
       setCurrentBet(data);
