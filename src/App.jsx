@@ -3386,7 +3386,7 @@ const handleRejectBet = async (betId, reason) => {
   <BetSubmission
     onComplete={handleBetComplete}
     currentOrg={currentOrg}
-    companyGoals={companyGoals}
+  currentCompany={currentCompany}
 
   />
 )}
