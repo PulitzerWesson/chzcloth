@@ -1,6 +1,5 @@
-// api/parse-narrative.js - AI parsing of narrative bet submissions with logging
+// api/parse-narrative.js
 
-// Retry helper — handles Anthropic 529 overloaded errors gracefully
 async function callWithRetry(fn, maxAttempts = 3) {
   let lastResponse;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -16,83 +15,132 @@ async function callWithRetry(fn, maxAttempts = 3) {
 }
 
 export default async function handler(req, res) {
-  // COMPREHENSIVE LOGGING FOR DEBUGGING
   console.log('=== PARSE NARRATIVE REQUEST START ===');
-  console.log('Method:', req.method);
   console.log('Timestamp:', new Date().toISOString());
-  
+
   if (req.method !== 'POST') {
-    console.log('Method not allowed:', req.method);
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    console.log('Request body exists:', !!req.body);
-    console.log('Body keys:', Object.keys(req.body || {}));
-    
-    const { narrative, goalContext, uploadedFile } = req.body;
-    
+    const { narrative, goalContext, uploadedFile, strategicAlignment } = req.body;
+
     console.log('Parsed request data:', {
       hasNarrative: !!narrative,
       narrativeLength: narrative?.length || 0,
       hasGoalContext: !!goalContext,
-      goalLength: goalContext?.length || 0,
+      strategicAlignment: strategicAlignment || 'inner',
       hasUploadedFile: !!uploadedFile,
-      fileType: uploadedFile?.type || 'none',
-      fileDataLength: uploadedFile?.data?.length || 0
     });
 
-    // Build the prompt
-    const promptText = `Analyze this product bet and return ONLY valid JSON.
+    const alignment = strategicAlignment || 'inner';
 
-Goal: ${goalContext}
+    // Alignment-specific review framing
+    const alignmentContext = {
+      inner: `This bet is marked INNER RING — core product, critical path. This is a commitment, not a test. 
+The bar is high: the person needs to genuinely understand the problem, have a defensible causal mechanism, 
+and know what they will measure and how. Weak causation or vague problem framing on a core bet is a real issue.`,
 
-${narrative?.trim() ? `Bet Narrative:\n${narrative}\n` : ''}
-${uploadedFile ? 'A supporting document has been provided with additional context.' : ''}
+      outer: `This bet is marked OUTER RING — nice to have, quality of life. 
+The key question beyond problem clarity is opportunity cost: is this worth doing right now vs core work? 
+Push on whether the problem is real and felt, not just assumed. 
+If the mechanism is weak, flag it — but also ask whether this is the right bet at all given what else could be done.`,
 
-Return this exact structure:
+      experimental: `This bet is marked EXPERIMENTAL — test, learn, might not ship. 
+Do NOT penalize for ambitious predictions or incomplete evidence — that's the point of an experiment. 
+What matters here is learning design: will they actually know something meaningful when this ends? 
+Push on: what is the specific question this experiment answers? What would a clear result look like — 
+both positive and negative? If the experiment can't fail in a way that teaches them something, it's not a real experiment.`
+    }[alignment];
+
+    const promptText = `You are reviewing a product bet before it gets scored. Your job is not to be a copy editor. 
+Your job is to push on the things that actually determine whether this bet is worth making.
+
+STRATEGIC CONTEXT:
+Goal: ${goalContext || 'Not specified'}
+Strategic Alignment: ${alignment.toUpperCase()}
+
+${alignmentContext}
+
+${narrative?.trim() ? `BET NARRATIVE:\n${narrative}\n` : '(No narrative — document provided)'}
+${uploadedFile ? '\nA supporting document has been provided.' : ''}
+
+---
+
+YOUR REVIEW FRAMEWORK — push on these four things, in this order of importance:
+
+1. PROBLEM CLARITY
+Does this person actually understand what is broken and why? 
+Not "improve conversion" — but what specific friction, for whom, in what context, measured how?
+A sharp problem statement predicts better bets more than anything else.
+Flag if: the problem is assumed rather than observed, vague rather than specific, or missing entirely.
+
+2. CAUSAL MECHANISM  
+Is there a real reason why their intervention causes the outcome they're predicting?
+Not just "because users want this" — but a defensible chain of cause and effect.
+The test: could a skeptic in the room poke a hole in the mechanism with one question?
+Flag if: the mechanism is asserted rather than explained, or if it relies on correlation rather than causation.
+
+3. THE KILLING ASSUMPTION
+What is the single thing — if false — that makes this entire bet wrong?
+Not a list of risks. The one thing.
+A person who can name this is thinking clearly. A person who can't may not have thought it through.
+Flag if: assumptions are vague, plural without priority, or if the person hasn't identified the real load-bearing belief.
+
+4. EVIDENCE QUALITY (adjust expectations based on alignment type above)
+There is a difference between "we think" and "we measured."
+"We assume users want this" ≠ "we interviewed 15 churned users and 11 cited this reason."
+"We expect 20% lift" ≠ "we ran a 2-week test on 200 users and saw 18% lift."
+Flag if: evidence is absent or the confidence of the prediction is not matched by the quality of evidence supporting it.
+
+---
+
+ISSUE SEVERITY:
+- "missing": blocks scoring — the bet cannot be evaluated without this
+- "weak": bet can be scored but this meaningfully reduces confidence
+
+STRENGTHS:
+Call out what is genuinely sharp — not just "good hypothesis structure" but actual insight, real evidence, clear mechanism, honest uncertainty.
+
+READY TO SCORE:
+- true if the core intent is clear enough to evaluate, even with weak signals
+- false only if the bet is too vague to score (e.g., "improve things", no mechanism, no metric)
+- For experimental bets: be more generous — readyToScore=true if the learning question is clear
+
+---
+
+Return ONLY valid JSON:
 {
   "extracted": {
-    "change": "what they will build",
-    "baseline": "current numbers",
-    "magnitude": "expected numbers",
-    "mechanism": "why it will work",
-    "evidence": "proof they have",
-    "effort": "estimated effort based on scope (1-sprint, 2-3-sprints, 4-6-sprints, or 6-plus-sprints)"
+    "change": "what they will specifically do",
+    "baseline": "current measured state",
+    "magnitude": "expected outcome with numbers",
+    "mechanism": "the causal chain they're relying on",
+    "evidence": "what they have actually observed or tested",
+    "effort": "inferred effort: 1-sprint | 2-3-sprints | 4-6-sprints | 6-plus-sprints"
   },
   "goalAlignment": {
     "aligned": true,
-    "reasoning": "does bet achieve the goal"
+    "reasoning": "does this bet actually move the goal, or just loosely relate to it"
   },
+  "killingAssumption": "The single belief that, if false, makes this bet wrong",
   "issues": [
-    {"field": "example", "severity": "missing", "message": "what is missing"}
+    {
+      "field": "problem_clarity | mechanism | killing_assumption | evidence | scope | goal_alignment",
+      "severity": "missing | weak",
+      "message": "Direct, specific, one sentence. Not a suggestion — a pushback."
+    }
   ],
-  "strengths": ["what they did well"],
+  "strengths": [
+    "Specific thing that is genuinely sharp — not generic praise"
+  ],
   "readyToScore": true
-}
+}`;
 
-Instructions:
-- Extract "change" with specificity - flag as weak if vague (e.g., "improve conversion", "add features", "make it better")
-- Good scope is specific: "Add 5 video testimonials to pricing page" vs bad: "Improve social proof"
-- Estimate effort based on what they're building (simple UI change = 1-sprint, new feature = 2-3-sprints, complex system = 4-6-sprints, major platform = 6-plus-sprints)
-- Only flag "validation" issue if they have NO evidence at all (no tests, no interviews, no data)
-- Flag "change" as weak if the scope is unclear or too broad
-- If field is missing, use empty string
-- Keep all text values concise
-- Return ONLY the JSON`;
-
-    // Build message content - different structure for file vs no file
     let messageContent;
-    
     if (uploadedFile) {
-      console.log('Building MULTI-PART content (text + document)');
-      console.log('Uploaded file type:', uploadedFile.type);
-      
       messageContent = [
-        { 
-          type: 'text', 
-          text: promptText 
-        },
+        { type: 'text', text: promptText },
         {
           type: 'document',
           source: {
@@ -102,40 +150,17 @@ Instructions:
           }
         }
       ];
-      console.log('Multi-part content built with structure:', {
-        contentParts: 2,
-        documentSource: {
-          type: 'base64',
-          media_type: uploadedFile.type,
-          dataLength: uploadedFile.data?.length
-        }
-      });
     } else {
-      console.log('Building TEXT-ONLY content');
       messageContent = promptText;
-      console.log('Text-only content built successfully');
     }
 
-    console.log('Calling Anthropic API...');
-    console.log('API Key present:', !!process.env.ANTHROPIC_API_KEY);
-    console.log('API Key prefix:', process.env.ANTHROPIC_API_KEY?.substring(0, 10) + '...');
-    
     const apiPayload = {
       model: 'claude-sonnet-4-20250514',
       max_tokens: 3000,
-      messages: [{
-        role: 'user',
-        content: messageContent
-      }]
+      messages: [{ role: 'user', content: messageContent }]
     };
-    
-    console.log('API payload structure:', {
-      model: apiPayload.model,
-      max_tokens: apiPayload.max_tokens,
-      messageCount: apiPayload.messages.length,
-      contentType: Array.isArray(messageContent) ? 'array' : 'string',
-      contentParts: Array.isArray(messageContent) ? messageContent.length : 1
-    });
+
+    console.log('Calling Anthropic API...');
 
     const response = await callWithRetry(() => fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -148,64 +173,40 @@ Instructions:
     }));
 
     console.log('Anthropic API response status:', response.status);
-    console.log('Response OK:', response.ok);
-    
+
     const data = await response.json();
-    
+
     if (!response.ok) {
-      console.error('Anthropic API returned error:', {
-        status: response.status,
-        error: data.error,
-        type: data.type
-      });
+      console.error('Anthropic API error:', data.error);
       throw new Error(data.error?.message || `Anthropic API error: ${response.status}`);
     }
 
-    console.log('Anthropic response received, parsing...');
-    console.log('Response content length:', data.content?.length);
-    console.log('First content type:', data.content?.[0]?.type);
-
     const text = data.content[0].text;
-    console.log('Extracted text length:', text?.length);
-    
-    // Try to extract JSON
     let jsonText = text.trim();
-    
-    if (jsonText.startsWith('```')) {
-      console.log('Response wrapped in markdown, extracting...');
-      const match = jsonText.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/);
-      if (match) {
-        jsonText = match[1];
-        console.log('Extracted from markdown successfully');
-      }
-    }
-    
-    console.log('Parsing JSON...');
-    const parsed = JSON.parse(jsonText);
-    console.log('JSON parsed successfully');
-    console.log('Parsed keys:', Object.keys(parsed));
 
+    if (jsonText.startsWith('```')) {
+      const match = jsonText.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/);
+      if (match) jsonText = match[1];
+    }
+
+    const parsed = JSON.parse(jsonText);
     console.log('=== REQUEST COMPLETED SUCCESSFULLY ===');
     return res.status(200).json(parsed);
-    
+
   } catch (error) {
     console.error('=== ERROR IN PARSE NARRATIVE ===');
-    console.error('Error name:', error.name);
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
-    
-    // Return proper JSON error
-    return res.status(500).json({ 
+    console.error('Error:', error.message);
+
+    return res.status(500).json({
       error: error.message || 'Unknown error',
-      errorName: error.name,
-      timestamp: new Date().toISOString(),
       fallback: {
         extracted: {},
-        goalAlignment: { aligned: false, reasoning: "Analysis failed - check logs" },
-        issues: [{ 
-          field: "analysis", 
-          severity: "missing", 
-          message: `Error: ${error.message}` 
+        goalAlignment: { aligned: false, reasoning: 'Analysis failed — check logs' },
+        killingAssumption: null,
+        issues: [{
+          field: 'analysis',
+          severity: 'missing',
+          message: `Error: ${error.message}`
         }],
         strengths: [],
         readyToScore: false
