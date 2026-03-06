@@ -319,7 +319,10 @@ export default function BetSubmission({ onComplete, currentOrg, currentCompany =
       evidenceDetails:  extracted.evidence || '',
       companyId:        currentCompany?.id || null,
       productAreaId:    selectedProductAreaId,
+      productAreaLabel: selectedArea?.label || null,
       reach,
+      companyName:      currentCompany?.name || null,
+      companyContext:   currentCompany?.context || null,
     };
     onComplete(betData);
   };
