@@ -2803,6 +2803,7 @@ const {
   initialized: orgsInitialized,
   createOrganization,
   switchCurrentOrg,
+  addCompanyToOrg,
   isAdmin,
   canInviteUsers
 } = useOrganizations();
