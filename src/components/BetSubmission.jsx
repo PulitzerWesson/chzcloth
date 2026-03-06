@@ -270,7 +270,7 @@ export default function BetSubmission({ onComplete, currentOrg, currentCompany =
       setAiReview(review);
       setSubmitState('reviewed');
       setTimeout(() => reviewRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
-      if (review.extracted?.effort) setEstimatedEffort(parseEffort(review.extracted.effort));
+
     } catch {
       setAiReview({
         extracted: {},
@@ -488,23 +488,6 @@ export default function BetSubmission({ onComplete, currentOrg, currentCompany =
           </button>
         </div>
 
-        {/* Targeted prompts on re-submit */}
-        {submitState === 'reviewed' && !canScore && aiReview?.issues?.length > 0 && (
-          <div style={{ marginBottom: 12, padding: '14px 16px', background: 'rgba(239,68,68,0.04)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: 10 }}>
-            <div style={{ color: '#ef4444', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Address these in your revision</div>
-            {aiReview.issues.slice(0, 3).map((issue, i) => {
-              const prompt = ISSUE_PROMPTS[issue.field];
-              if (!prompt) return null;
-              return (
-                <div key={i} style={{ display: 'flex', gap: 10, marginBottom: i < Math.min(aiReview.issues.length, 3) - 1 ? 8 : 0 }}>
-                  <span style={{ color: '#ef4444', fontSize: '0.85rem', flexShrink: 0, marginTop: 1 }}>→</span>
-                  <div style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.5 }}>{prompt}</div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
         {showExample && (
           <div style={{ marginBottom: 12, padding: '14px 16px', background: 'rgba(45,212,191,0.04)', border: '1px solid rgba(45,212,191,0.12)', borderRadius: 10, fontSize: '0.85rem', color: '#64748b', lineHeight: 1.7, whiteSpace: 'pre-line' }}>
             <div style={{ color: '#2dd4bf', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Example</div>
@@ -625,6 +608,23 @@ export default function BetSubmission({ onComplete, currentOrg, currentCompany =
         </div>
       </div>
 
+      {/* ── Revision prompts — shown below inputs when needs revision ─────── */}
+      {submitState === 'reviewed' && !canScore && aiReview?.issues?.length > 0 && (
+        <div style={{ marginBottom: 16, padding: '14px 16px', background: 'rgba(239,68,68,0.04)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: 10 }}>
+          <div style={{ color: '#ef4444', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Address these in your revision</div>
+          {aiReview.issues.slice(0, 3).map((issue, i) => {
+            const prompt = ISSUE_PROMPTS[issue.field];
+            if (!prompt) return null;
+            return (
+              <div key={i} style={{ display: 'flex', gap: 10, marginBottom: i < Math.min(aiReview.issues.length, 3) - 1 ? 8 : 0 }}>
+                <span style={{ color: '#ef4444', fontSize: '0.85rem', flexShrink: 0, marginTop: 1 }}>→</span>
+                <div style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.5 }}>{prompt}</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* ── Row 6: AI Review ──────────────────────────────────────────────── */}
       <div ref={reviewRef}>
         {submitState !== 'idle' && aiReview && (
@@ -691,19 +691,19 @@ export default function BetSubmission({ onComplete, currentOrg, currentCompany =
           </button>
         )}
 
-        {/* Re-submit for review — shown when reviewed but not scoreable, or idle */}
-        {(submitState === 'idle' || (submitState === 'reviewed' && !canScore)) && (
+        {/* Re-submit for review — shown when idle, analyzing, or reviewed but not scoreable */}
+        {(submitState === 'idle' || submitState === 'analyzing' || (submitState === 'reviewed' && !canScore)) && (
           <button
             onClick={handleReview}
             disabled={ctaDisabled() || submitState === 'analyzing'}
             style={{
               padding: '13px 28px',
-              background: ctaDisabled() ? 'rgba(255,255,255,0.08)' : 'rgba(45,212,191,0.15)',
-              border: ctaDisabled() ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(45,212,191,0.3)',
+              background: ctaDisabled() || submitState === 'analyzing' ? 'rgba(255,255,255,0.08)' : 'rgba(45,212,191,0.15)',
+              border: ctaDisabled() || submitState === 'analyzing' ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(45,212,191,0.3)',
               borderRadius: 10,
-              color: ctaDisabled() ? '#334155' : '#2dd4bf',
+              color: ctaDisabled() || submitState === 'analyzing' ? '#334155' : '#2dd4bf',
               fontSize: '0.95rem', fontWeight: 700,
-              cursor: ctaDisabled() ? 'not-allowed' : 'pointer',
+              cursor: ctaDisabled() || submitState === 'analyzing' ? 'not-allowed' : 'pointer',
               transition: 'all 0.2s',
             }}
           >
