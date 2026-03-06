@@ -361,6 +361,11 @@ export default function BetSubmission({ onComplete, currentOrg, currentCompany =
 
       {/* Header */}
       <div style={{ marginBottom: 40 }}>
+        {currentCompany && (
+          <div style={{ color: '#2dd4bf', fontSize: '0.78rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+            {currentCompany.name}
+          </div>
+        )}
         <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#f1f5f9', margin: '0 0 8px 0' }}>Make a Bet</h1>
         <p style={{ color: '#64748b', margin: 0, fontSize: '0.95rem' }}>
           Describe what you'll build, why it matters, and how you'll validate it
@@ -370,10 +375,7 @@ export default function BetSubmission({ onComplete, currentOrg, currentCompany =
       {/* ── Product Area (shown when company has areas) ───────────────────── */}
       {currentCompany?.product_areas?.length > 0 && (
         <div style={{ marginBottom: 16, ...cardStyle }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
-            <SectionLabel>Product Area</SectionLabel>
-            <span style={{ color: '#334155', fontSize: '0.8rem', marginBottom: 10 }}>{currentCompany.name}</span>
-          </div>
+          <SectionLabel>Product Area</SectionLabel>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {currentCompany.product_areas.map(area => {
               const active = selectedProductAreaId === area.archetypeId;
