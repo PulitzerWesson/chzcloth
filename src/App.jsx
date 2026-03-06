@@ -3588,6 +3588,10 @@ const handleRejectBet = async (betId, reason) => {
     bets={bets}
     expandedPriorityBet={expandedPriorityBet}
     setExpandedPriorityBet={setExpandedPriorityBet}
+    currentUserId={user?.id}
+    onMarkStarted={markStarted}
+    onMarkShipped={markCompleted}
+    onRecordOutcome={recordOutcome}
   />
 )}
 
