@@ -2817,6 +2817,7 @@ const { ideas, loading: ideasLoading, updateIdeaStatus, claimIdea, submitIdea, u
   const [betToReplace, setBetToReplace] = useState(null);
   const [pendingBet, setPendingBet] = useState(null);
   const [expandedPriorityBet, setExpandedPriorityBet] = useState(null);
+  const [currentCompany, setCurrentCompany] = useState(null);
 
   
   // FIX: Progressive loading messages for Supabase free tier cold starts (5-8s)
