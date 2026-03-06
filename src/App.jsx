@@ -3558,7 +3558,7 @@ const handleRejectBet = async (betId, reason) => {
         </div>
       </div>
 
-      {/* Content area swaps */}
+{/* Content area swaps */}
 {screen === 'dashboard' && (
   <Dashboard 
     profile={profile} 
@@ -3576,11 +3576,10 @@ const handleRejectBet = async (betId, reason) => {
     markStarted={markStarted}
     markCompleted={markCompleted}
     setScreen={setScreen}
+    currentCompany={currentCompany}
   />
 )}
-
-      {console.log('Current screen state:', screen)}
-
+{console.log('Current screen state:', screen)}
 {screen === 'team' && (
   <CompanyDashboard 
     currentOrg={currentOrg}
@@ -3588,17 +3587,16 @@ const handleRejectBet = async (betId, reason) => {
     onCompanyAdded={refreshOrganizations}
   />
 )}
-   {screen === 'outcomes' && (
-  <OutcomesQueue bets={bets} />
+{screen === 'outcomes' && (
+  <OutcomesQueue bets={bets} currentCompany={currentCompany} />
 )}
-
 {screen === 'stats' && (
   <StatsScreen
     currentOrg={currentOrg}
     isAdmin={isAdmin}
+    currentCompany={currentCompany}
   />
-)}  
-          
+)}
 {screen === 'priority_queue' && (
   <PriorityQueue
     bets={bets}
@@ -3608,9 +3606,9 @@ const handleRejectBet = async (betId, reason) => {
     onMarkStarted={markStarted}
     onMarkShipped={markCompleted}
     onRecordOutcome={recordOutcome}
+    currentCompany={currentCompany}
   />
 )}
-
 {screen === 'ideas_queue' && (
   <IdeasQueue 
     ideas={ideas || []}
@@ -3621,26 +3619,24 @@ const handleRejectBet = async (betId, reason) => {
     onUnclaimIdea={unclaimIdea}
     onClaimAndStructure={handleClaimAndStructure}
     setScreen={setScreen}
+    currentCompany={currentCompany}
   />
 )}
-    
 
-          
-        </div>
-      </div>
-    )}
-          {screen === 'sponsor_review' && (
-      <SponsorReview
-        bets={bets}
-        currentOrg={currentOrg}
-        onApprove={handleApproveBet}
-        onReject={handleRejectBet}
-        onCancel={() => setScreen('dashboard')}
-      />
+</div>
+    </div>
+  )}
+{screen === 'sponsor_review' && (
+  <SponsorReview
+    bets={bets}
+    currentOrg={currentOrg}
+    onApprove={handleApproveBet}
+    onReject={handleRejectBet}
+    onCancel={() => setScreen('dashboard')}
+    currentCompany={currentCompany}
+  />
 )}
 
-
-    
-    </div>
-  );
+</div>
+);
 }
