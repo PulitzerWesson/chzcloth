@@ -33,28 +33,30 @@ export function useIdeas(orgId) {
 
       if (ideasError) throw ideasError
 
-const transformed = (ideasData || []).map(idea => ({
-  id: idea.id,
-  orgId: idea.org_id,
-  submittedBy: idea.submitted_by,
-  submittedByEmail: idea.submitted_by_profile?.email,
-  title: idea.title,
-  description: idea.description,
-  problem: idea.problem,
-  expectedImpact: idea.expected_impact,
-  status: idea.status,
-  claimedBy: idea.claimed_by,
-  claimedByEmail: idea.claimed_by_profile?.email,
-  claimedAt: idea.claimed_at,
-  createdAt: idea.created_at,
-  updatedAt: idea.updated_at,
-  entry_type: idea.entry_type,
-  bet_data: idea.bet_data,
-  viability_score: idea.viability_score,
-  relevance_score: idea.relevance_score,
-  overall_score: idea.overall_score,
-  scoring_rationale: idea.scoring_rationale
-}))
+      const transformed = (ideasData || []).map(idea => ({
+        id: idea.id,
+        orgId: idea.org_id,
+        companyId: idea.company_id,
+        submittedBy: idea.submitted_by,
+        submittedByEmail: idea.submitted_by_profile?.email,
+        title: idea.title,
+        description: idea.description,
+        problem: idea.problem,
+        expectedImpact: idea.expected_impact,
+        status: idea.status,
+        claimedBy: idea.claimed_by,
+        claimedByEmail: idea.claimed_by_profile?.email,
+        claimedAt: idea.claimed_at,
+        createdAt: idea.created_at,
+        updatedAt: idea.updated_at,
+        entry_type: idea.entry_type,
+        bet_data: idea.bet_data,
+        viability_score: idea.viability_score,
+        relevance_score: idea.relevance_score,
+        overall_score: idea.overall_score,
+        scoring_rationale: idea.scoring_rationale
+      }))
+
       setIdeas(transformed)
       setError(null)
     } catch (err) {
@@ -71,62 +73,64 @@ const transformed = (ideasData || []).map(idea => ({
     fetchIdeas()
   }, [fetchIdeas])
 
-const submitIdea = async (ideaData) => {
-  if (!user || !orgId) return { error: { message: 'Not authenticated or no org selected' } }
+  const submitIdea = async (ideaData) => {
+    if (!user || !orgId) return { error: { message: 'Not authenticated or no org selected' } }
 
-  try {
-    const { data, error } = await supabase
-      .from('ideas')
-      .insert({
-        org_id: orgId,
-        submitted_by: user.id,
-        title: ideaData.title,
-        description: ideaData.description,
-        problem: ideaData.problem || null,
-        expected_impact: ideaData.expectedImpact || null,
-        entry_type: ideaData.entry_type || 'idea',
-        bet_data: ideaData.bet_data || null,
-        viability_score: ideaData.viability_score || null,
-        relevance_score: ideaData.relevance_score || null,
-        overall_score: ideaData.overall_score || null,
-        scoring_rationale: ideaData.scoring_rationale || null,
-        status: ideaData.status || 'pending'
-      })
-      .select()
-      .single()
+    try {
+      const { data, error } = await supabase
+        .from('ideas')
+        .insert({
+          org_id: orgId,
+          submitted_by: user.id,
+          title: ideaData.title,
+          description: ideaData.description,
+          problem: ideaData.problem || null,
+          expected_impact: ideaData.expectedImpact || null,
+          entry_type: ideaData.entry_type || 'idea',
+          bet_data: ideaData.bet_data || null,
+          viability_score: ideaData.viability_score || null,
+          relevance_score: ideaData.relevance_score || null,
+          overall_score: ideaData.overall_score || null,
+          scoring_rationale: ideaData.scoring_rationale || null,
+          status: ideaData.status || 'pending',
+          company_id: ideaData.company_id || null,
+        })
+        .select()
+        .single()
 
-    if (error) throw error
+      if (error) throw error
 
-const newIdea = {
-  id: data.id,
-  orgId: data.org_id,
-  submittedBy: data.submitted_by,
-  submittedByEmail: user.email,
-  title: data.title,
-  description: data.description,
-  problem: data.problem,
-  expectedImpact: data.expected_impact,
-  status: data.status,
-  claimedBy: null,
-  claimedByEmail: null,
-  claimedAt: null,
-  createdAt: data.created_at,
-  updatedAt: data.updated_at,
-  entry_type: data.entry_type,
-  bet_data: data.bet_data,
-  viability_score: data.viability_score,
-  relevance_score: data.relevance_score,
-  overall_score: data.overall_score,
-  scoring_rationale: data.scoring_rationale
-}
+      const newIdea = {
+        id: data.id,
+        orgId: data.org_id,
+        companyId: data.company_id,
+        submittedBy: data.submitted_by,
+        submittedByEmail: user.email,
+        title: data.title,
+        description: data.description,
+        problem: data.problem,
+        expectedImpact: data.expected_impact,
+        status: data.status,
+        claimedBy: null,
+        claimedByEmail: null,
+        claimedAt: null,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+        entry_type: data.entry_type,
+        bet_data: data.bet_data,
+        viability_score: data.viability_score,
+        relevance_score: data.relevance_score,
+        overall_score: data.overall_score,
+        scoring_rationale: data.scoring_rationale
+      }
 
-    setIdeas(prev => [newIdea, ...prev])
-    return { data: newIdea, error: null }
-  } catch (err) {
-    console.error('Error submitting idea:', err)
-    return { data: null, error: err }
+      setIdeas(prev => [newIdea, ...prev])
+      return { data: newIdea, error: null }
+    } catch (err) {
+      console.error('Error submitting idea:', err)
+      return { data: null, error: err }
+    }
   }
-}
 
   const claimIdea = async (ideaId) => {
     if (!user) return { error: { message: 'Not authenticated' } }
@@ -140,7 +144,7 @@ const newIdea = {
           claimed_at: new Date().toISOString()
         })
         .eq('id', ideaId)
-        .eq('status', 'pending') // Only allow claiming pending ideas
+        .eq('status', 'pending')
         .select()
         .single()
 
@@ -177,7 +181,7 @@ const newIdea = {
           claimed_at: null
         })
         .eq('id', ideaId)
-        .eq('claimed_by', user.id) // Only allow unclaiming your own claims
+        .eq('claimed_by', user.id)
         .select()
         .single()
 
@@ -234,7 +238,7 @@ const newIdea = {
         .from('ideas')
         .delete()
         .eq('id', ideaId)
-        .eq('submitted_by', user.id) // Only allow deleting your own ideas
+        .eq('submitted_by', user.id)
 
       if (error) throw error
 
@@ -274,28 +278,26 @@ const newIdea = {
   }, [ideas, user])
 
   const withdrawFromMarketplace = async (betId) => {
-  if (!user) return { error: { message: 'Not authenticated' } }
-  try {
-    // Find the idea that belongs to this bet
-    const idea = ideas.find(i => {
-      const bd = typeof i.bet_data === 'string' ? JSON.parse(i.bet_data) : i.bet_data;
-      return bd?.id === betId;
-    });
-    if (!idea) return { error: { message: 'Idea not found' } }
-    const { error } = await supabase
-      .from('ideas')
-      .delete()
-      .eq('id', idea.id)
-      .eq('submitted_by', user.id)
-    if (error) throw error
-    setIdeas(prev => prev.filter(i => i.id !== idea.id))
-    return { error: null }
-  } catch (err) {
-    console.error('Error withdrawing from marketplace:', err)
-    return { error: err }
+    if (!user) return { error: { message: 'Not authenticated' } }
+    try {
+      const idea = ideas.find(i => {
+        const bd = typeof i.bet_data === 'string' ? JSON.parse(i.bet_data) : i.bet_data
+        return bd?.id === betId
+      })
+      if (!idea) return { error: { message: 'Idea not found' } }
+      const { error } = await supabase
+        .from('ideas')
+        .delete()
+        .eq('id', idea.id)
+        .eq('submitted_by', user.id)
+      if (error) throw error
+      setIdeas(prev => prev.filter(i => i.id !== idea.id))
+      return { error: null }
+    } catch (err) {
+      console.error('Error withdrawing from marketplace:', err)
+      return { error: err }
+    }
   }
-}
-  
 
   return {
     ideas,
