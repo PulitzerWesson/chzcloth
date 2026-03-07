@@ -3430,13 +3430,20 @@ const handleRejectBet = async (betId, reason) => {
   <OrgSwitcher
     organizations={organizations || []}
     currentOrg={currentOrg}
-    onSwitch={(orgId) => { setCurrentCompany(null); switchCurrentOrg(orgId); }}
+    onSwitch={(orgId) => { 
+  setCurrentCompany(null); 
+  localStorage.removeItem('currentCompanyId');
+  switchCurrentOrg(orgId); 
+}}
     onAddOrg={() => setScreen('orgsetup')}
-    onAddCompany={addCompanyToOrg}
     canInviteUsers={canInviteUsers}
       companies={currentOrg?.companies || []}
   currentCompany={currentCompany}
-  onSelectCompany={setCurrentCompany}
+  onSelectCompany={(company) => {
+  setCurrentCompany(company);
+  if (company) localStorage.setItem('currentCompanyId', company.id);
+  else localStorage.removeItem('currentCompanyId');
+}}
     onAddCompany={() => setScreen('team')}
   />
 </div>
