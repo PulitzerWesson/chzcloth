@@ -2878,12 +2878,19 @@ const { ideas, loading: ideasLoading, updateIdeaStatus, claimIdea, submitIdea, u
       .then(({ data }) => setCompanyGoals(data || []));
   }, [currentOrg?.orgId]);
 
-  useEffect(() => {
+useEffect(() => {
   const companies = currentOrg?.companies || [];
-  if (companies.length === 1) {
-    setCurrentCompany(companies[0]);
-  } else if (companies.length === 0) {
+  if (companies.length === 0) {
     setCurrentCompany(null);
+    return;
+  }
+  const savedId = localStorage.getItem('currentCompanyId');
+  const saved = companies.find(c => c.id === savedId);
+  if (saved) {
+    setCurrentCompany(saved);
+  } else if (companies.length === 1) {
+    setCurrentCompany(companies[0]);
+    localStorage.setItem('currentCompanyId', companies[0].id);
   }
 }, [currentOrg?.orgId]);
   
