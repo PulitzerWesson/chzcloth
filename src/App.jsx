@@ -3628,7 +3628,7 @@ const handleRejectBet = async (betId, reason) => {
     currentUserId={user?.id}
     onMarkStarted={markStarted}
     onMarkShipped={markCompleted}
-    onRecordOutcome={recordOutcome}
+    onRecordOutcome={handleRecordOutcome}
     currentCompany={currentCompany}
   />
 )}
