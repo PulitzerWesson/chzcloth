@@ -208,14 +208,14 @@ function OutcomesQueue({ bets }) {
 
                 {/* Meta row */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.78rem', color: '#475569', flexWrap: 'wrap', marginBottom: 12 }}>
+                  <span style={{ padding: '3px 10px', background: oc.bg, border: `1px solid ${oc.border}`, borderRadius: 5, color: oc.text, fontSize: '0.72rem', fontWeight: 600 }}>
+                    {oc.label}
+                  </span>
                   {lc && (
                     <span style={{ padding: '3px 8px', background: lc.bg, border: `1px solid ${lc.border}`, borderRadius: 5, color: lc.text, fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                       {bet.lever}
                     </span>
                   )}
-                  <span style={{ padding: '3px 10px', background: oc.bg, border: `1px solid ${oc.border}`, borderRadius: 5, color: oc.text, fontSize: '0.72rem', fontWeight: 600 }}>
-                    {oc.label}
-                  </span>
                   <span>by {bet.submittedByEmail || 'unknown'}</span>
                   {bet.sponsoredByEmail && <><span>·</span><span>approved by {bet.sponsoredByEmail}</span></>}
                   {bet.completedAt && <><span>·</span><span>Shipped {fmt(bet.completedAt)}</span></>}
