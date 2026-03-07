@@ -82,15 +82,11 @@ const alignmentLabel = (a) => {
   return a;
 };
 
-function OutcomesQueue({ bets, currentCompany }) {
+function OutcomesQueue({ bets }) {
   const [filter, setFilter] = useState('all');
   const [expanded, setExpanded] = useState(null);
 
-  const companyBets = currentCompany
-    ? (bets || []).filter(b => b.companyId === currentCompany.id)
-    : (bets || []);
-
-  const outcomeBets = companyBets
+  const outcomeBets = (bets || [])
     .filter(b => OUTCOME_KEYS.includes(b.status || b.outcome))
     .sort((a, b) => new Date(b.completedAt || b.createdAt) - new Date(a.completedAt || a.createdAt));
 
@@ -141,9 +137,7 @@ function OutcomesQueue({ bets, currentCompany }) {
 
       {outcomeBets.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '80px 20px' }}>
-          <div style={{ color: '#475569', fontSize: '1rem', marginBottom: 8 }}>
-            {currentCompany ? `No outcomes recorded for ${currentCompany.name} yet` : 'No outcomes recorded yet'}
-          </div>     
+          <div style={{ color: '#475569', fontSize: '1rem', marginBottom: 8 }}>No outcomes recorded yet</div>
           <div style={{ color: '#334155', fontSize: '0.875rem', maxWidth: 360, margin: '0 auto', lineHeight: 1.6 }}>
             Once your team ships bets and records what happened, they'll appear here. This is where learning compounds.
           </div>
@@ -200,9 +194,7 @@ function OutcomesQueue({ bets, currentCompany }) {
                         </div>
                       </div>
                     )}
-                    <span style={{ padding: '4px 12px', background: oc.bg, border: `1px solid ${oc.border}`, borderRadius: 20, color: oc.text, fontSize: '0.78rem', fontWeight: 600 }}>
-                      {oc.label}
-                    </span>
+
                   </div>
                   </div>
                 </div>
@@ -221,6 +213,9 @@ function OutcomesQueue({ bets, currentCompany }) {
                       {bet.lever}
                     </span>
                   )}
+                  <span style={{ padding: '3px 10px', background: oc.bg, border: `1px solid ${oc.border}`, borderRadius: 5, color: oc.text, fontSize: '0.72rem', fontWeight: 600 }}>
+                    {oc.label}
+                  </span>
                   <span>by {bet.submittedByEmail || 'unknown'}</span>
                   {bet.sponsoredByEmail && <><span>·</span><span>approved by {bet.sponsoredByEmail}</span></>}
                   {bet.completedAt && <><span>·</span><span>Shipped {fmt(bet.completedAt)}</span></>}
