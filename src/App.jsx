@@ -2606,11 +2606,15 @@ function Dashboard({ profile, bets, currentOrg, organizations, onSwitchOrg, onEd
   const [filters, setFilters] = useState(defaultFilters);
   const [summaryExpanded, setSummaryExpanded] = useState(false);
 
-  const yourBets = safeBets.filter(b => b.userId === currentUserId || b.user_id === currentUserId);
-  const sponsoredBets = safeBets.filter(b =>
+  const yourBets = safeBets
+  .filter(b => b.userId === currentUserId || b.user_id === currentUserId)
+  .filter(b => !currentCompany || b.companyId === currentCompany.id);
+ const sponsoredBets = safeBets
+  .filter(b =>
     b.sponsoredBy === currentUserId &&
     (b.userId !== currentUserId && b.user_id !== currentUserId)
-  );
+  )
+  .filter(b => !currentCompany || b.companyId === currentCompany.id);
 
   const counts = computeCounts([...yourBets, ...sponsoredBets], getContribStatus);
   const filteredYourBets = applyFilters(yourBets, filters, getContribStatus);
