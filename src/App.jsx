@@ -2842,6 +2842,10 @@ const { ideas, loading: ideasLoading, updateIdeaStatus, claimIdea, submitIdea, u
   const [pendingBet, setPendingBet] = useState(null);
   const [expandedPriorityBet, setExpandedPriorityBet] = useState(null);
   const [currentCompany, setCurrentCompany] = useState(null);
+  const QUEUE_SCREENS = ['dashboard', 'priority_queue', 'ideas_queue', 'outcomes'];
+  const TEAM_SCREENS = ['stats', 'team'];
+  const isQueueScreen = QUEUE_SCREENS.includes(screen);
+  const isTeamScreen = TEAM_SCREENS.includes(screen);
 
   
   // FIX: Progressive loading messages for Supabase free tier cold starts (5-8s)
