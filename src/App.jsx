@@ -3466,49 +3466,50 @@ const handleRejectBet = async (betId, reason) => {
   />
 </div>
 
- const QUEUE_SCREENS = ['dashboard', 'priority_queue', 'ideas_queue', 'outcomes'];
-const TEAM_SCREENS = ['stats', 'team'];
-const isQueueScreen = QUEUE_SCREENS.includes(screen);
-const isTeamScreen = TEAM_SCREENS.includes(screen);
+{/* Tabs - always visible */}
+      <div style={{
+        borderBottom: '1px solid rgba(255,255,255,0.1)',
+        marginBottom: 40
+      }}>
+        <div style={{ display: 'flex', gap: 40, paddingLeft: 0, alignItems: 'stretch' }}>
 
-<div style={{ display: 'flex', gap: 40, paddingLeft: 0 }}>
+          {/* ── Queue tabs ── */}
+          <button onClick={() => setScreen('dashboard')} style={{ background: 'transparent', border: 'none', borderBottom: screen === 'dashboard' ? '2px solid #7dd3fc' : '2px solid transparent', padding: '16px 0', color: screen === 'dashboard' ? '#e0e0e0' : '#666', fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ color: screen === 'dashboard' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>●</span>
+            Your Queue
+          </button>
 
-  {/* ── Queue tabs (teal) ── */}
-  <button onClick={() => setScreen('dashboard')} style={{ background: 'transparent', border: 'none', borderBottom: screen === 'dashboard' ? '2px solid #7dd3fc' : '2px solid transparent', padding: '16px 0', color: screen === 'dashboard' ? '#e0e0e0' : '#555', fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '8px' }}>
-    <span style={{ color: screen === 'dashboard' ? '#7dd3fc' : '#444', fontSize: '0.85rem' }}>◆</span>
-    Your Queue
-  </button>
+          <button onClick={() => setScreen('priority_queue')} style={{ background: 'transparent', border: 'none', borderBottom: screen === 'priority_queue' ? '2px solid #7dd3fc' : '2px solid transparent', padding: '16px 0', color: screen === 'priority_queue' ? '#e0e0e0' : '#666', fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ color: screen === 'priority_queue' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>▤</span>
+            Priority Queue
+          </button>
 
-  <button onClick={() => setScreen('priority_queue')} style={{ background: 'transparent', border: 'none', borderBottom: screen === 'priority_queue' ? '2px solid #7dd3fc' : '2px solid transparent', padding: '16px 0', color: screen === 'priority_queue' ? '#e0e0e0' : '#555', fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '8px' }}>
-    <span style={{ color: screen === 'priority_queue' ? '#7dd3fc' : '#444', fontSize: '0.85rem' }}>▤</span>
-    Priority Queue
-  </button>
+          <button onClick={() => setScreen('ideas_queue')} style={{ background: 'transparent', border: 'none', borderBottom: screen === 'ideas_queue' ? '2px solid #7dd3fc' : '2px solid transparent', padding: '16px 0', color: screen === 'ideas_queue' ? '#e0e0e0' : '#666', fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ color: screen === 'ideas_queue' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>◎</span>
+            Marketplace
+          </button>
 
-  <button onClick={() => setScreen('ideas_queue')} style={{ background: 'transparent', border: 'none', borderBottom: screen === 'ideas_queue' ? '2px solid #7dd3fc' : '2px solid transparent', padding: '16px 0', color: screen === 'ideas_queue' ? '#e0e0e0' : '#555', fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '8px' }}>
-    <span style={{ color: screen === 'ideas_queue' ? '#7dd3fc' : '#444', fontSize: '0.85rem' }}>◎</span>
-    Marketplace
-  </button>
+          <button onClick={() => setScreen('outcomes')} style={{ background: 'transparent', border: 'none', borderBottom: screen === 'outcomes' ? '2px solid #7dd3fc' : '2px solid transparent', padding: '16px 0', color: screen === 'outcomes' ? '#e0e0e0' : '#666', fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ color: screen === 'outcomes' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>✦</span>
+            Outcomes
+          </button>
 
-  <button onClick={() => setScreen('outcomes')} style={{ background: 'transparent', border: 'none', borderBottom: screen === 'outcomes' ? '2px solid #7dd3fc' : '2px solid transparent', padding: '16px 0', color: screen === 'outcomes' ? '#e0e0e0' : '#555', fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '8px' }}>
-    <span style={{ color: screen === 'outcomes' ? '#7dd3fc' : '#444', fontSize: '0.85rem' }}>✓</span>
-    Outcomes
-  </button>
+          {/* ── Divider ── */}
+          <div style={{ width: 1, background: 'rgba(255,255,255,0.08)', margin: '10px 0' }} />
 
-  {/* ── Divider ── */}
-  <div style={{ width: 1, background: 'rgba(255,255,255,0.08)', margin: '12px 0' }} />
+          {/* ── Team tabs ── */}
+          <button onClick={() => setScreen('stats')} style={{ background: 'transparent', border: 'none', borderBottom: screen === 'stats' ? '2px solid #a78bfa' : '2px solid transparent', padding: '16px 0', color: screen === 'stats' ? '#e0e0e0' : '#666', fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ color: screen === 'stats' ? '#a78bfa' : '#555', fontSize: '0.85rem' }}>⬡</span>
+            Stats
+          </button>
 
-  {/* ── Team tabs (purple) ── */}
-  <button onClick={() => setScreen('stats')} style={{ background: 'transparent', border: 'none', borderBottom: screen === 'stats' ? '2px solid #a78bfa' : '2px solid transparent', padding: '16px 0', color: screen === 'stats' ? '#e0e0e0' : '#555', fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '8px' }}>
-    <span style={{ color: screen === 'stats' ? '#a78bfa' : '#444', fontSize: '0.85rem' }}>▦</span>
-    Stats
-  </button>
+          <button onClick={() => setScreen('team')} style={{ background: 'transparent', border: 'none', borderBottom: screen === 'team' ? '2px solid #a78bfa' : '2px solid transparent', padding: '16px 0', color: screen === 'team' ? '#e0e0e0' : '#666', fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ color: screen === 'team' ? '#a78bfa' : '#555', fontSize: '0.85rem' }}>◆</span>
+            Team
+          </button>
 
-  <button onClick={() => setScreen('team')} style={{ background: 'transparent', border: 'none', borderBottom: screen === 'team' ? '2px solid #a78bfa' : '2px solid transparent', padding: '16px 0', color: screen === 'team' ? '#e0e0e0' : '#555', fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '8px' }}>
-    <span style={{ color: screen === 'team' ? '#a78bfa' : '#444', fontSize: '0.85rem' }}>●</span>
-    Team
-  </button>
-
-</div>
+        </div>
+      </div>
 
 {/* Content area swaps */}
 {screen === 'dashboard' && (
