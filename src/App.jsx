@@ -3479,6 +3479,11 @@ const handleRejectBet = async (betId, reason) => {
             Your Queue
           </button>
 
+          <button onClick={() => setScreen('outcomes')} style={{ background: 'transparent', border: 'none', borderBottom: screen === 'outcomes' ? '2px solid #7dd3fc' : '2px solid transparent', padding: '16px 0', color: screen === 'outcomes' ? '#e0e0e0' : '#666', fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ color: screen === 'outcomes' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>✦</span>
+            Outcomes
+          </button>
+
           <button onClick={() => setScreen('priority_queue')} style={{ background: 'transparent', border: 'none', borderBottom: screen === 'priority_queue' ? '2px solid #7dd3fc' : '2px solid transparent', padding: '16px 0', color: screen === 'priority_queue' ? '#e0e0e0' : '#666', fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ color: screen === 'priority_queue' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>▤</span>
             Priority Queue
@@ -3489,10 +3494,7 @@ const handleRejectBet = async (betId, reason) => {
             Marketplace
           </button>
 
-          <button onClick={() => setScreen('outcomes')} style={{ background: 'transparent', border: 'none', borderBottom: screen === 'outcomes' ? '2px solid #7dd3fc' : '2px solid transparent', padding: '16px 0', color: screen === 'outcomes' ? '#e0e0e0' : '#666', fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ color: screen === 'outcomes' ? '#7dd3fc' : '#555', fontSize: '0.85rem' }}>✦</span>
-            Outcomes
-          </button>
+
 
           {/* ── Divider ── */}
           <div style={{ width: 1, background: 'rgba(255,255,255,0.08)', margin: '10px 0' }} />
