@@ -2334,6 +2334,16 @@ const getStatusBadge = (bet) => {
   return { bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)', text: '#94a3b8', label: 'Draft' };
 };
 
+// PASTE THIS INTO App.jsx REPLACING THE EXISTING BetCard FUNCTION
+
+const OUTCOME_COLORS = {
+  succeeded:     { bg: 'rgba(34,197,94,0.15)',   border: 'rgba(34,197,94,0.3)',   text: '#22c55e', label: 'Succeeded' },
+  partial:       { bg: 'rgba(251,191,36,0.15)',  border: 'rgba(251,191,36,0.3)',  text: '#fbbf24', label: 'Partial Win' },
+  failed:        { bg: 'rgba(239,68,68,0.15)',   border: 'rgba(239,68,68,0.3)',   text: '#ef4444', label: 'Failed' },
+  inconclusive:  { bg: 'rgba(100,116,139,0.15)', border: 'rgba(100,116,139,0.3)', text: '#94a3b8', label: 'Inconclusive' },
+  never_shipped: { bg: 'rgba(71,85,105,0.15)',   border: 'rgba(71,85,105,0.3)',   text: '#64748b', label: 'Never Shipped' },
+};
+
 function BetCard({ bet, showAddToMarketplace, expandedBets, setExpandedBets, onRecordOutcome, onAddToMarketplace, onWithdrawFromMarketplace, markStarted, onMarkCompletedClick }) {
   const isExpanded = expandedBets[bet.id];
   const isAIEnhanced = bet.aiEnhanced;
@@ -2344,12 +2354,20 @@ function BetCard({ bet, showAddToMarketplace, expandedBets, setExpandedBets, onR
   const hasOutcome = ['succeeded', 'partial', 'failed', 'inconclusive', 'never_shipped'].includes(bet.status || bet.outcome);
   const lc = lever && LEVER_COLORS[lever] ? LEVER_COLORS[lever] : { bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)', text: '#94a3b8' };
   const statusBadge = getStatusBadge(bet);
-
-  // showAddToMarketplace === true means "Your Bets", false means "Sponsored by You"
   const isYourBet = showAddToMarketplace;
+  const oc = hasOutcome ? OUTCOME_COLORS[bet.status || bet.outcome] : null;
 
   return (
-    <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 20, display: 'flex', gap: 16, marginBottom: 12 }}>
+    <div style={{
+      background: 'rgba(255,255,255,0.03)',
+      border: `1px solid ${oc ? oc.border : 'rgba(255,255,255,0.1)'}`,
+      borderLeft: oc ? `3px solid ${oc.text}` : '1px solid rgba(255,255,255,0.1)',
+      borderRadius: 12,
+      padding: 20,
+      display: 'flex',
+      gap: 16,
+      marginBottom: 12
+    }}>
       <div style={{ flexShrink: 0, paddingTop: 4 }}>
         <StrategicAlignmentIcon alignment={bet.strategicAlignment} />
       </div>
@@ -2402,7 +2420,7 @@ function BetCard({ bet, showAddToMarketplace, expandedBets, setExpandedBets, onR
         )}
 
         {/* Meta row */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.8rem', color: '#64748b', marginBottom: 16, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.8rem', color: '#64748b', marginBottom: hasOutcome ? 12 : 16, flexWrap: 'wrap' }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 10px', background: statusBadge.bg, border: `1px solid ${statusBadge.border}`, borderRadius: 6, color: statusBadge.text, fontSize: '0.75rem', fontWeight: 600 }}>
             {statusBadge.label}
           </span>
@@ -2411,36 +2429,42 @@ function BetCard({ bet, showAddToMarketplace, expandedBets, setExpandedBets, onR
               {lever}
             </span>
           )}
-        {isYourBet ? (
-  bet.approvalStatus === 'approved' && bet.sponsoredByEmail && (
-    <><span>•</span><span>sponsored by {bet.sponsoredByEmail}</span></>
-  )
-) : (
-  bet.submittedByEmail && (
-    <><span>•</span><span>by {bet.submittedByEmail}</span></>
-  )
-)}
-
-          {/* Date — contextual: started date takes priority, then submitted */}
-          {isStarted ? (
-            <>
-              <span>•</span>
-              <span>Started {fmt(bet.startedAt)}</span>
-            </>
+          {isYourBet ? (
+            bet.approvalStatus === 'approved' && bet.sponsoredByEmail && (
+              <><span>•</span><span>sponsored by {bet.sponsoredByEmail}</span></>
+            )
           ) : (
-            <>
-              <span>•</span>
-              <span>Submitted {fmt(bet.createdAt)}</span>
-            </>
+            bet.submittedByEmail && (
+              <><span>•</span><span>by {bet.submittedByEmail}</span></>
+            )
           )}
-
+          {isStarted ? (
+            <><span>•</span><span>Started {fmt(bet.startedAt)}</span></>
+          ) : (
+            <><span>•</span><span>Submitted {fmt(bet.createdAt)}</span></>
+          )}
           {isCompleted && (
-            <>
-              <span>•</span>
-              <span>Completed {fmt(bet.completedAt)}</span>
-            </>
+            <><span>•</span><span>Completed {fmt(bet.completedAt)}</span></>
           )}
         </div>
+
+        {/* Outcome inline — shown when outcome is recorded */}
+        {hasOutcome && (
+          <div style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {bet.actualResult && (
+              <div style={{ padding: '10px 14px', background: 'rgba(0,0,0,0.2)', borderRadius: 8 }}>
+                <div style={{ color: '#475569', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>What Happened</div>
+                <div style={{ color: '#cbd5e1', fontSize: '0.88rem', lineHeight: 1.5 }}>{bet.actualResult}</div>
+              </div>
+            )}
+            {bet.learned && (
+              <div style={{ padding: '10px 14px', background: `rgba(${oc ? oc.text.replace('#','').match(/.{2}/g).map(h=>parseInt(h,16)).join(',') : '45,212,191'},0.04)`, border: `1px solid ${oc ? oc.border : 'rgba(45,212,191,0.15)'}`, borderRadius: 8 }}>
+                <div style={{ color: oc ? oc.text : '#2dd4bf', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>What We Learned</div>
+                <div style={{ color: '#cbd5e1', fontSize: '0.88rem', lineHeight: 1.5 }}>{bet.learned}</div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Actions row */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -2533,12 +2557,6 @@ function BetCard({ bet, showAddToMarketplace, expandedBets, setExpandedBets, onR
                 <div>
                   <div style={{ color: '#64748b', marginBottom: 4 }}>Assumptions:</div>
                   <div style={{ color: '#94a3b8' }}>{bet.assumptions}</div>
-                </div>
-              )}
-              {hasOutcome && (
-                <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                  {bet.actualResult && <div style={{ marginBottom: 8 }}><span style={{ color: '#64748b' }}>Result: </span><span style={{ color: '#94a3b8' }}>{bet.actualResult}</span></div>}
-                  {bet.learned && <div><span style={{ color: '#64748b' }}>Learned: </span><span style={{ color: '#94a3b8' }}>{bet.learned}</span></div>}
                 </div>
               )}
             </div>
